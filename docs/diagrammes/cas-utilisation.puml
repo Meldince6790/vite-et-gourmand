@@ -1,0 +1,72 @@
+@startuml CasUtilisation
+left to right direction
+
+'========================
+' ACTEURS
+'========================
+actor Visiteur
+actor Client
+actor Employe
+actor Administrateur
+
+Client --|> Visiteur
+Administrateur --|> Employe
+
+'========================
+' SYSTEME
+'========================
+rectangle "Vite & Gourmand" {
+
+  '--- VISITEUR ---
+  usecase "Consulter menus" as UC1
+  usecase "Filtrer menus" as UC2
+  usecase "Voir détail menu" as UC3
+  usecase "Envoyer message (contact)" as UC4
+  usecase "Créer compte" as UC5
+
+  '--- CLIENT ---
+  usecase "Se connecter" as UC6
+  usecase "Passer commande" as UC7
+  usecase "Consulter ses commandes" as UC8
+
+  '--- EMPLOYE ---
+  usecase "Gérer commandes" as UC9
+  usecase "Gérer menus" as UC10
+  usecase "Gérer avis" as UC11
+
+  '--- ADMINISTRATEUR ---
+  usecase "Gérer employés" as UC12
+  usecase "Analyser ventes" as UC13
+  usecase "Chiffre d'affaires" as UC14
+}
+
+'========================
+' LIENS ACTEURS
+'========================
+
+Visiteur --> UC1
+Visiteur --> UC2
+Visiteur --> UC3
+Visiteur --> UC4
+Visiteur --> UC5
+
+Client --> UC6
+Client --> UC7
+Client --> UC8
+
+Employe --> UC9
+Employe --> UC10
+Employe --> UC11
+
+Administrateur --> UC12
+Administrateur --> UC13
+Administrateur --> UC14
+
+'========================
+' RELATIONS ENTRE CAS D'UTILISATION
+'========================
+
+UC2 ..> UC1 : <<extend>>
+UC3 ..> UC1 : <<extend>>
+
+@enduml

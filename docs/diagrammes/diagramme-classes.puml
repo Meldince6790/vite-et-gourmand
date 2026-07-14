@@ -1,0 +1,146 @@
+@startuml DiagrammeClasses
+
+title Diagramme de classes - Vite & Gourmand
+
+left to right direction
+
+skinparam classAttributeIconSize 0
+
+
+' =====================
+' Utilisateurs
+' =====================
+
+class Utilisateur {
+    - utilisateur_id : int
+    - email : string
+    - password : string
+    - nom : string
+    - prenom : string
+    - telephone : string
+    - ville : string
+    - pays : string
+    - adresse_postale : string
+}
+
+class Role {
+    - role_id : int
+    - libelle : string
+}
+
+
+Utilisateur "0..*" -- "1" Role : possède
+
+
+' =====================
+' Catalogue
+' =====================
+
+class Menu {
+    - menu_id : int
+    - titre : string
+    - nombre_personne_minimum : int
+    - prix_par_personne : decimal
+    - description : string
+    - quantite_restante : int
+}
+
+class Theme {
+    - theme_id : int
+    - libelle : string
+}
+
+class Regime {
+    - regime_id : int
+    - libelle : string
+}
+
+class Plat {
+    - plat_id : int
+    - titre_plat : string
+    - photo : blob
+}
+
+class Allergene {
+    - allergene_id : int
+    - libelle : string
+}
+
+
+Menu "0..*" -- "1" Theme : appartient à
+Menu "0..*" -- "1" Regime : adapté à
+
+
+
+' =====================
+' Commandes
+' =====================
+
+class Commande {
+    - numero_commande : string
+    - date_commande : date
+    - date_prestation : date
+    - heure_livraison : time
+    - prix_menu : decimal
+    - nombre_personne : int
+    - prix_livraison : decimal
+    - statut : string
+    - pret_materiel : boolean
+    - restitution_materiel : boolean
+}
+
+
+Utilisateur "1" -- "0..*" Commande : effectue
+
+Commande "0..*" -- "1" Menu : concerne
+
+
+' =====================
+' Avis
+' =====================
+
+class Avis {
+    - avis_id : int
+    - note : int
+    - description : string
+    - statut : string
+}
+
+
+Utilisateur "1" -- "0..*" Avis : publie
+
+
+' =====================
+' Horaire
+' =====================
+
+class Horaire {
+    - horaire_id : int
+    - jour : string
+    - heure_ouverture : string
+    - heure_fermeture : string
+}
+
+
+' =====================
+' Classes d'association
+' =====================
+
+class MenuPlat {
+    - menu_plat_id : int
+}
+
+class PlatAllergene {
+    - plat_allergene_id : int
+}
+
+
+
+Menu "1" -- "0..*" MenuPlat : contient
+Plat "1" -- "0..*" MenuPlat : appartient à
+
+Plat "1" -- "0..*" PlatAllergene : référence
+Allergene "1" -- "0..*" PlatAllergene : concerne
+
+
+@enduml

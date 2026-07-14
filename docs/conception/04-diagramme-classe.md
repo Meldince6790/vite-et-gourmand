@@ -63,4 +63,4 @@ Le diagramme UML précisera les attributs, les relations ainsi que les cardinali
 
 Le diagramme de classes suivant présente la structure statique de l'application **Vite & Gourmand**, les principales entités métier, leurs attributs ainsi que leurs relations.
 
-![Diagramme de classes - Vite & Gourmand](../diagrammes/DiagrammeClasses.svg)
+![Diagramme de classes - Vite & Gourmand](../diagrammes/diagramme-classes.svg)

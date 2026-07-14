@@ -61,7 +61,7 @@ Il peut :
 - consulter les menus ;
 - passer une commande ;
 - suivre ses commandes ;
-- modifier ou annuler une commande selon les règles métier ;
+- annuler une commande selon les règles métier ;
 - déposer un avis après une prestation.
 
 ---

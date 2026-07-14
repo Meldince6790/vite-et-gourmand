@@ -12,7 +12,7 @@ Cette analyse est indépendante des choix techniques qui seront réalisés lors 
 
 # 1. Présentation du projet
 
-**Vite & Gourmand** est une application web destinée à un service de traiteur.
+Vite & Gourmand est une application web permettant la gestion de prestations culinaires, de menus et de commandes.
 
 Elle permet aux clients de découvrir les prestations proposées, de consulter les menus disponibles, de passer des commandes en ligne et d'en assurer le suivi.
 
@@ -104,12 +104,3 @@ Il peut également :
 - Les aspects techniques (architecture, bases de données, authentification, etc.) feront l'objet de documents de conception dédiés.
 
 ---
-
-# Évolutions du document
-
-Ce document sera complété au fur et à mesure de l'avancement du Sprint 2, notamment avec :
-
-- les cas d'utilisation ;
-- les parcours utilisateurs ;
-- les besoins fonctionnels détaillés ;
-- les éventuelles contraintes fonctionnelles identifiées pendant la conception.

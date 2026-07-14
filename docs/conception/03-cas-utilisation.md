@@ -2,10 +2,10 @@
 
 ## 1. 🎯 Objectif du système
 
-Le site *Vite & Gourmand* est une application web destinée à un service de traiteur.
+Le site Vite & Gourmand est une application web destinée à la gestion de prestations culinaires.
 
 Il permet :
-- la consultation d’un catalogue de menus et produits
+- la consultation d’un catalogue de menus et plats
 - la passation de commandes en ligne (utilisateurs authentifiés uniquement)
 - la prise de contact via un formulaire structuré
 - la gestion interne des commandes et du catalogue par le personnel
@@ -60,7 +60,7 @@ Le visiteur peut consulter l’ensemble des menus disponibles.
 
 ### 📞 Formulaire de contact
 
-Le visiteur peut envoyer un message au traiteur via un formulaire de contact.
+Le visiteur peut envoyer un message au prestataire via un formulaire de contact.
 
 #### Fonctionnalités :
 - titre du message
@@ -72,7 +72,14 @@ Le visiteur peut envoyer un message au traiteur via un formulaire de contact.
 
 ### 👤 Création de compte
 
-Le visiteur peut créer un compte client via la page de connexion (email + mot de passe).
+Le visiteur peut créer un compte client via la page de connexion.
+
+Informations nécessaires :
+- nom ;
+- prénom ;
+- email ;
+- mot de passe ;
+- coordonnées de contact.
 
 ---
 
@@ -89,7 +96,7 @@ Le client peut passer commande.
 
 #### Fonctionnalités :
 - accès à la page de commande (authentification obligatoire)
-- sélection de menus
+- sélection du menu
 - définition du nombre de personnes
 - validation de commande
 

@@ -6,7 +6,6 @@ left to right direction
 
 skinparam classAttributeIconSize 0
 
-
 ' =====================
 ' Utilisateurs
 ' =====================
@@ -20,14 +19,13 @@ class Utilisateur {
     - telephone : string
     - ville : string
     - pays : string
-    - adresse_postale : string
+    - adresse : string
 }
 
 class Role {
     - role_id : int
     - libelle : string
 }
-
 
 Utilisateur "0..*" -- "1" Role : possède
 
@@ -67,11 +65,6 @@ class Allergene {
 }
 
 
-Menu "0..*" -- "1" Theme : appartient à
-Menu "0..*" -- "1" Regime : adapté à
-
-
-
 ' =====================
 ' Commandes
 ' =====================
@@ -80,7 +73,7 @@ class Commande {
     - numero_commande : string
     - date_commande : date
     - date_prestation : date
-    - heure_livraison : time
+    - heure_livraison : string
     - prix_menu : decimal
     - nombre_personne : int
     - prix_livraison : decimal
@@ -88,11 +81,6 @@ class Commande {
     - pret_materiel : boolean
     - restitution_materiel : boolean
 }
-
-
-Utilisateur "1" -- "0..*" Commande : effectue
-
-Commande "0..*" -- "1" Menu : concerne
 
 
 ' =====================
@@ -105,9 +93,6 @@ class Avis {
     - description : string
     - statut : string
 }
-
-
-Utilisateur "1" -- "0..*" Avis : publie
 
 
 ' =====================
@@ -123,24 +108,21 @@ class Horaire {
 
 
 ' =====================
-' Classes d'association
+' Associations
 ' =====================
 
-class MenuPlat {
-    - menu_plat_id : int
-}
+Utilisateur "1" -- "0..*" Commande : effectue
 
-class PlatAllergene {
-    - plat_allergene_id : int
-}
+Commande "0..*" -- "1" Menu : concerne
 
+Utilisateur "1" -- "0..*" Avis : publie
 
+Menu "0..*" -- "1" Theme : propose
 
-Menu "1" -- "0..*" MenuPlat : contient
-Plat "1" -- "0..*" MenuPlat : appartient à
+Menu "0..*" -- "1" Regime : adapte
 
-Plat "1" -- "0..*" PlatAllergene : référence
-Allergene "1" -- "0..*" PlatAllergene : concerne
+Menu "1..*" -- "0..*" Plat : propose
 
+Plat "0..*" -- "0..*" Allergene : contient
 
 @enduml

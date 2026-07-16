@@ -48,6 +48,19 @@ const platController = {
       });
     }
   },
+
+  async getMenusByPlat(req, res) {
+    try {
+      const menus = await platService.getMenusByPlatId(req.params.id);
+
+      res.json(menus);
+    } catch (error) {
+      res.status(500).json({
+        message: "Erreur lors de la récupération des menus du plat.",
+        error: error.message,
+      });
+    }
+  },
 };
 
 module.exports = platController;

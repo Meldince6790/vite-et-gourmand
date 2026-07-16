@@ -12,6 +12,10 @@ const platService = {
   async createPlat(plat) {
     return await Plat.create(plat);
   },
+
+  async getMenusByPlatId(platId) {
+    return await Plat.findMenusByPlatId(platId);
+  },
 };
 
 module.exports = platService;

@@ -50,6 +50,36 @@ const menuController = {
       });
     }
   },
+
+  async getPlatsByMenu(req, res) {
+    try {
+      const plats = await menuService.getPlatsByMenuId(req.params.id);
+
+      res.json(plats);
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        message: "Erreur lors de la récupération des plats du menu.",
+        error: error.message,
+      });
+    }
+  },
+
+  async addPlatToMenu(req, res) {
+    try {
+      await menuService.addPlatToMenu(req.params.id, req.body.plat_id);
+
+      res.status(201).json({
+        message: "Plat ajouté au menu avec succès.",
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Erreur lors de l'ajout du plat au menu.",
+        error: error.message,
+      });
+    }
+  },
 };
 
 module.exports = menuController;

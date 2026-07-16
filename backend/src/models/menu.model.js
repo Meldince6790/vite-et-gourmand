@@ -115,6 +115,40 @@ const Menu = {
       [menuId, platId],
     );
   },
+
+  async exists(id) {
+    const [rows] = await database.query(
+      "SELECT menu_id FROM menu WHERE menu_id = ?",
+      [id],
+    );
+
+    return rows.length > 0;
+  },
+
+  async platAlreadyExists(menuId, platId) {
+    const [rows] = await database.query(
+      `
+        SELECT *
+        FROM menu_plat
+        WHERE menu_id = ?
+        AND plat_id = ?
+        `,
+      [menuId, platId],
+    );
+
+    return rows.length > 0;
+  },
+
+  async removePlatFromMenu(menuId, platId) {
+    await database.query(
+      `
+        DELETE FROM menu_plat
+        WHERE menu_id = ?
+        AND plat_id = ?
+        `,
+      [menuId, platId],
+    );
+  },
 };
 
 module.exports = Menu;

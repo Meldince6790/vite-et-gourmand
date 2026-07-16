@@ -14,4 +14,6 @@ router.get("/:id", menuController.getMenuById);
 
 router.post("/", menuController.createMenu);
 
+router.delete("/:id/plats/:platId", menuController.removePlatFromMenu);
+
 module.exports = router;

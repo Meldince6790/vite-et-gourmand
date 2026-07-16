@@ -80,6 +80,21 @@ const menuController = {
       });
     }
   },
+
+  async removePlatFromMenu(req, res) {
+    try {
+      await menuService.removePlatFromMenu(req.params.id, req.params.platId);
+
+      res.json({
+        message: "Plat retiré du menu avec succès.",
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Erreur lors du retrait du plat du menu.",
+        error: error.message,
+      });
+    }
+  },
 };
 
 module.exports = menuController;

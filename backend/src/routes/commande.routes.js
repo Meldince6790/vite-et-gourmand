@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-
 const commandeController = require("../controllers/commande.controller");
+const authMiddleware = require("../middlewares/auth.middleware");
 
-router.get("/", commandeController.getAllCommandes);
+router.get("/", authMiddleware, commandeController.getAllCommandes);
 
 router.post("/", commandeController.createCommande);
 

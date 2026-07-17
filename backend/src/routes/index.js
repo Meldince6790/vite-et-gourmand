@@ -5,6 +5,7 @@ const router = express.Router();
 const utilisateurRoutes = require("./utilisateur.routes");
 const menuRoutes = require("./menu.routes");
 const platRoutes = require("./plat.routes");
+const commandeRoutes = require("./commande.routes");
 
 router.get("/", (req, res) => {
   res.json({
@@ -15,5 +16,6 @@ router.get("/", (req, res) => {
 router.use("/utilisateurs", utilisateurRoutes);
 router.use("/menus", menuRoutes);
 router.use("/plats", platRoutes);
+router.use("/commandes", commandeRoutes);
 
 module.exports = router;

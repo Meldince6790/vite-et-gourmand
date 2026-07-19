@@ -9,6 +9,7 @@ const commandeRoutes = require("./commande.routes");
 const authRoutes = require("./auth.routes");
 const allergeneRoutes = require("./allergene.routes");
 const themeRoutes = require("./theme.routes");
+const regimeRoutes = require("./regime.routes");
 
 router.get("/", (req, res) => {
   res.json({
@@ -23,5 +24,6 @@ router.use("/commandes", commandeRoutes);
 router.use("/auth", authRoutes);
 router.use("/allergenes", allergeneRoutes);
 router.use("/themes", themeRoutes);
+router.use("/regimes", regimeRoutes);
 
 module.exports = router;

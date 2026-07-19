@@ -9,9 +9,26 @@ const roleMiddleware = require("../middlewares/role.middleware");
 // Consultation des plats
 router.get("/", platController.getAllPlats);
 
-router.get("/:id", platController.getPlatById);
+router.get("/:id/allergenes", platController.getAllergenesByPlat);
 
 router.get("/:id/menus", platController.getMenusByPlat);
+
+router.get("/:id", platController.getPlatById);
+
+// Gestion des allergènes associés aux plats
+router.post(
+  "/:id/allergenes",
+  authMiddleware,
+  roleMiddleware(2, 3),
+  platController.addAllergeneToPlat,
+);
+
+router.delete(
+  "/:id/allergenes/:allergeneId",
+  authMiddleware,
+  roleMiddleware(2, 3),
+  platController.removeAllergeneFromPlat,
+);
 
 // Gestion des plats (Employé + Administrateur)
 router.post(

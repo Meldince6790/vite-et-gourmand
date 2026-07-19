@@ -95,6 +95,58 @@ const platController = {
       );
     }
   },
+
+  async getAllergenesByPlat(req, res) {
+    try {
+      const allergenes = await platService.getAllergenesByPlatId(req.params.id);
+
+      res.status(200).json(allergenes);
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        "Erreur lors de la récupération des allergènes du plat.",
+      );
+    }
+  },
+
+  async addAllergeneToPlat(req, res) {
+    try {
+      await platService.addAllergeneToPlat(
+        req.params.id,
+        req.body.allergene_id,
+      );
+
+      res.status(201).json({
+        message: "Allergène ajouté au plat avec succès.",
+      });
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        "Erreur lors de l'ajout de l'allergène au plat.",
+      );
+    }
+  },
+
+  async removeAllergeneFromPlat(req, res) {
+    try {
+      await platService.removeAllergeneFromPlat(
+        req.params.id,
+        req.params.allergeneId,
+      );
+
+      res.status(200).json({
+        message: "Allergène retiré du plat avec succès.",
+      });
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        "Erreur lors du retrait de l'allergène du plat.",
+      );
+    }
+  },
 };
 
 module.exports = platController;

@@ -59,6 +59,14 @@ const Plat = {
       [id],
     );
 
+    await database.query(
+      `
+        DELETE FROM plat_allergene
+        WHERE plat_id = ?
+      `,
+      [id],
+    );
+
     const [result] = await database.query(
       `
         DELETE FROM plat
@@ -98,6 +106,61 @@ const Plat = {
     );
 
     return rows;
+  },
+
+  async findAllergenesByPlatId(platId) {
+    const [rows] = await database.query(
+      `
+        SELECT
+          allergene.allergene_id,
+          allergene.libelle
+        FROM plat_allergene
+        JOIN allergene
+          ON plat_allergene.allergene_id = allergene.allergene_id
+        WHERE plat_allergene.plat_id = ?
+      `,
+      [platId],
+    );
+
+    return rows;
+  },
+
+  async addAllergeneToPlat(platId, allergeneId) {
+    await database.query(
+      `
+        INSERT INTO plat_allergene (
+          plat_id,
+          allergene_id
+        )
+        VALUES (?, ?)
+      `,
+      [platId, allergeneId],
+    );
+  },
+
+  async removeAllergeneFromPlat(platId, allergeneId) {
+    await database.query(
+      `
+        DELETE FROM plat_allergene
+        WHERE plat_id = ?
+        AND allergene_id = ?
+      `,
+      [platId, allergeneId],
+    );
+  },
+
+  async allergeneAlreadyExists(platId, allergeneId) {
+    const [rows] = await database.query(
+      `
+        SELECT *
+        FROM plat_allergene
+        WHERE plat_id = ?
+        AND allergene_id = ?
+      `,
+      [platId, allergeneId],
+    );
+
+    return rows.length > 0;
   },
 };
 

@@ -12,17 +12,13 @@ const authService = {
     const utilisateur = rows[0];
 
     if (!utilisateur) {
-      throw new Error("Utilisateur introuvable.");
+      throw new Error("Identifiants incorrects.");
     }
-    console.log("Password reçu :", password);
-    console.log("Hash BDD :", utilisateur.password);
 
     const passwordValid = await bcrypt.compare(password, utilisateur.password);
 
-    console.log("Résultat bcrypt :", passwordValid);
-
     if (!passwordValid) {
-      throw new Error("Mot de passe incorrect.");
+      throw new Error("Identifiants incorrects.");
     }
 
     const token = jwt.sign(

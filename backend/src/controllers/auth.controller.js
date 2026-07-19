@@ -11,8 +11,14 @@ const authController = {
     } catch (error) {
       console.error(error);
 
-      res.status(401).json({
-        message: error.message,
+      if (error.message === "Identifiants incorrects.") {
+        return res.status(401).json({
+          message: error.message,
+        });
+      }
+
+      res.status(500).json({
+        message: "Erreur interne du serveur.",
       });
     }
   },

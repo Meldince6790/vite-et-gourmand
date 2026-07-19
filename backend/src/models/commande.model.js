@@ -4,10 +4,10 @@ const Commande = {
   async findAll() {
     const [rows] = await database.query(
       `
-            SELECT *
-            FROM commande
-            ORDER BY date_commande DESC
-            `,
+        SELECT *
+        FROM commande
+        ORDER BY date_commande DESC
+      `,
     );
 
     return rows;
@@ -16,35 +16,49 @@ const Commande = {
   async findById(id) {
     const [rows] = await database.query(
       `
-            SELECT *
-            FROM commande
-            WHERE commande_id = ?
-            `,
+        SELECT *
+        FROM commande
+        WHERE commande_id = ?
+      `,
       [id],
     );
 
     return rows[0];
   },
 
+  async findByUtilisateurId(utilisateurId) {
+    const [rows] = await database.query(
+      `
+        SELECT *
+        FROM commande
+        WHERE utilisateur_id = ?
+        ORDER BY date_commande DESC
+      `,
+      [utilisateurId],
+    );
+
+    return rows;
+  },
+
   async create(commande) {
     const [result] = await database.query(
       `
         INSERT INTO commande (
-            numero_commande,
-            date_commande,
-            date_prestation,
-            heure_livraison,
-            prix_menu,
-            nombre_personne,
-            prix_livraison,
-            statut,
-            pret_materiel,
-            restitution_materiel,
-            utilisateur_id,
-            menu_id
+          numero_commande,
+          date_commande,
+          date_prestation,
+          heure_livraison,
+          prix_menu,
+          nombre_personne,
+          prix_livraison,
+          statut,
+          pret_materiel,
+          restitution_materiel,
+          utilisateur_id,
+          menu_id
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
+      `,
       [
         commande.numero_commande,
         commande.date_commande,
@@ -70,11 +84,36 @@ const Commande = {
         UPDATE commande
         SET statut = ?
         WHERE commande_id = ?
-        `,
+      `,
       [statut, id],
     );
 
-    return result.affectedRows;
+    return result.affectedRows > 0;
+  },
+
+  async delete(id) {
+    const [result] = await database.query(
+      `
+        DELETE FROM commande
+        WHERE commande_id = ?
+      `,
+      [id],
+    );
+
+    return result.affectedRows > 0;
+  },
+
+  async exists(id) {
+    const [rows] = await database.query(
+      `
+        SELECT commande_id
+        FROM commande
+        WHERE commande_id = ?
+      `,
+      [id],
+    );
+
+    return rows.length > 0;
   },
 };
 

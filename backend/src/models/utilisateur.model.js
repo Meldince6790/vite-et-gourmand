@@ -2,14 +2,41 @@ const database = require("../config/database");
 
 const Utilisateur = {
   async findAll() {
-    const [rows] = await database.query("SELECT * FROM utilisateur");
+    const [rows] = await database.query(
+      `
+        SELECT
+          utilisateur_id,
+          email,
+          nom,
+          prenom,
+          telephone,
+          ville,
+          pays,
+          adresse_postale,
+          role_id
+        FROM utilisateur
+      `,
+    );
 
     return rows;
   },
 
   async findById(id) {
     const [rows] = await database.query(
-      "SELECT * FROM utilisateur WHERE utilisateur_id = ?",
+      `
+        SELECT
+          utilisateur_id,
+          email,
+          nom,
+          prenom,
+          telephone,
+          ville,
+          pays,
+          adresse_postale,
+          role_id
+        FROM utilisateur
+        WHERE utilisateur_id = ?
+      `,
       [id],
     );
 
@@ -18,7 +45,11 @@ const Utilisateur = {
 
   async findByEmail(email) {
     const [rows] = await database.query(
-      "SELECT * FROM utilisateur WHERE email = ?",
+      `
+        SELECT *
+        FROM utilisateur
+        WHERE email = ?
+      `,
       [email],
     );
 
@@ -27,17 +58,20 @@ const Utilisateur = {
 
   async create(utilisateur) {
     const [result] = await database.query(
-      `INSERT INTO utilisateur (
-                email,
-                password,
-                nom,
-                prenom,
-                telephone,
-                ville,
-                pays,
-                adresse_postale,
-                role_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `
+        INSERT INTO utilisateur (
+          email,
+          password,
+          nom,
+          prenom,
+          telephone,
+          ville,
+          pays,
+          adresse_postale,
+          role_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
       [
         utilisateur.email,
         utilisateur.password,

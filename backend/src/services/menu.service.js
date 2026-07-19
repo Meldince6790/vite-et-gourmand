@@ -35,6 +35,12 @@ const menuService = {
   },
 
   async getPlatsByMenuId(menuId) {
+    const menuExiste = await Menu.exists(menuId);
+
+    if (!menuExiste) {
+      throw new Error("Menu introuvable.");
+    }
+
     return await Menu.findPlatsByMenuId(menuId);
   },
 
@@ -61,15 +67,16 @@ const menuService = {
   },
 
   async removePlatFromMenu(menuId, platId) {
-    const associationExiste = await Menu.platAlreadyExists(menuId, platId);
-
-    if (!associationExiste) {
-      throw new Error("Ce plat n'est pas associé à ce menu.");
-    }
     const menuExiste = await Menu.exists(menuId);
 
     if (!menuExiste) {
       throw new Error("Menu introuvable.");
+    }
+
+    const associationExiste = await Menu.platAlreadyExists(menuId, platId);
+
+    if (!associationExiste) {
+      throw new Error("Ce plat n'est pas associé à ce menu.");
     }
 
     return await Menu.removePlatFromMenu(menuId, platId);

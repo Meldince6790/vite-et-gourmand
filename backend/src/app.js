@@ -9,10 +9,12 @@ app.disable("x-powered-by");
 
 // Middlewares
 app.use(
-    cors({
-        origin: "http://localhost:5173",
-    })
-);app.use(express.json());
+  cors({
+    origin: "http://localhost:5173",
+  }),
+);
+
+app.use(express.json());
 
 // Routes
 const routes = require("./routes");
@@ -23,5 +25,5 @@ app.use("/", routes);
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`Serveur lancé sur le port ${PORT}`);
+  console.log(`Serveur lancé sur le port ${PORT}`);
 });

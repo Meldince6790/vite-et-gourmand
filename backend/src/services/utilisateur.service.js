@@ -3,6 +3,7 @@ const Utilisateur = require("../models/utilisateur.model");
 
 function validatePassword(password) {
   return (
+    typeof password === "string" &&
     password.length >= 10 &&
     /[A-Z]/.test(password) &&
     /[a-z]/.test(password) &&
@@ -17,10 +18,20 @@ const utilisateurService = {
   },
 
   async getUtilisateurById(id) {
-    return await Utilisateur.findById(id);
+    const utilisateur = await Utilisateur.findById(id);
+
+    if (!utilisateur) {
+      throw new Error("Utilisateur introuvable.");
+    }
+
+    return utilisateur;
   },
 
   async createUtilisateur(utilisateur) {
+    if (!utilisateur.email || !utilisateur.password) {
+      throw new Error("L'adresse e-mail et le mot de passe sont obligatoires.");
+    }
+
     const utilisateurExistant = await Utilisateur.findByEmail(
       utilisateur.email,
     );
@@ -39,6 +50,7 @@ const utilisateurService = {
 
     utilisateur.password = passwordHash;
 
+    // Toute inscription publique crée un compte client
     utilisateur.role_id = 1;
 
     return await Utilisateur.create(utilisateur);

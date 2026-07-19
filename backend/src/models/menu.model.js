@@ -5,15 +5,15 @@ const Menu = {
     const [rows] = await database.query(
       `
         SELECT 
-            menu.*,
-            regime.libelle AS regime,
-            theme.libelle AS theme
+          menu.*,
+          regime.libelle AS regime,
+          theme.libelle AS theme
         FROM menu
         JOIN regime 
-            ON menu.regime_id = regime.regime_id
+          ON menu.regime_id = regime.regime_id
         JOIN theme 
-            ON menu.theme_id = theme.theme_id
-        `,
+          ON menu.theme_id = theme.theme_id
+      `,
     );
 
     return rows;
@@ -23,16 +23,16 @@ const Menu = {
     const [menus] = await database.query(
       `
         SELECT 
-            menu.*,
-            regime.libelle AS regime,
-            theme.libelle AS theme
+          menu.*,
+          regime.libelle AS regime,
+          theme.libelle AS theme
         FROM menu
         JOIN regime
-            ON menu.regime_id = regime.regime_id
+          ON menu.regime_id = regime.regime_id
         JOIN theme
-            ON menu.theme_id = theme.theme_id
+          ON menu.theme_id = theme.theme_id
         WHERE menu.menu_id = ?
-        `,
+      `,
       [id],
     );
 
@@ -45,14 +45,14 @@ const Menu = {
     const [plats] = await database.query(
       `
         SELECT
-            plat.plat_id,
-            plat.titre_plat,
-            plat.photo
+          plat.plat_id,
+          plat.titre_plat,
+          plat.photo
         FROM menu_plat
         JOIN plat
-            ON menu_plat.plat_id = plat.plat_id
+          ON menu_plat.plat_id = plat.plat_id
         WHERE menu_plat.menu_id = ?
-        `,
+      `,
       [id],
     );
 
@@ -63,15 +63,18 @@ const Menu = {
 
   async create(menu) {
     const [result] = await database.query(
-      `INSERT INTO menu (
-            titre,
-            nombre_personne_minimum,
-            prix_par_personne,
-            description,
-            quantite_restante,
-            regime_id,
-            theme_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `
+        INSERT INTO menu (
+          titre,
+          nombre_personne_minimum,
+          prix_par_personne,
+          description,
+          quantite_restante,
+          regime_id,
+          theme_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
       [
         menu.titre,
         menu.nombre_personne_minimum,
@@ -86,18 +89,67 @@ const Menu = {
     return result.insertId;
   },
 
+  async update(id, menu) {
+    const [result] = await database.query(
+      `
+        UPDATE menu
+        SET
+          titre = ?,
+          nombre_personne_minimum = ?,
+          prix_par_personne = ?,
+          description = ?,
+          quantite_restante = ?,
+          regime_id = ?,
+          theme_id = ?
+        WHERE menu_id = ?
+      `,
+      [
+        menu.titre,
+        menu.nombre_personne_minimum,
+        menu.prix_par_personne,
+        menu.description,
+        menu.quantite_restante,
+        menu.regime_id,
+        menu.theme_id,
+        id,
+      ],
+    );
+
+    return result.affectedRows > 0;
+  },
+
+  async delete(id) {
+    await database.query(
+      `
+        DELETE FROM menu_plat
+        WHERE menu_id = ?
+      `,
+      [id],
+    );
+
+    const [result] = await database.query(
+      `
+        DELETE FROM menu
+        WHERE menu_id = ?
+      `,
+      [id],
+    );
+
+    return result.affectedRows > 0;
+  },
+
   async findPlatsByMenuId(menuId) {
     const [rows] = await database.query(
       `
         SELECT
-            plat.plat_id,
-            plat.titre_plat,
-            plat.photo
+          plat.plat_id,
+          plat.titre_plat,
+          plat.photo
         FROM menu_plat
         JOIN plat
-            ON menu_plat.plat_id = plat.plat_id
+          ON menu_plat.plat_id = plat.plat_id
         WHERE menu_plat.menu_id = ?
-        `,
+      `,
       [menuId],
     );
 
@@ -108,17 +160,33 @@ const Menu = {
     await database.query(
       `
         INSERT INTO menu_plat (
-            menu_id,
-            plat_id
-        ) VALUES (?, ?)
-        `,
+          menu_id,
+          plat_id
+        )
+        VALUES (?, ?)
+      `,
+      [menuId, platId],
+    );
+  },
+
+  async removePlatFromMenu(menuId, platId) {
+    await database.query(
+      `
+        DELETE FROM menu_plat
+        WHERE menu_id = ?
+        AND plat_id = ?
+      `,
       [menuId, platId],
     );
   },
 
   async exists(id) {
     const [rows] = await database.query(
-      "SELECT menu_id FROM menu WHERE menu_id = ?",
+      `
+        SELECT menu_id
+        FROM menu
+        WHERE menu_id = ?
+      `,
       [id],
     );
 
@@ -132,22 +200,11 @@ const Menu = {
         FROM menu_plat
         WHERE menu_id = ?
         AND plat_id = ?
-        `,
+      `,
       [menuId, platId],
     );
 
     return rows.length > 0;
-  },
-
-  async removePlatFromMenu(menuId, platId) {
-    await database.query(
-      `
-        DELETE FROM menu_plat
-        WHERE menu_id = ?
-        AND plat_id = ?
-        `,
-      [menuId, platId],
-    );
   },
 };
 

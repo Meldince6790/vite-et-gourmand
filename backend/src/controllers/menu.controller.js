@@ -1,16 +1,37 @@
 const menuService = require("../services/menu.service");
 
+function handleError(res, error, defaultMessage) {
+  console.error(error);
+
+  if (error.message.includes("introuvable")) {
+    return res.status(404).json({
+      message: error.message,
+    });
+  }
+
+  if (error.message.includes("déjà") || error.message.includes("existe")) {
+    return res.status(409).json({
+      message: error.message,
+    });
+  }
+
+  return res.status(400).json({
+    message: error.message || defaultMessage,
+  });
+}
+
 const menuController = {
   async getAllMenus(req, res) {
     try {
       const menus = await menuService.getAllMenus();
 
-      res.json(menus);
+      res.status(200).json(menus);
     } catch (error) {
-      res.status(500).json({
-        message: "Erreur lors de la récupération des menus.",
-        error: error.message,
-      });
+      return handleError(
+        res,
+        error,
+        "Erreur lors de la récupération des menus.",
+      );
     }
   },
 
@@ -18,25 +39,14 @@ const menuController = {
     try {
       const menu = await menuService.getMenuById(req.params.id);
 
-      if (!menu) {
-        return res.status(404).json({
-          message: "Menu introuvable.",
-        });
-      }
-
-      res.json(menu);
+      res.status(200).json(menu);
     } catch (error) {
-      res.status(500).json({
-        message: "Erreur lors de la récupération du menu.",
-        error: error.message,
-      });
+      return handleError(res, error, "Erreur lors de la récupération du menu.");
     }
   },
 
   async createMenu(req, res) {
     try {
-      console.log(req.body);
-
       const menuId = await menuService.createMenu(req.body);
 
       res.status(201).json({
@@ -44,10 +54,31 @@ const menuController = {
         menu_id: menuId,
       });
     } catch (error) {
-      res.status(500).json({
-        message: "Erreur lors de la création du menu.",
-        error: error.message,
+      return handleError(res, error, "Erreur lors de la création du menu.");
+    }
+  },
+
+  async updateMenu(req, res) {
+    try {
+      await menuService.updateMenu(req.params.id, req.body);
+
+      res.status(200).json({
+        message: "Menu modifié avec succès.",
       });
+    } catch (error) {
+      return handleError(res, error, "Erreur lors de la modification du menu.");
+    }
+  },
+
+  async deleteMenu(req, res) {
+    try {
+      await menuService.deleteMenu(req.params.id);
+
+      res.status(200).json({
+        message: "Menu supprimé avec succès.",
+      });
+    } catch (error) {
+      return handleError(res, error, "Erreur lors de la suppression du menu.");
     }
   },
 
@@ -55,14 +86,13 @@ const menuController = {
     try {
       const plats = await menuService.getPlatsByMenuId(req.params.id);
 
-      res.json(plats);
+      res.status(200).json(plats);
     } catch (error) {
-      console.error(error);
-
-      res.status(500).json({
-        message: "Erreur lors de la récupération des plats du menu.",
-        error: error.message,
-      });
+      return handleError(
+        res,
+        error,
+        "Erreur lors de la récupération des plats du menu.",
+      );
     }
   },
 
@@ -74,10 +104,7 @@ const menuController = {
         message: "Plat ajouté au menu avec succès.",
       });
     } catch (error) {
-      res.status(500).json({
-        message: "Erreur lors de l'ajout du plat au menu.",
-        error: error.message,
-      });
+      return handleError(res, error, "Erreur lors de l'ajout du plat au menu.");
     }
   },
 
@@ -85,14 +112,11 @@ const menuController = {
     try {
       await menuService.removePlatFromMenu(req.params.id, req.params.platId);
 
-      res.json({
+      res.status(200).json({
         message: "Plat retiré du menu avec succès.",
       });
     } catch (error) {
-      res.status(500).json({
-        message: "Erreur lors du retrait du plat du menu.",
-        error: error.message,
-      });
+      return handleError(res, error, "Erreur lors du retrait du plat du menu.");
     }
   },
 };

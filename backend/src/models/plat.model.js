@@ -2,7 +2,12 @@ const database = require("../config/database");
 
 const Plat = {
   async findAll() {
-    const [rows] = await database.query("SELECT * FROM plat");
+    const [rows] = await database.query(
+      `
+        SELECT *
+        FROM plat
+      `,
+    );
 
     return rows;
   },
@@ -53,7 +58,7 @@ const Plat = {
   async delete(id) {
     await database.query(
       `
-        DELETE FROM menu_plat
+        DELETE FROM plat_allergene
         WHERE plat_id = ?
       `,
       [id],
@@ -61,7 +66,7 @@ const Plat = {
 
     await database.query(
       `
-        DELETE FROM plat_allergene
+        DELETE FROM menu_plat
         WHERE plat_id = ?
       `,
       [id],
@@ -126,7 +131,7 @@ const Plat = {
   },
 
   async addAllergeneToPlat(platId, allergeneId) {
-    await database.query(
+    const [result] = await database.query(
       `
         INSERT INTO plat_allergene (
           plat_id,
@@ -136,26 +141,30 @@ const Plat = {
       `,
       [platId, allergeneId],
     );
+
+    return result.affectedRows > 0;
   },
 
   async removeAllergeneFromPlat(platId, allergeneId) {
-    await database.query(
+    const [result] = await database.query(
       `
         DELETE FROM plat_allergene
         WHERE plat_id = ?
-        AND allergene_id = ?
+          AND allergene_id = ?
       `,
       [platId, allergeneId],
     );
+
+    return result.affectedRows > 0;
   },
 
-  async allergeneAlreadyExists(platId, allergeneId) {
+  async allergeneExistsForPlat(platId, allergeneId) {
     const [rows] = await database.query(
       `
         SELECT *
         FROM plat_allergene
         WHERE plat_id = ?
-        AND allergene_id = ?
+          AND allergene_id = ?
       `,
       [platId, allergeneId],
     );

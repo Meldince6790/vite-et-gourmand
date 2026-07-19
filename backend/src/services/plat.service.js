@@ -73,12 +73,9 @@ const platService = {
       throw new Error("Allergène introuvable.");
     }
 
-    const associationExiste = await Plat.allergeneAlreadyExists(
-      platId,
-      allergeneId,
-    );
+    const dejaAssocie = await Plat.allergeneExistsForPlat(platId, allergeneId);
 
-    if (associationExiste) {
+    if (dejaAssocie) {
       throw new Error("Cet allergène est déjà associé à ce plat.");
     }
 
@@ -86,12 +83,21 @@ const platService = {
   },
 
   async removeAllergeneFromPlat(platId, allergeneId) {
-    const associationExiste = await Plat.allergeneAlreadyExists(
-      platId,
-      allergeneId,
-    );
+    const platExiste = await Plat.exists(platId);
 
-    if (!associationExiste) {
+    if (!platExiste) {
+      throw new Error("Plat introuvable.");
+    }
+
+    const allergeneExiste = await Allergene.exists(allergeneId);
+
+    if (!allergeneExiste) {
+      throw new Error("Allergène introuvable.");
+    }
+
+    const dejaAssocie = await Plat.allergeneExistsForPlat(platId, allergeneId);
+
+    if (!dejaAssocie) {
       throw new Error("Cet allergène n'est pas associé à ce plat.");
     }
 

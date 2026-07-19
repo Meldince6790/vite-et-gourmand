@@ -9,7 +9,12 @@ function handleError(res, error, defaultMessage) {
     });
   }
 
-  if (error.message.includes("déjà") || error.message.includes("existe")) {
+  if (
+    error.message.includes("déjà") ||
+    error.message.includes("existe") ||
+    error.message.includes("associé") ||
+    error.message.includes("utilisé")
+  ) {
     return res.status(409).json({
       message: error.message,
     });

@@ -48,8 +48,23 @@ const utilisateurController = {
     } catch (error) {
       console.error(error);
 
+      if (error.message === "Cette adresse e-mail est déjà utilisée.") {
+        return res.status(409).json({
+          message: error.message,
+        });
+      }
+
+      if (
+        error.message ===
+        "Le mot de passe ne respecte pas les règles de sécurité."
+      ) {
+        return res.status(400).json({
+          message: error.message,
+        });
+      }
+
       res.status(500).json({
-        message: "Erreur lors de la création de l'utilisateur.",
+        message: "Erreur interne du serveur.",
       });
     }
   },

@@ -11,6 +11,7 @@ const allergeneRoutes = require("./allergene.routes");
 const themeRoutes = require("./theme.routes");
 const regimeRoutes = require("./regime.routes");
 const horaireRoutes = require("./horaire.routes");
+const avisRoutes = require("./avis.routes");
 
 router.get("/", (req, res) => {
   res.json({
@@ -27,5 +28,6 @@ router.use("/allergenes", allergeneRoutes);
 router.use("/themes", themeRoutes);
 router.use("/regimes", regimeRoutes);
 router.use("/horaires", horaireRoutes);
+router.use("/avis", avisRoutes);
 
 module.exports = router;

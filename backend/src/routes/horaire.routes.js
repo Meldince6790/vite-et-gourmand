@@ -1,5 +1,4 @@
 const express = require("express");
-
 const router = express.Router();
 
 const horaireController = require("../controllers/horaire.controller");
@@ -18,21 +17,21 @@ router.get("/:id", horaireController.getById);
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware([2, 3]),
+  roleMiddleware(2, 3),
   horaireController.create,
 );
 
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware([2, 3]),
+  roleMiddleware(2, 3),
   horaireController.update,
 );
 
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware([2, 3]),
+  roleMiddleware(2, 3),
   horaireController.delete,
 );
 

@@ -3,9 +3,11 @@ const Menu = require("../models/menu.model");
 
 const STATUTS_AUTORISES = [
   "En attente",
-  "Validée",
+  "Acceptée",
   "En préparation",
+  "En cours de livraison",
   "Livrée",
+  "En attente du retour de matériel",
   "Terminée",
   "Annulée",
 ];
@@ -61,6 +63,8 @@ const commandeService = {
 
     commande.numero_commande = `CMD-${Date.now()}`;
     commande.date_commande = new Date();
+
+    // Statut initial d'une nouvelle commande
     commande.statut = "En attente";
 
     if (commande.pret_materiel === undefined) {

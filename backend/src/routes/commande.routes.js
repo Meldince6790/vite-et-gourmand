@@ -1,14 +1,35 @@
 const express = require("express");
 const router = express.Router();
+
 const commandeController = require("../controllers/commande.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
+const roleMiddleware = require("../middlewares/role.middleware");
 
-router.get("/", authMiddleware, commandeController.getAllCommandes);
+// Consultation de toutes les commandes (Employé + Administrateur)
+router.get(
+  "/",
+  authMiddleware,
+  roleMiddleware(2, 3),
+  commandeController.getAllCommandes,
+);
 
-router.post("/", commandeController.createCommande);
+// Création d'une commande (Client)
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(1),
+  commandeController.createCommande,
+);
 
-router.get("/:id", commandeController.getCommandeById);
+// Consultation d'une commande
+router.get("/:id", authMiddleware, commandeController.getCommandeById);
 
-router.patch("/:id/statut", commandeController.updateStatut);
+// Modification du statut (Employé + Administrateur)
+router.patch(
+  "/:id/statut",
+  authMiddleware,
+  roleMiddleware(2, 3),
+  commandeController.updateStatut,
+);
 
 module.exports = router;

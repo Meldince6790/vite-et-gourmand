@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout.jsx";
 import Home from "./pages/Home.jsx";
 import Menus from "./pages/Menus.jsx";
+import MenuDetail from "./pages/MenuDetail.jsx";
 import Login from "./pages/Login.jsx";
 import Contact from "./pages/Contact.jsx";
 
@@ -12,6 +13,7 @@ function App() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/menus" element={<Menus />} />
+        <Route path="/menus/:id" element={<MenuDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/contact" element={<Contact />} />
       </Route>

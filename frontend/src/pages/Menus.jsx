@@ -28,6 +28,7 @@ function Menus() {
             menus.map((menu) => (
               <MenuCard
                 key={menu.menu_id}
+                id={menu.menu_id}
                 title={menu.titre}
                 description={menu.description}
                 price={menu.prix_par_personne}

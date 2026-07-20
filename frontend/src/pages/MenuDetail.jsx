@@ -37,6 +37,14 @@ function MenuDetail() {
       <p>Thème : {menu.theme}</p>
 
       <p>Minimum de personnes : {menu.nombre_personne_minimum}</p>
+
+      <h2>Composition du menu</h2>
+
+      <ul>
+        {menu.plats.map((plat) => (
+          <li key={plat.plat_id}>{plat.titre_plat}</li>
+        ))}
+      </ul>
     </section>
   );
 }

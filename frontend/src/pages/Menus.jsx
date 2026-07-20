@@ -1,19 +1,27 @@
 import { useEffect, useState } from "react";
 
-import API_URL from "../api/api";
+import menuService from "../services/menu.service";
 import MenuCard from "../components/MenuCard.jsx";
 import "../styles/pages.css";
 
 function Menus() {
   const [menus, setMenus] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${API_URL}/menus`)
-      .then((response) => response.json())
-      .then((data) => setMenus(data))
-      .catch((error) => {
+    async function loadMenus() {
+      try {
+        const data = await menuService.getMenus();
+
+        setMenus(data);
+      } catch (error) {
         console.error("Erreur lors de la récupération des menus :", error);
-      });
+
+        setError("Impossible de charger les menus.");
+      }
+    }
+
+    loadMenus();
   }, []);
 
   return (
@@ -22,6 +30,8 @@ function Menus() {
         <h1>Nos menus</h1>
 
         <p>Découvrez nos propositions adaptées à vos événements.</p>
+
+        {error && <p>{error}</p>}
 
         <div className="menu-grid">
           {menus.length > 0 ? (

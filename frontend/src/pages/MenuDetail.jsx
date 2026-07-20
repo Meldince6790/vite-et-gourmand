@@ -1,22 +1,34 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import API_URL from "../api/api.js";
+import menuService from "../services/menu.service";
 import "../styles/pages.css";
 
 function MenuDetail() {
   const { id } = useParams();
 
   const [menu, setMenu] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${API_URL}/menus/${id}`)
-      .then((response) => response.json())
-      .then((data) => setMenu(data))
-      .catch((error) => {
+    async function loadMenu() {
+      try {
+        const data = await menuService.getMenuById(id);
+
+        setMenu(data);
+      } catch (error) {
         console.error("Erreur lors de la récupération du menu :", error);
-      });
+
+        setError("Impossible de charger ce menu.");
+      }
+    }
+
+    loadMenu();
   }, [id]);
+
+  if (error) {
+    return <p>{error}</p>;
+  }
 
   if (!menu) {
     return <p>Chargement du menu...</p>;

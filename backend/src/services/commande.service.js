@@ -1,7 +1,7 @@
 const Commande = require("../models/commande.model");
 const Menu = require("../models/menu.model");
 
-const STATUTS_AUTORISES = [
+const STATUTS_AUTORISES = new Set([
   "En attente",
   "Acceptée",
   "En préparation",
@@ -10,7 +10,7 @@ const STATUTS_AUTORISES = [
   "En attente du retour de matériel",
   "Terminée",
   "Annulée",
-];
+]);
 
 const commandeService = {
   async getAllCommandes() {
@@ -38,6 +38,18 @@ const commandeService = {
       throw new Error("Menu introuvable.");
     }
 
+    if (!commande.date_prestation) {
+      throw new Error("La date de prestation est obligatoire.");
+    }
+
+    if (!commande.heure_livraison) {
+      throw new Error("L'heure de livraison est obligatoire.");
+    }
+
+    if (!commande.adresse_livraison) {
+      throw new Error("L'adresse de livraison est obligatoire.");
+    }
+
     if (!commande.nombre_personne || commande.nombre_personne <= 0) {
       throw new Error("Le nombre de personnes doit être supérieur à zéro.");
     }
@@ -48,8 +60,13 @@ const commandeService = {
       );
     }
 
-    const prixMenu =
+    let prixMenu =
       Number(menu.prix_par_personne) * Number(commande.nombre_personne);
+
+    // Réduction de 10% si la commande dépasse de 5 personnes le minimum requis
+    if (commande.nombre_personne >= Number(menu.nombre_personne_minimum) + 5) {
+      prixMenu *= 0.9;
+    }
 
     commande.prix_menu = Number(prixMenu.toFixed(2));
 
@@ -64,7 +81,6 @@ const commandeService = {
     commande.numero_commande = `CMD-${Date.now()}`;
     commande.date_commande = new Date();
 
-    // Statut initial d'une nouvelle commande
     commande.statut = "En attente";
 
     if (commande.pret_materiel === undefined) {
@@ -85,7 +101,7 @@ const commandeService = {
       throw new Error("Commande introuvable.");
     }
 
-    if (!STATUTS_AUTORISES.includes(statut)) {
+    if (!STATUTS_AUTORISES.has(statut)) {
       throw new Error("Statut de commande invalide.");
     }
 

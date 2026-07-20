@@ -48,6 +48,7 @@ const Commande = {
           date_commande,
           date_prestation,
           heure_livraison,
+          adresse_livraison,
           prix_menu,
           nombre_personne,
           prix_livraison,
@@ -57,13 +58,14 @@ const Commande = {
           utilisateur_id,
           menu_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         commande.numero_commande,
         commande.date_commande,
         commande.date_prestation,
         commande.heure_livraison,
+        commande.adresse_livraison,
         commande.prix_menu,
         commande.nombre_personne,
         commande.prix_livraison,

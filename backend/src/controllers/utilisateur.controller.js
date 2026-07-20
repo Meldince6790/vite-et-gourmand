@@ -37,6 +37,28 @@ const utilisateurController = {
     }
   },
 
+  async getMe(req, res) {
+    try {
+      const utilisateur = await utilisateurService.getUtilisateurById(
+        req.user.utilisateur_id,
+      );
+
+      if (!utilisateur) {
+        return res.status(404).json({
+          message: "Utilisateur introuvable.",
+        });
+      }
+
+      res.status(200).json(utilisateur);
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        message: "Erreur lors de la récupération du profil utilisateur.",
+      });
+    }
+  },
+
   async create(req, res) {
     try {
       const id = await utilisateurService.createUtilisateur(req.body);

@@ -1,20 +1,52 @@
 import { NavLink } from "react-router-dom";
+import "../styles/navbar.css";
 
 function Navbar() {
   return (
-    <nav>
-      <ul style={{ display: "flex", gap: "1rem", listStyle: "none" }}>
+    <nav className="navbar">
+      <ul className="navbar-list">
         <li>
-          <NavLink to="/">Accueil</NavLink>
+          <NavLink
+            className={({ isActive }) =>
+              isActive ? "navbar-link active" : "navbar-link"
+            }
+            to="/"
+          >
+            Accueil
+          </NavLink>
         </li>
+
         <li>
-          <NavLink to="/menus">Menus</NavLink>
+          <NavLink
+            className={({ isActive }) =>
+              isActive ? "navbar-link active" : "navbar-link"
+            }
+            to="/menus"
+          >
+            Menus
+          </NavLink>
         </li>
+
         <li>
-          <NavLink to="/login">Connexion</NavLink>
+          <NavLink
+            className={({ isActive }) =>
+              isActive ? "navbar-link active" : "navbar-link"
+            }
+            to="/login"
+          >
+            Connexion
+          </NavLink>
         </li>
+
         <li>
-          <NavLink to="/contact">Contact</NavLink>
+          <NavLink
+            className={({ isActive }) =>
+              isActive ? "navbar-link active" : "navbar-link"
+            }
+            to="/contact"
+          >
+            Contact
+          </NavLink>
         </li>
       </ul>
     </nav>

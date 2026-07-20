@@ -1,19 +1,20 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
+import "../styles/layout.css";
 
 function MainLayout() {
   return (
-    <div>
-      <header>
+    <div className="layout">
+      <header className="header">
         <h1>Vite & Gourmand</h1>
         <Navbar />
       </header>
 
-      <main>
+      <main className="main">
         <Outlet />
       </main>
 
-      <footer>
+      <footer className="footer">
         <p>@ 2026 - Vite & Gourmand</p>
       </footer>
     </div>

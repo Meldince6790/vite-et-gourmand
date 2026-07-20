@@ -1,0 +1,25 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 1rem 2rem;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.footer {
+  background-color: var(--secondary-color);
+  text-align: center;
+  padding: 1rem;
+}

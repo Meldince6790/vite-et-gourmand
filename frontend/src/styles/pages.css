@@ -1,0 +1,146 @@
+.hero {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.hero h2 {
+  color: var(--primary-color);
+  font-size: 2.5rem;
+}
+
+.hero p {
+  font-size: 1.2rem;
+}
+
+.button {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: 0.8rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+.button:hover {
+  background-color: var(--accent-color);
+}
+
+.section {
+  margin-top: 3rem;
+}
+
+.section h2 {
+  color: var(--primary-color);
+}
+
+.cards {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.card {
+  flex: 1;
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.menu-card button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.menu-card button:hover {
+  background-color: var(--accent-color);
+}
+
+.form {
+  max-width: 600px;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form label {
+  font-weight: bold;
+}
+
+.form input,
+.form textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-family: inherit;
+}
+
+.form textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.form button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.form button:hover {
+  background-color: var(--accent-color);
+}
+
+.login-container {
+  max-width: 400px;
+  margin: 2rem auto;
+}
+
+.login-container h1 {
+  color: var(--primary-color);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-form label {
+  font-weight: bold;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-family: inherit;
+}
+
+.login-form button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.login-form button:hover {
+  background-color: var(--accent-color);
+}

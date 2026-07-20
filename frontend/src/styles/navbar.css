@@ -1,0 +1,26 @@
+.navbar {
+  margin-top: 1rem;
+}
+
+.navbar-list {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.navbar-link {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.2s ease;
+}
+
+.navbar-link:hover {
+  color: var(--accent-color);
+}
+
+.navbar-link.active {
+  color: var(--accent-color);
+}

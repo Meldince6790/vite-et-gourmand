@@ -86,11 +86,35 @@ async function updateStatut(id, statut) {
   return data;
 }
 
+async function annulerCommande(id, annulation) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/commandes/${id}/annulation`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(annulation),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Erreur lors de l'annulation de la commande.",
+    );
+  }
+
+  return data;
+}
+
 const commandeService = {
   createCommande,
   getMesCommandes,
   getCommandes,
   updateStatut,
+  annulerCommande,
 };
 
 export default commandeService;

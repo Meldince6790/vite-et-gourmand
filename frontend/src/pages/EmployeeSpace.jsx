@@ -5,6 +5,17 @@ import commandeService from "../services/commande.service.js";
 
 import "../styles/pages.css";
 
+const STATUTS_COMMANDES = [
+  "En attente",
+  "Acceptée",
+  "En préparation",
+  "En cours de livraison",
+  "Livrée",
+  "En attente du retour de matériel",
+  "Terminée",
+  "Annulée",
+];
+
 function EmployeeSpace() {
   const [avis, setAvis] = useState([]);
   const [commandes, setCommandes] = useState([]);
@@ -64,10 +75,10 @@ function EmployeeSpace() {
   });
 
   function handleStatutChange(id, statut) {
-    setStatuts({
-      ...statuts,
+    setStatuts((ancien) => ({
+      ...ancien,
       [id]: statut,
-    });
+    }));
   }
 
   async function handleUpdateAvis(id) {
@@ -87,10 +98,10 @@ function EmployeeSpace() {
   }
 
   function handleStatutCommandeChange(id, statut) {
-    setStatutsCommandes({
-      ...statutsCommandes,
+    setStatutsCommandes((ancien) => ({
+      ...ancien,
       [id]: statut,
-    });
+    }));
   }
 
   async function handleUpdateStatutCommande(id) {
@@ -114,7 +125,6 @@ function EmployeeSpace() {
       <p>Bienvenue dans votre espace de gestion.</p>
 
       {error && <p>{error}</p>}
-
       {message && <p>{message}</p>}
 
       <h2>Avis clients</h2>
@@ -134,7 +144,7 @@ function EmployeeSpace() {
               <p>{item.description}</p>
 
               <p>
-                Statut actuel : <strong>{item.statut}</strong>
+                Statut : <strong>{item.statut}</strong>
               </p>
 
               <select
@@ -163,27 +173,25 @@ function EmployeeSpace() {
 
       <div className="filters">
         <label>
-          Filtrer par statut :
+          <span>Filtrer par statut :</span>
+
           <select
             value={filtreStatut}
             onChange={(event) => setFiltreStatut(event.target.value)}
           >
             <option value="Tous">Tous</option>
-            <option value="En attente">En attente</option>
-            <option value="Acceptée">Acceptée</option>
-            <option value="En préparation">En préparation</option>
-            <option value="En cours de livraison">En cours de livraison</option>
-            <option value="Livrée">Livrée</option>
-            <option value="En attente du retour de matériel">
-              En attente du retour de matériel
-            </option>
-            <option value="Terminée">Terminée</option>
-            <option value="Annulée">Annulée</option>
+
+            {STATUTS_COMMANDES.map((statut) => (
+              <option key={statut} value={statut}>
+                {statut}
+              </option>
+            ))}
           </select>
         </label>
 
         <label>
-          Rechercher un client :
+          <span>Rechercher un client :</span>
+
           <input
             type="text"
             value={rechercheClient}
@@ -205,11 +213,21 @@ function EmployeeSpace() {
                 Client : {commande.prenom} {commande.nom}
               </p>
 
-              <p>
-                Statut actuel : <strong>{commande.statut}</strong>
-              </p>
+              <p>Date prestation : {commande.date_prestation}</p>
 
-              <p>Date livraison : {commande.date_livraison}</p>
+              <p>Heure : {commande.heure_livraison}</p>
+
+              <p>Adresse : {commande.adresse_livraison}</p>
+
+              <p>Nombre de personnes : {commande.nombre_personne}</p>
+
+              <p>Prix menu : {commande.prix_menu} €</p>
+
+              <p>Prix livraison : {commande.prix_livraison} €</p>
+
+              <p>
+                Statut : <strong>{commande.statut}</strong>
+              </p>
 
               <select
                 value={statutsCommandes[commande.commande_id] || ""}
@@ -220,18 +238,11 @@ function EmployeeSpace() {
                   )
                 }
               >
-                <option value="En attente">En attente</option>
-                <option value="Acceptée">Acceptée</option>
-                <option value="En préparation">En préparation</option>
-                <option value="En cours de livraison">
-                  En cours de livraison
-                </option>
-                <option value="Livrée">Livrée</option>
-                <option value="En attente du retour de matériel">
-                  En attente du retour de matériel
-                </option>
-                <option value="Terminée">Terminée</option>
-                <option value="Annulée">Annulée</option>
+                {STATUTS_COMMANDES.map((statut) => (
+                  <option key={statut} value={statut}>
+                    {statut}
+                  </option>
+                ))}
               </select>
 
               <button

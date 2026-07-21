@@ -1,6 +1,6 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-const AuthContext = createContext();
+import { AuthContext } from "./auth.context";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -47,8 +47,4 @@ export function AuthProvider({ children }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }

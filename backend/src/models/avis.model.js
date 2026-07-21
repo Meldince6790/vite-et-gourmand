@@ -56,16 +56,33 @@ const Avis = {
   },
 
   async update(id, avis) {
+    const fields = [];
+    const values = [];
+
+    if (avis.note !== undefined) {
+      fields.push("note = ?");
+      values.push(avis.note);
+    }
+
+    if (avis.description !== undefined) {
+      fields.push("description = ?");
+      values.push(avis.description);
+    }
+
+    if (avis.statut !== undefined) {
+      fields.push("statut = ?");
+      values.push(avis.statut);
+    }
+
+    values.push(id);
+
     const [result] = await db.query(
       `
       UPDATE avis
-      SET
-        note = ?,
-        description = ?,
-        statut = ?
+      SET ${fields.join(", ")}
       WHERE avis_id = ?
       `,
-      [avis.note, avis.description, avis.statut, id],
+      values,
     );
 
     return result.affectedRows;

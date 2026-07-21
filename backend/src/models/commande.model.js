@@ -4,8 +4,13 @@ const Commande = {
   async findAll() {
     const [rows] = await database.query(
       `
-        SELECT *
+        SELECT
+          commande.*,
+          utilisateur.nom,
+          utilisateur.prenom
         FROM commande
+        LEFT JOIN utilisateur
+          ON commande.utilisateur_id = utilisateur.utilisateur_id
         ORDER BY date_commande DESC
       `,
     );

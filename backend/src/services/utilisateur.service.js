@@ -57,25 +57,21 @@ const utilisateurService = {
   },
 
   async updateUtilisateur(id, donnees) {
-    const utilisateur = await Utilisateur.findById(id);
+    const utilisateurExistant = await Utilisateur.findById(id);
 
-    if (!utilisateur) {
+    if (!utilisateurExistant) {
       throw new Error("Utilisateur introuvable.");
     }
 
-    if (donnees.email && donnees.email !== utilisateur.email) {
-      const utilisateurExistant = await Utilisateur.findByEmail(donnees.email);
-
-      if (utilisateurExistant && utilisateurExistant.utilisateur_id !== id) {
-        throw new Error("Cette adresse e-mail est déjà utilisée.");
-      }
-    }
-
+    // Seuls ces champs sont modifiables par le client.
+    // Email, mot de passe et rôle sont volontairement exclus.
     const utilisateurModifie = {
       nom: donnees.nom,
       prenom: donnees.prenom,
-      email: donnees.email,
       telephone: donnees.telephone,
+      ville: donnees.ville,
+      pays: donnees.pays,
+      adresse_postale: donnees.adresse_postale,
     };
 
     await Utilisateur.update(id, utilisateurModifie);

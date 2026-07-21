@@ -15,10 +15,12 @@ function ClientSpace() {
   const [isEditing, setIsEditing] = useState(false);
 
   const [profil, setProfil] = useState({
-    nom: user.nom,
-    prenom: user.prenom,
-    email: user.email,
+    nom: user.nom || "",
+    prenom: user.prenom || "",
     telephone: user.telephone || "",
+    ville: user.ville || "",
+    pays: user.pays || "",
+    adresse_postale: user.adresse_postale || "",
   });
 
   useEffect(() => {
@@ -102,6 +104,18 @@ function ClientSpace() {
                 <strong>Téléphone :</strong> {user.telephone}
               </p>
 
+              <p>
+                <strong>Ville :</strong> {user.ville}
+              </p>
+
+              <p>
+                <strong>Pays :</strong> {user.pays}
+              </p>
+
+              <p>
+                <strong>Adresse :</strong> {user.adresse_postale}
+              </p>
+
               <button type="button" onClick={() => setIsEditing(true)}>
                 Modifier mes informations
               </button>
@@ -130,14 +144,7 @@ function ClientSpace() {
 
               <label htmlFor="email">Email</label>
 
-              <input
-                id="email"
-                type="email"
-                name="email"
-                value={profil.email}
-                onChange={handleChange}
-                required
-              />
+              <input id="email" type="email" value={user.email} disabled />
 
               <label htmlFor="telephone">Téléphone</label>
 
@@ -145,6 +152,33 @@ function ClientSpace() {
                 id="telephone"
                 name="telephone"
                 value={profil.telephone}
+                onChange={handleChange}
+              />
+
+              <label htmlFor="ville">Ville</label>
+
+              <input
+                id="ville"
+                name="ville"
+                value={profil.ville}
+                onChange={handleChange}
+              />
+
+              <label htmlFor="pays">Pays</label>
+
+              <input
+                id="pays"
+                name="pays"
+                value={profil.pays}
+                onChange={handleChange}
+              />
+
+              <label htmlFor="adresse_postale">Adresse postale</label>
+
+              <input
+                id="adresse_postale"
+                name="adresse_postale"
+                value={profil.adresse_postale}
                 onChange={handleChange}
               />
 

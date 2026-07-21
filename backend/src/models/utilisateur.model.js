@@ -89,24 +89,30 @@ const Utilisateur = {
   },
 
   async update(id, utilisateur) {
-    await database.query(
+    const [result] = await database.query(
       `
         UPDATE utilisateur
         SET
-          email = ?,
           nom = ?,
           prenom = ?,
-          telephone = ?
+          telephone = ?,
+          ville = ?,
+          pays = ?,
+          adresse_postale = ?
         WHERE utilisateur_id = ?
       `,
       [
-        utilisateur.email,
         utilisateur.nom,
         utilisateur.prenom,
         utilisateur.telephone,
+        utilisateur.ville,
+        utilisateur.pays,
+        utilisateur.adresse_postale,
         id,
       ],
     );
+
+    return result;
   },
 };
 

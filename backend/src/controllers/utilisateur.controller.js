@@ -21,15 +21,15 @@ const utilisateurController = {
         req.params.id,
       );
 
-      if (!utilisateur) {
-        return res.status(404).json({
-          message: "Utilisateur introuvable.",
-        });
-      }
-
       res.status(200).json(utilisateur);
     } catch (error) {
       console.error(error);
+
+      if (error.message === "Utilisateur introuvable.") {
+        return res.status(404).json({
+          message: error.message,
+        });
+      }
 
       res.status(500).json({
         message: "Erreur lors de la récupération de l'utilisateur.",
@@ -43,15 +43,15 @@ const utilisateurController = {
         req.user.utilisateur_id,
       );
 
-      if (!utilisateur) {
-        return res.status(404).json({
-          message: "Utilisateur introuvable.",
-        });
-      }
-
       res.status(200).json(utilisateur);
     } catch (error) {
       console.error(error);
+
+      if (error.message === "Utilisateur introuvable.") {
+        return res.status(404).json({
+          message: error.message,
+        });
+      }
 
       res.status(500).json({
         message: "Erreur lors de la récupération du profil utilisateur.",
@@ -73,8 +73,8 @@ const utilisateurController = {
     } catch (error) {
       console.error(error);
 
-      if (error.message === "Cette adresse e-mail est déjà utilisée.") {
-        return res.status(409).json({
+      if (error.message === "Utilisateur introuvable.") {
+        return res.status(404).json({
           message: error.message,
         });
       }

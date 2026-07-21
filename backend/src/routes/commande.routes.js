@@ -49,12 +49,28 @@ router.patch(
   commandeController.updateStatut,
 );
 
+// Annulation d'une commande (Client)
+router.patch(
+  "/:id/annulation-client",
+  authMiddleware,
+  roleMiddleware(1),
+  commandeController.annulerCommandeClient,
+);
+
 // Annulation d'une commande (Employé + Administrateur)
 router.patch(
-  "/:id/annulation",
+  "/:id/annulation-employe",
   authMiddleware,
   roleMiddleware(2, 3),
   commandeController.annulerCommande,
+);
+
+// Modification d'une commande (Client)
+router.patch(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(1),
+  commandeController.updateCommandeClient,
 );
 
 // Suppression d'une commande (Employé + Administrateur)

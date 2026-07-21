@@ -121,6 +121,35 @@ const Commande = {
     return result.affectedRows > 0;
   },
 
+  async update(id, commande) {
+    const [result] = await database.query(
+      `
+        UPDATE commande
+        SET
+          date_prestation = ?,
+          heure_livraison = ?,
+          adresse_livraison = ?,
+          nombre_personne = ?,
+          prix_menu = ?,
+          pret_materiel = ?,
+          restitution_materiel = ?
+        WHERE commande_id = ?
+      `,
+      [
+        commande.date_prestation,
+        commande.heure_livraison,
+        commande.adresse_livraison,
+        commande.nombre_personne,
+        commande.prix_menu,
+        commande.pret_materiel,
+        commande.restitution_materiel,
+        id,
+      ],
+    );
+
+    return result.affectedRows > 0;
+  },
+
   async delete(id) {
     const [result] = await database.query(
       `

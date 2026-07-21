@@ -81,7 +81,6 @@ const commandeService = {
 
     commande.numero_commande = `CMD-${Date.now()}`;
     commande.date_commande = new Date();
-
     commande.statut = "En attente";
 
     if (commande.pret_materiel === undefined) {
@@ -93,6 +92,20 @@ const commandeService = {
     }
 
     return await Commande.create(commande);
+  },
+
+  async getCommandeClient(id, utilisateurId) {
+    const commande = await Commande.findById(id);
+
+    if (!commande) {
+      throw new Error("Commande introuvable.");
+    }
+
+    if (commande.utilisateur_id !== utilisateurId) {
+      throw new Error("Cette commande ne vous appartient pas.");
+    }
+
+    return commande;
   },
 
   async updateStatut(id, statut) {
@@ -109,6 +122,7 @@ const commandeService = {
     return await Commande.updateStatut(id, statut);
   },
 
+  // Annulation employé/admin
   async annulerCommande(id, data) {
     const commandeExiste = await Commande.exists(id);
 
@@ -132,6 +146,66 @@ const commandeService = {
       mode_contact_annulation: data.mode_contact_annulation,
       motif_annulation: data.motif_annulation,
       date_annulation: new Date(),
+    });
+  },
+
+  // Annulation client
+  async annulerCommandeClient(id, utilisateurId) {
+    const commande = await this.getCommandeClient(id, utilisateurId);
+
+    if (commande.statut !== "En attente") {
+      throw new Error("Cette commande ne peut plus être annulée.");
+    }
+
+    return await Commande.updateAnnulation(id, {
+      mode_contact_annulation: null,
+      motif_annulation: "Annulation demandée par le client.",
+      date_annulation: new Date(),
+    });
+  },
+
+  async updateCommande(id, utilisateurId, data) {
+    const commande = await this.getCommandeClient(id, utilisateurId);
+
+    if (commande.statut !== "En attente") {
+      throw new Error("Cette commande ne peut plus être modifiée.");
+    }
+
+    const menu = await Menu.findById(commande.menu_id);
+
+    if (!menu) {
+      throw new Error("Menu introuvable.");
+    }
+
+    const nombrePersonne = data.nombre_personne ?? commande.nombre_personne;
+
+    if (nombrePersonne < menu.nombre_personne_minimum) {
+      throw new Error(
+        "Le nombre de personnes est inférieur au minimum requis.",
+      );
+    }
+
+    let prixMenu = Number(menu.prix_par_personne) * Number(nombrePersonne);
+
+    if (nombrePersonne >= Number(menu.nombre_personne_minimum) + 5) {
+      prixMenu *= 0.9;
+    }
+
+    return await Commande.update(id, {
+      date_prestation: data.date_prestation ?? commande.date_prestation,
+
+      heure_livraison: data.heure_livraison ?? commande.heure_livraison,
+
+      adresse_livraison: data.adresse_livraison ?? commande.adresse_livraison,
+
+      nombre_personne: nombrePersonne,
+
+      pret_materiel: data.pret_materiel ?? commande.pret_materiel,
+
+      restitution_materiel:
+        data.restitution_materiel ?? commande.restitution_materiel,
+
+      prix_menu: Number(prixMenu.toFixed(2)),
     });
   },
 

@@ -32,6 +32,28 @@ function UserMenu() {
           </>
         )}
 
+        {user.role_id === 2 && (
+          <>
+            <NavLink className="user-menu-link" to="/espace-employe">
+              Commandes
+            </NavLink>
+
+            <NavLink className="user-menu-link" to="/espace-employe">
+              Avis
+            </NavLink>
+
+            <NavLink className="user-menu-link" to="/espace-employe">
+              Gestion
+            </NavLink>
+          </>
+        )}
+
+        {user.role_id === 3 && (
+          <NavLink className="user-menu-link" to="/admin-space">
+            Administration
+          </NavLink>
+        )}
+
         <button className="user-menu-link" type="button" onClick={handleLogout}>
           Déconnexion
         </button>

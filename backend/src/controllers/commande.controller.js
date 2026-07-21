@@ -64,7 +64,7 @@ const commandeController = {
       return handleError(
         res,
         error,
-        "Erreur lors de la récupération des commandes de l'utilisateur.",
+        "Erreur lors de la récupération des commandes utilisateur.",
       );
     }
   },
@@ -103,6 +103,45 @@ const commandeController = {
         res,
         error,
         "Erreur lors de la création de la commande.",
+      );
+    }
+  },
+
+  async updateCommandeClient(req, res) {
+    try {
+      await commandeService.updateCommande(
+        req.params.id,
+        req.user.utilisateur_id,
+        req.body,
+      );
+
+      res.status(200).json({
+        message: "Commande modifiée avec succès.",
+      });
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        "Erreur lors de la modification de la commande.",
+      );
+    }
+  },
+
+  async annulerCommandeClient(req, res) {
+    try {
+      await commandeService.annulerCommandeClient(
+        req.params.id,
+        req.user.utilisateur_id,
+      );
+
+      res.status(200).json({
+        message: "Commande annulée avec succès.",
+      });
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        "Erreur lors de l'annulation de la commande.",
       );
     }
   },

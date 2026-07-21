@@ -98,6 +98,29 @@ const Commande = {
     return result.affectedRows > 0;
   },
 
+  async updateAnnulation(id, annulation) {
+    const [result] = await database.query(
+      `
+        UPDATE commande
+        SET
+          statut = ?,
+          mode_contact_annulation = ?,
+          motif_annulation = ?,
+          date_annulation = ?
+        WHERE commande_id = ?
+      `,
+      [
+        "Annulée",
+        annulation.mode_contact_annulation,
+        annulation.motif_annulation,
+        annulation.date_annulation,
+        id,
+      ],
+    );
+
+    return result.affectedRows > 0;
+  },
+
   async delete(id) {
     const [result] = await database.query(
       `

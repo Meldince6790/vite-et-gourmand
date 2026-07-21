@@ -12,6 +12,8 @@ const STATUTS_AUTORISES = new Set([
   "Annulée",
 ]);
 
+const MODES_CONTACT_AUTORISES = new Set(["Téléphone", "Mail"]);
+
 const commandeService = {
   async getAllCommandes() {
     return await Commande.findAll();
@@ -63,7 +65,6 @@ const commandeService = {
     let prixMenu =
       Number(menu.prix_par_personne) * Number(commande.nombre_personne);
 
-    // Réduction de 10% si la commande dépasse de 5 personnes le minimum requis
     if (commande.nombre_personne >= Number(menu.nombre_personne_minimum) + 5) {
       prixMenu *= 0.9;
     }
@@ -106,6 +107,32 @@ const commandeService = {
     }
 
     return await Commande.updateStatut(id, statut);
+  },
+
+  async annulerCommande(id, data) {
+    const commandeExiste = await Commande.exists(id);
+
+    if (!commandeExiste) {
+      throw new Error("Commande introuvable.");
+    }
+
+    if (!data.mode_contact_annulation) {
+      throw new Error("Le mode de contact est obligatoire.");
+    }
+
+    if (!MODES_CONTACT_AUTORISES.has(data.mode_contact_annulation)) {
+      throw new Error("Le mode de contact doit être Téléphone ou Mail.");
+    }
+
+    if (!data.motif_annulation) {
+      throw new Error("Le motif d'annulation est obligatoire.");
+    }
+
+    return await Commande.updateAnnulation(id, {
+      mode_contact_annulation: data.mode_contact_annulation,
+      motif_annulation: data.motif_annulation,
+      date_annulation: new Date(),
+    });
   },
 
   async deleteCommande(id) {

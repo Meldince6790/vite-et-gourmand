@@ -15,6 +15,10 @@ const authService = {
       throw new Error("Identifiants incorrects.");
     }
 
+    if (!password || !utilisateur.password) {
+      throw new Error("Identifiants incorrects.");
+    }
+
     const passwordValid = await bcrypt.compare(password, utilisateur.password);
 
     if (!passwordValid) {

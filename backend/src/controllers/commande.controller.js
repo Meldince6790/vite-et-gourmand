@@ -123,6 +123,22 @@ const commandeController = {
     }
   },
 
+  async annulerCommande(req, res) {
+    try {
+      await commandeService.annulerCommande(req.params.id, req.body);
+
+      res.status(200).json({
+        message: "Commande annulée avec succès.",
+      });
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        "Erreur lors de l'annulation de la commande.",
+      );
+    }
+  },
+
   async deleteCommande(req, res) {
     try {
       await commandeService.deleteCommande(req.params.id);

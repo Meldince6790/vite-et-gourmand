@@ -49,6 +49,14 @@ router.patch(
   commandeController.updateStatut,
 );
 
+// Annulation d'une commande (Employé + Administrateur)
+router.patch(
+  "/:id/annulation",
+  authMiddleware,
+  roleMiddleware(2, 3),
+  commandeController.annulerCommande,
+);
+
 // Suppression d'une commande (Employé + Administrateur)
 router.delete(
   "/:id",

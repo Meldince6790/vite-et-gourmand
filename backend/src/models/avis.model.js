@@ -3,12 +3,12 @@ const db = require("../config/database");
 const Avis = {
   async getAll() {
     const [rows] = await db.query(`
-      SELECT 
+      SELECT
         avis.*,
         utilisateur.nom,
         utilisateur.prenom
       FROM avis
-      INNER JOIN utilisateur 
+      LEFT JOIN utilisateur
         ON avis.utilisateur_id = utilisateur.utilisateur_id
     `);
 
@@ -18,14 +18,14 @@ const Avis = {
   async getById(id) {
     const [rows] = await db.query(
       `
-      SELECT 
+      SELECT
         avis.*,
         utilisateur.nom,
         utilisateur.prenom
       FROM avis
-      INNER JOIN utilisateur 
+      LEFT JOIN utilisateur
         ON avis.utilisateur_id = utilisateur.utilisateur_id
-      WHERE avis_id = ?
+      WHERE avis.avis_id = ?
       `,
       [id],
     );
@@ -36,11 +36,20 @@ const Avis = {
   async create(avis) {
     const [result] = await db.query(
       `
-      INSERT INTO avis 
-      (note, description, statut, utilisateur_id)
+      INSERT INTO avis (
+        note,
+        description,
+        statut,
+        utilisateur_id
+      )
       VALUES (?, ?, ?, ?)
       `,
-      [avis.note, avis.description, avis.statut, avis.utilisateur_id],
+      [
+        avis.note,
+        avis.description,
+        avis.statut || "En attente",
+        avis.utilisateur_id,
+      ],
     );
 
     return result.insertId;
@@ -50,7 +59,10 @@ const Avis = {
     const [result] = await db.query(
       `
       UPDATE avis
-      SET note = ?, description = ?, statut = ?
+      SET
+        note = ?,
+        description = ?,
+        statut = ?
       WHERE avis_id = ?
       `,
       [avis.note, avis.description, avis.statut, id],

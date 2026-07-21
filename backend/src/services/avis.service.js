@@ -11,6 +11,10 @@ const avisService = {
   },
 
   async create(data) {
+    if (!data.note) {
+      throw new Error("La note est obligatoire.");
+    }
+
     const note = Number(data.note);
 
     if (note < 1 || note > 5) {
@@ -21,14 +25,13 @@ const avisService = {
       throw new Error("Le commentaire est obligatoire.");
     }
 
-    // Vérification qu'une commande terminée existe pour l'utilisateur
     const [commandes] = await db.query(
       `
-      SELECT commande_id
-      FROM commande
-      WHERE utilisateur_id = ?
-      AND statut = ?
-      LIMIT 1
+        SELECT commande_id
+        FROM commande
+        WHERE utilisateur_id = ?
+        AND statut = ?
+        LIMIT 1
       `,
       [data.utilisateur_id, "Terminée"],
     );
@@ -46,6 +49,10 @@ const avisService = {
   },
 
   async update(id, data) {
+    if (!data.note) {
+      throw new Error("La note est obligatoire.");
+    }
+
     const note = Number(data.note);
 
     if (note < 1 || note > 5) {

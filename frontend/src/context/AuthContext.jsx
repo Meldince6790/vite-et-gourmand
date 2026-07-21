@@ -18,8 +18,13 @@ export function AuthProvider({ children }) {
     setToken(utilisateur.token);
 
     localStorage.setItem("utilisateur", JSON.stringify(utilisateur));
-
     localStorage.setItem("token", utilisateur.token);
+  }
+
+  function updateUser(utilisateur) {
+    setUser(utilisateur);
+
+    localStorage.setItem("utilisateur", JSON.stringify(utilisateur));
   }
 
   function logout() {
@@ -35,6 +40,7 @@ export function AuthProvider({ children }) {
       user,
       token,
       login,
+      updateUser,
       logout,
     }),
     [user, token],

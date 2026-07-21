@@ -87,6 +87,27 @@ const Utilisateur = {
 
     return result.insertId;
   },
+
+  async update(id, utilisateur) {
+    await database.query(
+      `
+        UPDATE utilisateur
+        SET
+          email = ?,
+          nom = ?,
+          prenom = ?,
+          telephone = ?
+        WHERE utilisateur_id = ?
+      `,
+      [
+        utilisateur.email,
+        utilisateur.nom,
+        utilisateur.prenom,
+        utilisateur.telephone,
+        id,
+      ],
+    );
+  },
 };
 
 module.exports = Utilisateur;

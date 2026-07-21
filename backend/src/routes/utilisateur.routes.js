@@ -9,6 +9,9 @@ const roleMiddleware = require("../middlewares/role.middleware");
 // Profil utilisateur connecté
 router.get("/me", authMiddleware, utilisateurController.getMe);
 
+// Modification du profil utilisateur connecté
+router.patch("/me", authMiddleware, utilisateurController.updateMe);
+
 // Liste des utilisateurs (administrateur uniquement)
 router.get(
   "/",

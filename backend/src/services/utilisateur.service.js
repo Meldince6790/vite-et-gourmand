@@ -55,6 +55,33 @@ const utilisateurService = {
 
     return await Utilisateur.create(utilisateur);
   },
+
+  async updateUtilisateur(id, donnees) {
+    const utilisateur = await Utilisateur.findById(id);
+
+    if (!utilisateur) {
+      throw new Error("Utilisateur introuvable.");
+    }
+
+    if (donnees.email && donnees.email !== utilisateur.email) {
+      const utilisateurExistant = await Utilisateur.findByEmail(donnees.email);
+
+      if (utilisateurExistant && utilisateurExistant.utilisateur_id !== id) {
+        throw new Error("Cette adresse e-mail est déjà utilisée.");
+      }
+    }
+
+    const utilisateurModifie = {
+      nom: donnees.nom,
+      prenom: donnees.prenom,
+      email: donnees.email,
+      telephone: donnees.telephone,
+    };
+
+    await Utilisateur.update(id, utilisateurModifie);
+
+    return await Utilisateur.findById(id);
+  },
 };
 
 module.exports = utilisateurService;

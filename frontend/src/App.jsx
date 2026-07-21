@@ -5,6 +5,7 @@ import Home from "./pages/Home.jsx";
 import Menus from "./pages/Menus.jsx";
 import MenuDetail from "./pages/MenuDetail.jsx";
 import Commander from "./pages/Commander.jsx";
+import ClientSpace from "./pages/ClientSpace.jsx";
 import MesCommandes from "./pages/MesCommandes.jsx";
 import Login from "./pages/Login.jsx";
 import Contact from "./pages/Contact.jsx";
@@ -17,6 +18,7 @@ function App() {
         <Route path="/menus" element={<Menus />} />
         <Route path="/menus/:id" element={<MenuDetail />} />
         <Route path="/commander/:id" element={<Commander />} />
+        <Route path="/espace-client" element={<ClientSpace />} />
         <Route path="/mes-commandes" element={<MesCommandes />} />
         <Route path="/login" element={<Login />} />
         <Route path="/contact" element={<Contact />} />

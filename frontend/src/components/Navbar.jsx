@@ -1,17 +1,11 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
+import UserMenu from "./UserMenu.jsx";
 import "../styles/navbar.css";
 
 function Navbar() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  function handleLogout() {
-    logout();
-
-    navigate("/");
-  }
+  const { user } = useAuth();
 
   return (
     <nav className="navbar">
@@ -38,35 +32,21 @@ function Navbar() {
           </NavLink>
         </li>
 
+        <li>
+          <NavLink
+            className={({ isActive }) =>
+              isActive ? "navbar-link active" : "navbar-link"
+            }
+            to="/contact"
+          >
+            Contact
+          </NavLink>
+        </li>
+
         {user ? (
-          <>
-            <li>
-              <span className="navbar-link">Bonjour {user.prenom}</span>
-            </li>
-
-            {user.role_id === 1 && (
-              <li>
-                <NavLink
-                  className={({ isActive }) =>
-                    isActive ? "navbar-link active" : "navbar-link"
-                  }
-                  to="/mes-commandes"
-                >
-                  Mes commandes
-                </NavLink>
-              </li>
-            )}
-
-            <li>
-              <button
-                className="navbar-link"
-                type="button"
-                onClick={handleLogout}
-              >
-                Déconnexion
-              </button>
-            </li>
-          </>
+          <li>
+            <UserMenu />
+          </li>
         ) : (
           <li>
             <NavLink
@@ -79,17 +59,6 @@ function Navbar() {
             </NavLink>
           </li>
         )}
-
-        <li>
-          <NavLink
-            className={({ isActive }) =>
-              isActive ? "navbar-link active" : "navbar-link"
-            }
-            to="/contact"
-          >
-            Contact
-          </NavLink>
-        </li>
       </ul>
     </nav>
   );

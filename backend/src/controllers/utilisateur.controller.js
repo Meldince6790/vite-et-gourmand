@@ -59,6 +59,32 @@ const utilisateurController = {
     }
   },
 
+  async updateMe(req, res) {
+    try {
+      const utilisateur = await utilisateurService.updateUtilisateur(
+        req.user.utilisateur_id,
+        req.body,
+      );
+
+      res.status(200).json({
+        message: "Profil mis à jour avec succès.",
+        utilisateur,
+      });
+    } catch (error) {
+      console.error(error);
+
+      if (error.message === "Cette adresse e-mail est déjà utilisée.") {
+        return res.status(409).json({
+          message: error.message,
+        });
+      }
+
+      res.status(400).json({
+        message: error.message || "Erreur lors de la mise à jour du profil.",
+      });
+    }
+  },
+
   async create(req, res) {
     try {
       const id = await utilisateurService.createUtilisateur(req.body);

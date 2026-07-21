@@ -22,6 +22,7 @@ function EmployeeSpace() {
 
   const [statuts, setStatuts] = useState({});
   const [statutsCommandes, setStatutsCommandes] = useState({});
+  const [annulations, setAnnulations] = useState({});
 
   const [filtreStatut, setFiltreStatut] = useState("Tous");
   const [rechercheClient, setRechercheClient] = useState("");
@@ -109,6 +110,30 @@ function EmployeeSpace() {
       await commandeService.updateStatut(id, statutsCommandes[id]);
 
       setMessage("Statut de commande modifié avec succès.");
+
+      const data = await commandeService.getCommandes();
+
+      setCommandes(data);
+    } catch (error) {
+      setError(error.message);
+    }
+  }
+
+  function handleAnnulationChange(id, champ, valeur) {
+    setAnnulations((ancien) => ({
+      ...ancien,
+      [id]: {
+        ...ancien[id],
+        [champ]: valeur,
+      },
+    }));
+  }
+
+  async function handleAnnulerCommande(id) {
+    try {
+      await commandeService.annulerCommande(id, annulations[id]);
+
+      setMessage("Commande annulée avec succès.");
 
       const data = await commandeService.getCommandes();
 
@@ -214,15 +239,10 @@ function EmployeeSpace() {
               </p>
 
               <p>Date prestation : {commande.date_prestation}</p>
-
               <p>Heure : {commande.heure_livraison}</p>
-
               <p>Adresse : {commande.adresse_livraison}</p>
-
               <p>Nombre de personnes : {commande.nombre_personne}</p>
-
               <p>Prix menu : {commande.prix_menu} €</p>
-
               <p>Prix livraison : {commande.prix_livraison} €</p>
 
               <p>
@@ -251,6 +271,61 @@ function EmployeeSpace() {
               >
                 Modifier le statut
               </button>
+
+              {commande.statut !== "Annulée" &&
+                commande.statut !== "Terminée" && (
+                  <>
+                    <label>
+                      <span>Mode de contact :</span>
+
+                      <select
+                        value={
+                          annulations[commande.commande_id]
+                            ?.mode_contact_annulation || ""
+                        }
+                        onChange={(event) =>
+                          handleAnnulationChange(
+                            commande.commande_id,
+                            "mode_contact_annulation",
+                            event.target.value,
+                          )
+                        }
+                      >
+                        <option value="">Choisir</option>
+                        <option value="Téléphone">Téléphone</option>
+                        <option value="Mail">Mail</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Motif d'annulation :</span>
+
+                      <input
+                        type="text"
+                        value={
+                          annulations[commande.commande_id]?.motif_annulation ||
+                          ""
+                        }
+                        onChange={(event) =>
+                          handleAnnulationChange(
+                            commande.commande_id,
+                            "motif_annulation",
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </label>
+
+                    <button
+                      className="button"
+                      onClick={() =>
+                        handleAnnulerCommande(commande.commande_id)
+                      }
+                    >
+                      Annuler la commande
+                    </button>
+                  </>
+                )}
             </div>
           ))}
         </div>

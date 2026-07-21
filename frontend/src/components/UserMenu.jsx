@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 
-import { useAuth } from "../context/AuthContext";
+import useAuth from "../hooks/useAuth";
 import "../styles/navbar.css";
 
 function UserMenu() {

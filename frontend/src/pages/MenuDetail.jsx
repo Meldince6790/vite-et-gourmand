@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { useAuth } from "../context/AuthContext";
+import useAuth from "../hooks/useAuth";
 import menuService from "../services/menu.service";
 import "../styles/pages.css";
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { useAuth } from "../context/AuthContext";
+import useAuth from "../hooks/useAuth";
 import commandeService from "../services/commande.service";
 import utilisateurService from "../services/utilisateur.service";
 import "../styles/pages.css";

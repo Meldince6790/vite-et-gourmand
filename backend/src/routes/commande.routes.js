@@ -14,7 +14,15 @@ router.get(
   commandeController.getAllCommandes,
 );
 
-// Consultation d'une commande par utilisateur (Employé + Administrateur)
+// Consultation de ses propres commandes (Client)
+router.get(
+  "/mes-commandes",
+  authMiddleware,
+  roleMiddleware(1),
+  commandeController.getMesCommandes,
+);
+
+// Consultation des commandes par utilisateur (Employé + Administrateur)
 router.get(
   "/utilisateur/:id",
   authMiddleware,

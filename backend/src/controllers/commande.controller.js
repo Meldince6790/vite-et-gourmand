@@ -69,6 +69,22 @@ const commandeController = {
     }
   },
 
+  async getMesCommandes(req, res) {
+    try {
+      const commandes = await commandeService.getCommandesByUtilisateurId(
+        req.user.utilisateur_id,
+      );
+
+      res.status(200).json(commandes);
+    } catch (error) {
+      return handleError(
+        res,
+        error,
+        "Erreur lors de la récupération de vos commandes.",
+      );
+    }
+  },
+
   async createCommande(req, res) {
     try {
       const commande = {

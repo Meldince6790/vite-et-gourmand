@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
+import { useAuth } from "../context/AuthContext";
 import menuService from "../services/menu.service";
 import "../styles/pages.css";
 
 function MenuDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
+  const { user } = useAuth();
 
   const [menu, setMenu] = useState(null);
   const [error, setError] = useState("");
@@ -25,6 +29,16 @@ function MenuDetail() {
 
     loadMenu();
   }, [id]);
+
+  function handleCommander() {
+    if (!user) {
+      navigate("/login");
+
+      return;
+    }
+
+    navigate(`/commander/${id}`);
+  }
 
   if (error) {
     return <p>{error}</p>;
@@ -57,6 +71,10 @@ function MenuDetail() {
           <li key={plat.plat_id}>{plat.titre_plat}</li>
         ))}
       </ul>
+
+      <button type="button" onClick={handleCommander}>
+        Commander
+      </button>
     </section>
   );
 }

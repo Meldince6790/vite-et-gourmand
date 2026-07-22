@@ -62,6 +62,17 @@ const commandeService = {
       );
     }
 
+    const stockDisponible = await Menu.hasStock(
+      commande.menu_id,
+      commande.nombre_personne,
+    );
+
+    if (!stockDisponible) {
+      throw new Error(
+        "Le stock disponible est insuffisant pour cette commande.",
+      );
+    }
+
     let prixMenu =
       Number(menu.prix_par_personne) * Number(commande.nombre_personne);
 
@@ -91,7 +102,11 @@ const commandeService = {
       commande.restitution_materiel = false;
     }
 
-    return await Commande.create(commande);
+    const result = await Commande.create(commande);
+
+    await Menu.decreaseStock(commande.menu_id, commande.nombre_personne);
+
+    return result;
   },
 
   async getCommandeClient(id, utilisateurId) {
@@ -124,9 +139,9 @@ const commandeService = {
 
   // Annulation employé / administrateur
   async annulerCommande(id, data) {
-    const commandeExiste = await Commande.exists(id);
+    const commande = await Commande.findById(id);
 
-    if (!commandeExiste) {
+    if (!commande) {
       throw new Error("Commande introuvable.");
     }
 
@@ -142,11 +157,15 @@ const commandeService = {
       throw new Error("Le motif d'annulation est obligatoire.");
     }
 
-    return await Commande.updateAnnulation(id, {
+    const result = await Commande.updateAnnulation(id, {
       mode_contact_annulation: data.mode_contact_annulation,
       motif_annulation: data.motif_annulation,
       date_annulation: new Date(),
     });
+
+    await Menu.increaseStock(commande.menu_id, commande.nombre_personne);
+
+    return result;
   },
 
   // Annulation client
@@ -157,7 +176,11 @@ const commandeService = {
       throw new Error("Cette commande ne peut plus être annulée.");
     }
 
-    return await Commande.updateStatut(id, "Annulée");
+    const result = await Commande.updateStatut(id, "Annulée");
+
+    await Menu.increaseStock(commande.menu_id, commande.nombre_personne);
+
+    return result;
   },
 
   async updateCommande(id, utilisateurId, data) {

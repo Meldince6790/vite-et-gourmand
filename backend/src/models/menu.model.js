@@ -69,17 +69,19 @@ const Menu = {
           nombre_personne_minimum,
           prix_par_personne,
           description,
+          conditions,
           quantite_restante,
           regime_id,
           theme_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         menu.titre,
         menu.nombre_personne_minimum,
         menu.prix_par_personne,
         menu.description,
+        menu.conditions,
         menu.quantite_restante,
         menu.regime_id,
         menu.theme_id,
@@ -98,6 +100,7 @@ const Menu = {
           nombre_personne_minimum = ?,
           prix_par_personne = ?,
           description = ?,
+          conditions = ?,
           quantite_restante = ?,
           regime_id = ?,
           theme_id = ?
@@ -108,6 +111,7 @@ const Menu = {
         menu.nombre_personne_minimum,
         menu.prix_par_personne,
         menu.description,
+        menu.conditions,
         menu.quantite_restante,
         menu.regime_id,
         menu.theme_id,
@@ -219,6 +223,48 @@ const Menu = {
     );
 
     return rows.length > 0;
+  },
+
+  // Gestion du stock
+
+  async hasStock(id, quantite = 1) {
+    const [rows] = await database.query(
+      `
+        SELECT quantite_restante
+        FROM menu
+        WHERE menu_id = ?
+      `,
+      [id],
+    );
+
+    if (rows.length === 0) {
+      return false;
+    }
+
+    return rows[0].quantite_restante >= quantite;
+  },
+
+  async decreaseStock(id, quantite) {
+    await database.query(
+      `
+        UPDATE menu
+        SET quantite_restante = quantite_restante - ?
+        WHERE menu_id = ?
+        AND quantite_restante >= ?
+      `,
+      [quantite, id, quantite],
+    );
+  },
+
+  async increaseStock(id, quantite) {
+    await database.query(
+      `
+        UPDATE menu
+        SET quantite_restante = quantite_restante + ?
+        WHERE menu_id = ?
+      `,
+      [quantite, id],
+    );
   },
 };
 

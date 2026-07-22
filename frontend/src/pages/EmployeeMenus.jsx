@@ -11,8 +11,10 @@ const menuInitial = {
   titre: "",
   description: "",
   photo: "",
+  conditions: "",
   nombre_personne_minimum: "",
   prix_par_personne: "",
+  quantite_restante: "",
   regime_id: "",
   theme_id: "",
 };
@@ -23,7 +25,9 @@ function EmployeeMenus() {
   const [regimes, setRegimes] = useState([]);
   const [themes, setThemes] = useState([]);
 
-  const [menuFormulaire, setMenuFormulaire] = useState(menuInitial);
+  const [menuFormulaire, setMenuFormulaire] = useState({
+    ...menuInitial,
+  });
 
   const [menuEdition, setMenuEdition] = useState(null);
 
@@ -32,6 +36,18 @@ function EmployeeMenus() {
 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  async function chargerAssociationsMenus(menusData) {
+    const associations = {};
+
+    for (const menu of menusData) {
+      const platsMenu = await menuService.getPlatsByMenuId(menu.menu_id);
+
+      associations[menu.menu_id] = platsMenu;
+    }
+
+    setPlatsMenus(associations);
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -49,15 +65,7 @@ function EmployeeMenus() {
         setRegimes(regimesData);
         setThemes(themesData);
 
-        const associations = {};
-
-        for (const menu of menusData) {
-          const platsMenu = await menuService.getPlatsByMenuId(menu.menu_id);
-
-          associations[menu.menu_id] = platsMenu;
-        }
-
-        setPlatsMenus(associations);
+        await chargerAssociationsMenus(menusData);
       } catch (error) {
         setError(error.message);
       }
@@ -80,15 +88,7 @@ function EmployeeMenus() {
 
     setMenus(data);
 
-    const associations = {};
-
-    for (const menu of data) {
-      const platsMenu = await menuService.getPlatsByMenuId(menu.menu_id);
-
-      associations[menu.menu_id] = platsMenu;
-    }
-
-    setPlatsMenus(associations);
+    await chargerAssociationsMenus(data);
   }
 
   async function handleSubmit(event) {
@@ -105,7 +105,10 @@ function EmployeeMenus() {
         setMessage("Menu créé avec succès.");
       }
 
-      setMenuFormulaire(menuInitial);
+      setMenuFormulaire({
+        ...menuInitial,
+      });
+
       setMenuEdition(null);
 
       await refreshMenus();
@@ -121,8 +124,10 @@ function EmployeeMenus() {
       titre: menu.titre,
       description: menu.description || "",
       photo: menu.photo || "",
+      conditions: menu.conditions || "",
       nombre_personne_minimum: menu.nombre_personne_minimum,
       prix_par_personne: menu.prix_par_personne,
+      quantite_restante: menu.quantite_restante,
       regime_id: menu.regime_id,
       theme_id: menu.theme_id,
     });
@@ -183,7 +188,6 @@ function EmployeeMenus() {
 
         <label>
           <span>Titre :</span>
-
           <input
             type="text"
             name="titre"
@@ -194,7 +198,6 @@ function EmployeeMenus() {
 
         <label>
           <span>Description :</span>
-
           <textarea
             name="description"
             value={menuFormulaire.description}
@@ -203,8 +206,17 @@ function EmployeeMenus() {
         </label>
 
         <label>
-          <span>Photo :</span>
+          <span>Conditions :</span>
+          <textarea
+            name="conditions"
+            value={menuFormulaire.conditions}
+            onChange={handleChange}
+            placeholder="Ex : commander 7 jours avant, conserver au frais..."
+          />
+        </label>
 
+        <label>
+          <span>Photo :</span>
           <input
             type="text"
             name="photo"
@@ -215,7 +227,6 @@ function EmployeeMenus() {
 
         <label>
           <span>Nombre minimum :</span>
-
           <input
             type="number"
             name="nombre_personne_minimum"
@@ -226,7 +237,6 @@ function EmployeeMenus() {
 
         <label>
           <span>Prix par personne :</span>
-
           <input
             type="number"
             name="prix_par_personne"
@@ -236,8 +246,17 @@ function EmployeeMenus() {
         </label>
 
         <label>
-          <span>Régime :</span>
+          <span>Stock disponible :</span>
+          <input
+            type="number"
+            name="quantite_restante"
+            value={menuFormulaire.quantite_restante}
+            onChange={handleChange}
+          />
+        </label>
 
+        <label>
+          <span>Régime :</span>
           <select
             name="regime_id"
             value={menuFormulaire.regime_id}
@@ -255,7 +274,6 @@ function EmployeeMenus() {
 
         <label>
           <span>Thème :</span>
-
           <select
             name="theme_id"
             value={menuFormulaire.theme_id}
@@ -283,11 +301,21 @@ function EmployeeMenus() {
 
             <p>{menu.description}</p>
 
+            {menu.conditions && (
+              <p>
+                <strong>Conditions :</strong> {menu.conditions}
+              </p>
+            )}
+
             <p>Régime : {menu.regime}</p>
 
             <p>Thème : {menu.theme}</p>
 
             <p>Prix : {menu.prix_par_personne} €</p>
+
+            <p>
+              Stock disponible : <strong>{menu.quantite_restante}</strong>
+            </p>
 
             <h4>Plats :</h4>
 

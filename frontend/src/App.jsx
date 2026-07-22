@@ -19,6 +19,8 @@ import EmployeeHoraires from "./pages/EmployeeHoraires.jsx";
 
 import AdminSpace from "./pages/AdminSpace.jsx";
 import AdminUtilisateur from "./pages/AdminUtilisateur.jsx";
+import AdminStatistiques from "./pages/AdminStatistiques.jsx";
+import AdminChiffreAffaires from "./pages/AdminChiffreAffaires.jsx";
 
 import MesCommandes from "./pages/MesCommandes.jsx";
 
@@ -69,6 +71,24 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[3]}>
               <AdminUtilisateur />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/espace-admin/statistiques"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <AdminStatistiques />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/espace-admin/chiffre-affaires"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <AdminChiffreAffaires />
             </ProtectedRoute>
           }
         />

@@ -138,6 +138,33 @@ const Menu = {
     return result.affectedRows > 0;
   },
 
+  async exists(id) {
+    const [rows] = await database.query(
+      `
+        SELECT menu_id
+        FROM menu
+        WHERE menu_id = ?
+      `,
+      [id],
+    );
+
+    return rows.length > 0;
+  },
+
+  async usedInCommandes(id) {
+    const [rows] = await database.query(
+      `
+        SELECT commande_id
+        FROM commande
+        WHERE menu_id = ?
+        LIMIT 1
+      `,
+      [id],
+    );
+
+    return rows.length > 0;
+  },
+
   async findPlatsByMenuId(menuId) {
     const [rows] = await database.query(
       `
@@ -178,19 +205,6 @@ const Menu = {
       `,
       [menuId, platId],
     );
-  },
-
-  async exists(id) {
-    const [rows] = await database.query(
-      `
-        SELECT menu_id
-        FROM menu
-        WHERE menu_id = ?
-      `,
-      [id],
-    );
-
-    return rows.length > 0;
   },
 
   async platAlreadyExists(menuId, platId) {

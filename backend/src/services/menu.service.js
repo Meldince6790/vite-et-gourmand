@@ -31,6 +31,10 @@ const menuService = {
       throw new Error("Le prix par personne doit être supérieur à zéro.");
     }
 
+    if (menu.quantite_restante === undefined) {
+      menu.quantite_restante = 0;
+    }
+
     return await Menu.create(menu);
   },
 
@@ -97,6 +101,14 @@ const menuService = {
 
     if (!existe) {
       throw new Error("Menu introuvable.");
+    }
+
+    const utilise = await Menu.usedInCommandes(id);
+
+    if (utilise) {
+      throw new Error(
+        "Impossible de supprimer ce menu car il est associé à une commande.",
+      );
     }
 
     return await Menu.delete(id);

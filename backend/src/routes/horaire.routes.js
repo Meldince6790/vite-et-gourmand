@@ -1,4 +1,5 @@
 const express = require("express");
+
 const router = express.Router();
 
 const horaireController = require("../controllers/horaire.controller");
@@ -8,31 +9,31 @@ const roleMiddleware = require("../middlewares/role.middleware");
 
 // Consultation publique
 
-router.get("/", horaireController.getAll);
+router.get("/", horaireController.getAllHoraires);
 
-router.get("/:id", horaireController.getById);
+router.get("/:id", horaireController.getHoraireById);
 
-// Gestion employé/admin
+// Gestion des horaires (Employé + Administrateur)
 
 router.post(
   "/",
   authMiddleware,
   roleMiddleware(2, 3),
-  horaireController.create,
+  horaireController.createHoraire,
 );
 
-router.put(
+router.patch(
   "/:id",
   authMiddleware,
   roleMiddleware(2, 3),
-  horaireController.update,
+  horaireController.updateHoraire,
 );
 
 router.delete(
   "/:id",
   authMiddleware,
   roleMiddleware(2, 3),
-  horaireController.delete,
+  horaireController.deleteHoraire,
 );
 
 module.exports = router;

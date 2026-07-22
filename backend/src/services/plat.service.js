@@ -37,6 +37,14 @@ const platService = {
       throw new Error("Plat introuvable.");
     }
 
+    const utilise = await Plat.usedInMenus(id);
+
+    if (utilise) {
+      throw new Error(
+        "Impossible de supprimer ce plat car il est associé à un menu.",
+      );
+    }
+
     return await Plat.delete(id);
   },
 

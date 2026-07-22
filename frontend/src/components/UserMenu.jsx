@@ -33,23 +33,13 @@ function UserMenu() {
         )}
 
         {user.role_id === 2 && (
-          <>
-            <NavLink className="user-menu-link" to="/espace-employe">
-              Commandes
-            </NavLink>
-
-            <NavLink className="user-menu-link" to="/espace-employe">
-              Avis
-            </NavLink>
-
-            <NavLink className="user-menu-link" to="/espace-employe">
-              Gestion
-            </NavLink>
-          </>
+          <NavLink className="user-menu-link" to="/espace-employe">
+            Espace employé
+          </NavLink>
         )}
 
         {user.role_id === 3 && (
-          <NavLink className="user-menu-link" to="/admin-space">
+          <NavLink className="user-menu-link" to="/espace-admin">
             Administration
           </NavLink>
         )}

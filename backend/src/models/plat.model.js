@@ -96,6 +96,20 @@ const Plat = {
     return rows.length > 0;
   },
 
+  async usedInMenus(id) {
+    const [rows] = await database.query(
+      `
+        SELECT menu_id
+        FROM menu_plat
+        WHERE plat_id = ?
+        LIMIT 1
+      `,
+      [id],
+    );
+
+    return rows.length > 0;
+  },
+
   async findMenusByPlatId(platId) {
     const [rows] = await database.query(
       `

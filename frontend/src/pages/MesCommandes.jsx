@@ -6,28 +6,56 @@ import "../styles/pages.css";
 function MesCommandes() {
   const [commandes, setCommandes] = useState([]);
   const [commandeEdition, setCommandeEdition] = useState(null);
+  const [commandeAnnulation, setCommandeAnnulation] = useState(null);
 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  async function loadCommandes() {
+  useEffect(() => {
+    let actif = true;
+
+    async function fetchCommandes() {
+      try {
+        const data = await commandeService.getMesCommandes();
+
+        if (!actif) {
+          return;
+        }
+
+        setCommandes(data);
+      } catch (error) {
+        if (actif) {
+          console.error(
+            "Erreur lors de la récupération des commandes :",
+            error,
+          );
+
+          setError("Impossible de récupérer vos commandes.");
+        }
+      }
+    }
+
+    fetchCommandes();
+
+    return () => {
+      actif = false;
+    };
+  }, []);
+
+  async function refreshCommandes() {
     try {
       const data = await commandeService.getMesCommandes();
+
       setCommandes(data);
     } catch (error) {
-      console.error("Erreur lors de la récupération des commandes :", error);
-      setError("Impossible de récupérer vos commandes.");
+      setError(error.message);
     }
   }
 
-  useEffect(() => {
-    loadCommandes();
-  }, []);
-
   function handleModifier(commande) {
-    setCommandeEdition({ ...commande });
-    setMessage("");
-    setError("");
+    setCommandeEdition({
+      ...commande,
+    });
   }
 
   function handleChange(event) {
@@ -49,7 +77,7 @@ function MesCommandes() {
       setMessage("Commande modifiée avec succès.");
       setCommandeEdition(null);
 
-      await loadCommandes();
+      await refreshCommandes();
     } catch (error) {
       setError(error.message);
     }
@@ -59,21 +87,23 @@ function MesCommandes() {
     setCommandeEdition(null);
   }
 
-  async function handleAnnuler(commande) {
-    const confirmation = window.confirm(
-      "Êtes-vous sûr de vouloir annuler cette commande ?",
-    );
+  function handleAnnuler(commande) {
+    setCommandeAnnulation({
+      commande_id: commande.commande_id,
+    });
+  }
 
-    if (!confirmation) {
-      return;
-    }
-
+  async function handleConfirmAnnulation() {
     try {
-      await commandeService.annulerCommandeClient(commande.commande_id);
+      await commandeService.annulerCommandeClient(
+        commandeAnnulation.commande_id,
+      );
 
       setMessage("Commande annulée avec succès.");
 
-      await loadCommandes();
+      setCommandeAnnulation(null);
+
+      await refreshCommandes();
     } catch (error) {
       setError(error.message);
     }
@@ -105,6 +135,7 @@ function MesCommandes() {
                 <>
                   <label>
                     <span>Date de prestation :</span>
+
                     <input
                       type="date"
                       name="date_prestation"
@@ -115,6 +146,7 @@ function MesCommandes() {
 
                   <label>
                     <span>Heure de livraison :</span>
+
                     <input
                       type="time"
                       name="heure_livraison"
@@ -125,6 +157,7 @@ function MesCommandes() {
 
                   <label>
                     <span>Adresse de livraison :</span>
+
                     <input
                       type="text"
                       name="adresse_livraison"
@@ -135,6 +168,7 @@ function MesCommandes() {
 
                   <label>
                     <span>Nombre de personnes :</span>
+
                     <input
                       type="number"
                       name="nombre_personne"
@@ -150,6 +184,7 @@ function MesCommandes() {
                       checked={commandeEdition.pret_materiel}
                       onChange={handleChange}
                     />
+
                     <span>Prêt de matériel</span>
                   </label>
 
@@ -160,6 +195,7 @@ function MesCommandes() {
                       checked={commandeEdition.restitution_materiel}
                       onChange={handleChange}
                     />
+
                     <span>Restitution du matériel</span>
                   </label>
 
@@ -206,25 +242,38 @@ function MesCommandes() {
                     </p>
                   )}
 
-                  {commande.statut === "En attente" && (
-                    <>
+                  {commande.statut === "En attente" &&
+                    commandeAnnulation?.commande_id ===
+                      commande.commande_id && (
                       <button
                         className="button"
                         type="button"
-                        onClick={() => handleModifier(commande)}
+                        onClick={handleConfirmAnnulation}
                       >
-                        Modifier
+                        Confirmer l'annulation
                       </button>
+                    )}
 
-                      <button
-                        className="button"
-                        type="button"
-                        onClick={() => handleAnnuler(commande)}
-                      >
-                        Annuler la commande
-                      </button>
-                    </>
-                  )}
+                  {commande.statut === "En attente" &&
+                    commandeAnnulation === null && (
+                      <>
+                        <button
+                          className="button"
+                          type="button"
+                          onClick={() => handleModifier(commande)}
+                        >
+                          Modifier
+                        </button>
+
+                        <button
+                          className="button"
+                          type="button"
+                          onClick={() => handleAnnuler(commande)}
+                        >
+                          Annuler la commande
+                        </button>
+                      </>
+                    )}
                 </>
               )}
             </div>

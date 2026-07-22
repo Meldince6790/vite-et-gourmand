@@ -3,6 +3,8 @@ const cors = require("cors");
 
 require("dotenv").config();
 
+const connectMongoDB = require("./config/mongodb");
+
 const app = express();
 
 app.disable("x-powered-by");
@@ -24,6 +26,12 @@ app.use("/", routes);
 // Lancement du serveur
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Serveur lancé sur le port ${PORT}`);
-});
+async function startServer() {
+  await connectMongoDB();
+
+  app.listen(PORT, () => {
+    console.log(`Serveur lancé sur le port ${PORT}`);
+  });
+}
+
+startServer();

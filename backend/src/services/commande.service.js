@@ -1,5 +1,6 @@
 const Commande = require("../models/commande.model");
 const Menu = require("../models/menu.model");
+const statistiqueService = require("./statistique.service");
 
 const STATUTS_AUTORISES = new Set([
   "En attente",
@@ -102,11 +103,27 @@ const commandeService = {
       commande.restitution_materiel = false;
     }
 
-    const result = await Commande.create(commande);
+    const commandeId = await Commande.create(commande);
 
     await Menu.decreaseStock(commande.menu_id, commande.nombre_personne);
 
-    return result;
+    // Mise à jour des statistiques MongoDB
+    try {
+      await statistiqueService.updateStatistiqueCommande(
+        {
+          ...commande,
+          commande_id: commandeId,
+        },
+        menu,
+      );
+    } catch (error) {
+      console.error(
+        "Erreur lors de la mise à jour des statistiques MongoDB :",
+        error,
+      );
+    }
+
+    return commandeId;
   },
 
   async getCommandeClient(id, utilisateurId) {
@@ -137,7 +154,6 @@ const commandeService = {
     return await Commande.updateStatut(id, statut);
   },
 
-  // Annulation employé / administrateur
   async annulerCommande(id, data) {
     const commande = await Commande.findById(id);
 
@@ -168,7 +184,6 @@ const commandeService = {
     return result;
   },
 
-  // Annulation client
   async annulerCommandeClient(id, utilisateurId) {
     const commande = await this.getCommandeClient(id, utilisateurId);
 
@@ -212,12 +227,18 @@ const commandeService = {
 
     return await Commande.update(id, {
       date_prestation: data.date_prestation ?? commande.date_prestation,
+
       heure_livraison: data.heure_livraison ?? commande.heure_livraison,
+
       adresse_livraison: data.adresse_livraison ?? commande.adresse_livraison,
+
       nombre_personne: nombrePersonne,
+
       pret_materiel: data.pret_materiel ?? commande.pret_materiel,
+
       restitution_materiel:
         data.restitution_materiel ?? commande.restitution_materiel,
+
       prix_menu: Number(prixMenu.toFixed(2)),
     });
   },

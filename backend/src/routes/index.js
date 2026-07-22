@@ -12,6 +12,7 @@ const themeRoutes = require("./theme.routes");
 const regimeRoutes = require("./regime.routes");
 const horaireRoutes = require("./horaire.routes");
 const avisRoutes = require("./avis.routes");
+const statistiqueRoutes = require("./statistique.routes");
 
 router.get("/", (req, res) => {
   res.json({
@@ -29,5 +30,6 @@ router.use("/themes", themeRoutes);
 router.use("/regimes", regimeRoutes);
 router.use("/horaires", horaireRoutes);
 router.use("/avis", avisRoutes);
+router.use("/statistiques", statistiqueRoutes);
 
 module.exports = router;

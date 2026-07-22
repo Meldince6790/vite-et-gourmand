@@ -19,22 +19,17 @@ ChartJS.register(
   Legend,
 );
 
-function StatistiquesChart({ statistiques }) {
-  const maxCommandes =
-    statistiques.length > 0
-      ? Math.max(
-          ...statistiques.map((statistique) => statistique.total_commandes),
-        )
-      : 0;
-
+function ChiffreAffairesMenuChart({ chiffreAffaires }) {
   const data = {
-    labels: statistiques.map((statistique) => statistique.menu),
+    labels: chiffreAffaires.map((statistique) => statistique.menu),
 
     datasets: [
       {
-        label: "Nombre de commandes",
+        label: "Chiffre d'affaires (€)",
 
-        data: statistiques.map((statistique) => statistique.total_commandes),
+        data: chiffreAffaires.map(
+          (statistique) => statistique.chiffre_affaires,
+        ),
       },
     ],
   };
@@ -53,15 +48,13 @@ function StatistiquesChart({ statistiques }) {
       y: {
         beginAtZero: true,
 
-        suggestedMax: maxCommandes + 2,
-
-        ticks: {
-          stepSize: 1,
-        },
-
         title: {
           display: true,
-          text: "Nombre de commandes",
+          text: "Chiffre d'affaires (€)",
+        },
+
+        ticks: {
+          callback: (value) => `${value} €`,
         },
       },
     },
@@ -73,13 +66,13 @@ function StatistiquesChart({ statistiques }) {
 
       title: {
         display: true,
-        text: "Comparaison des commandes par menu",
+        text: "Chiffre d'affaires par menu",
       },
 
       tooltip: {
         callbacks: {
           label: (context) => {
-            return `${context.raw} commande(s)`;
+            return `${Number(context.raw).toFixed(2)} €`;
           },
         },
       },
@@ -89,4 +82,4 @@ function StatistiquesChart({ statistiques }) {
   return <Bar data={data} options={options} />;
 }
 
-export default StatistiquesChart;
+export default ChiffreAffairesMenuChart;

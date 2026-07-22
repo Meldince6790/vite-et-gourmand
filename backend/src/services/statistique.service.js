@@ -67,6 +67,7 @@ const statistiqueService = {
           },
         },
       },
+
       {
         $project: {
           _id: 0,
@@ -74,6 +75,7 @@ const statistiqueService = {
           total_commandes: 1,
         },
       },
+
       {
         $sort: {
           total_commandes: -1,
@@ -82,8 +84,106 @@ const statistiqueService = {
     ]);
   },
 
+  // Chiffre d'affaires total de l'année en cours
+  async getChiffreAffairesAnnuel() {
+    const annee = new Date().getFullYear();
+
+    const result = await Statistique.aggregate([
+      {
+        $match: {
+          periode: {
+            $regex: `^${annee}`,
+          },
+        },
+      },
+
+      {
+        $group: {
+          _id: null,
+
+          chiffre_affaires_total: {
+            $sum: "$chiffre_affaires",
+          },
+        },
+      },
+
+      {
+        $project: {
+          _id: 0,
+          annee: annee,
+          chiffre_affaires_total: 1,
+        },
+      },
+    ]);
+
+    return (
+      result[0] || {
+        annee,
+        chiffre_affaires_total: 0,
+      }
+    );
+  },
+
+  // Evolution du chiffre d'affaires par période
+  async getChiffreAffairesParPeriode() {
+    return await Statistique.aggregate([
+      {
+        $group: {
+          _id: "$periode",
+
+          chiffre_affaires: {
+            $sum: "$chiffre_affaires",
+          },
+        },
+      },
+
+      {
+        $project: {
+          _id: 0,
+          periode: "$_id",
+          chiffre_affaires: 1,
+        },
+      },
+
+      {
+        $sort: {
+          periode: 1,
+        },
+      },
+    ]);
+  },
+
+  // Chiffre d'affaires par menu
+  async getChiffreAffairesParMenu() {
+    return await Statistique.aggregate([
+      {
+        $group: {
+          _id: "$nom_menu",
+
+          chiffre_affaires: {
+            $sum: "$chiffre_affaires",
+          },
+        },
+      },
+
+      {
+        $project: {
+          _id: 0,
+          menu: "$_id",
+          chiffre_affaires: 1,
+        },
+      },
+
+      {
+        $sort: {
+          chiffre_affaires: -1,
+        },
+      },
+    ]);
+  },
+
   // Chiffre d'affaires avec filtres menu et période
-  async getChiffreAffaires(filters = {}) {
+  async getChiffreAffairesFiltre(filters = {}) {
     const match = {};
 
     if (filters.menu_id) {
@@ -97,31 +197,35 @@ const statistiqueService = {
       };
     }
 
-    const result = await Statistique.aggregate([
+    return await Statistique.aggregate([
       {
         $match: match,
       },
+
       {
         $group: {
-          _id: null,
-          chiffre_affaires_total: {
+          _id: "$nom_menu",
+
+          chiffre_affaires: {
             $sum: "$chiffre_affaires",
           },
         },
       },
+
       {
         $project: {
           _id: 0,
-          chiffre_affaires_total: 1,
+          menu: "$_id",
+          chiffre_affaires: 1,
+        },
+      },
+
+      {
+        $sort: {
+          chiffre_affaires: -1,
         },
       },
     ]);
-
-    return (
-      result[0] || {
-        chiffre_affaires_total: 0,
-      }
-    );
   },
 };
 

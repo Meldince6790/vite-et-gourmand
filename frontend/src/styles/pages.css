@@ -144,3 +144,16 @@
 .login-form button:hover {
   background-color: var(--accent-color);
 }
+
+.charts-container {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  width: 100%;
+  align-items: stretch;
+}
+
+.chart-wrapper {
+  flex: 1 1 50%;
+  min-width: 0;
+}

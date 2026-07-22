@@ -23,12 +23,36 @@ router.get(
   statistiqueController.getCommandesParMenu,
 );
 
-// Chiffre d'affaires avec filtres
+// Chiffre d'affaires année en cours
 router.get(
-  "/chiffre-affaires",
+  "/chiffre-affaires/annuel",
   authMiddleware,
   roleMiddleware(3),
-  statistiqueController.getChiffreAffaires,
+  statistiqueController.getChiffreAffairesAnnuel,
+);
+
+// Evolution du chiffre d'affaires par période
+router.get(
+  "/chiffre-affaires/periode",
+  authMiddleware,
+  roleMiddleware(3),
+  statistiqueController.getChiffreAffairesParPeriode,
+);
+
+// Chiffre d'affaires par menu
+router.get(
+  "/chiffre-affaires/menu",
+  authMiddleware,
+  roleMiddleware(3),
+  statistiqueController.getChiffreAffairesParMenu,
+);
+
+// Chiffre d'affaires avec filtres menu + période
+router.get(
+  "/chiffre-affaires/filtre",
+  authMiddleware,
+  roleMiddleware(3),
+  statistiqueController.getChiffreAffairesFiltre,
 );
 
 // Statistiques d'un menu précis

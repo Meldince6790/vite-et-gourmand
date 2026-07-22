@@ -50,19 +50,71 @@ const statistiqueController = {
     }
   },
 
-  // Chiffre d'affaires avec filtres
-  async getChiffreAffaires(req, res) {
+  // Chiffre d'affaires année en cours
+  async getChiffreAffairesAnnuel(req, res) {
     try {
-      const chiffreAffaires = await statistiqueService.getChiffreAffaires(
+      const chiffreAffaires =
+        await statistiqueService.getChiffreAffairesAnnuel();
+
+      res.status(200).json(chiffreAffaires);
+    } catch (error) {
+      console.error("Erreur récupération CA annuel :", error);
+
+      res.status(500).json({
+        message:
+          "Erreur serveur lors de la récupération du chiffre d'affaires annuel.",
+      });
+    }
+  },
+
+  // Evolution du chiffre d'affaires par période
+  async getChiffreAffairesParPeriode(req, res) {
+    try {
+      const chiffreAffaires =
+        await statistiqueService.getChiffreAffairesParPeriode();
+
+      res.status(200).json(chiffreAffaires);
+    } catch (error) {
+      console.error("Erreur récupération CA par période :", error);
+
+      res.status(500).json({
+        message:
+          "Erreur serveur lors de la récupération du chiffre d'affaires par période.",
+      });
+    }
+  },
+
+  // Chiffre d'affaires par menu
+  async getChiffreAffairesParMenu(req, res) {
+    try {
+      const chiffreAffaires =
+        await statistiqueService.getChiffreAffairesParMenu();
+
+      res.status(200).json(chiffreAffaires);
+    } catch (error) {
+      console.error("Erreur récupération CA par menu :", error);
+
+      res.status(500).json({
+        message:
+          "Erreur serveur lors de la récupération du chiffre d'affaires par menu.",
+      });
+    }
+  },
+
+  // Chiffre d'affaires avec filtres combinés
+  async getChiffreAffairesFiltre(req, res) {
+    try {
+      const chiffreAffaires = await statistiqueService.getChiffreAffairesFiltre(
         req.query,
       );
 
       res.status(200).json(chiffreAffaires);
     } catch (error) {
-      console.error("Erreur récupération chiffre affaires :", error);
+      console.error("Erreur récupération CA filtré :", error);
 
       res.status(500).json({
-        message: "Erreur serveur lors du calcul du chiffre d'affaires.",
+        message:
+          "Erreur serveur lors de la récupération du chiffre d'affaires filtré.",
       });
     }
   },

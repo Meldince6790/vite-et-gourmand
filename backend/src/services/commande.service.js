@@ -122,7 +122,7 @@ const commandeService = {
     return await Commande.updateStatut(id, statut);
   },
 
-  // Annulation employé/admin
+  // Annulation employé / administrateur
   async annulerCommande(id, data) {
     const commandeExiste = await Commande.exists(id);
 
@@ -157,11 +157,7 @@ const commandeService = {
       throw new Error("Cette commande ne peut plus être annulée.");
     }
 
-    return await Commande.updateAnnulation(id, {
-      mode_contact_annulation: null,
-      motif_annulation: "Annulation demandée par le client.",
-      date_annulation: new Date(),
-    });
+    return await Commande.updateStatut(id, "Annulée");
   },
 
   async updateCommande(id, utilisateurId, data) {
@@ -193,18 +189,12 @@ const commandeService = {
 
     return await Commande.update(id, {
       date_prestation: data.date_prestation ?? commande.date_prestation,
-
       heure_livraison: data.heure_livraison ?? commande.heure_livraison,
-
       adresse_livraison: data.adresse_livraison ?? commande.adresse_livraison,
-
       nombre_personne: nombrePersonne,
-
       pret_materiel: data.pret_materiel ?? commande.pret_materiel,
-
       restitution_materiel:
         data.restitution_materiel ?? commande.restitution_materiel,
-
       prix_menu: Number(prixMenu.toFixed(2)),
     });
   },

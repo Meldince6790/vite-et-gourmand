@@ -51,7 +51,7 @@ router.patch(
 
 // Annulation d'une commande (Client)
 router.patch(
-  "/:id/annulation-client",
+  "/:id/annulation",
   authMiddleware,
   roleMiddleware(1),
   commandeController.annulerCommandeClient,

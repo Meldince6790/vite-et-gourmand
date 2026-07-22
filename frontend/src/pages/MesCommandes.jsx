@@ -6,7 +6,6 @@ import "../styles/pages.css";
 function MesCommandes() {
   const [commandes, setCommandes] = useState([]);
   const [commandeEdition, setCommandeEdition] = useState(null);
-  const [commandeAnnulation, setCommandeAnnulation] = useState(null);
 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -14,11 +13,9 @@ function MesCommandes() {
   async function loadCommandes() {
     try {
       const data = await commandeService.getMesCommandes();
-
       setCommandes(data);
     } catch (error) {
       console.error("Erreur lors de la récupération des commandes :", error);
-
       setError("Impossible de récupérer vos commandes.");
     }
   }
@@ -28,9 +25,9 @@ function MesCommandes() {
   }, []);
 
   function handleModifier(commande) {
-    setCommandeEdition({
-      ...commande,
-    });
+    setCommandeEdition({ ...commande });
+    setMessage("");
+    setError("");
   }
 
   function handleChange(event) {
@@ -62,24 +59,19 @@ function MesCommandes() {
     setCommandeEdition(null);
   }
 
-  function handleAnnuler(commande) {
-    setCommandeAnnulation({
-      commande_id: commande.commande_id,
-      mode_contact_annulation: "Mail",
-      motif_annulation: "",
-    });
-  }
+  async function handleAnnuler(commande) {
+    const confirmation = window.confirm(
+      "Êtes-vous sûr de vouloir annuler cette commande ?",
+    );
 
-  async function handleConfirmAnnulation() {
+    if (!confirmation) {
+      return;
+    }
+
     try {
-      await commandeService.annulerCommande(commandeAnnulation.commande_id, {
-        mode_contact_annulation: commandeAnnulation.mode_contact_annulation,
-        motif_annulation: commandeAnnulation.motif_annulation,
-      });
+      await commandeService.annulerCommandeClient(commande.commande_id);
 
       setMessage("Commande annulée avec succès.");
-
-      setCommandeAnnulation(null);
 
       await loadCommandes();
     } catch (error) {
@@ -158,7 +150,6 @@ function MesCommandes() {
                       checked={commandeEdition.pret_materiel}
                       onChange={handleChange}
                     />
-
                     <span>Prêt de matériel</span>
                   </label>
 
@@ -169,7 +160,6 @@ function MesCommandes() {
                       checked={commandeEdition.restitution_materiel}
                       onChange={handleChange}
                     />
-
                     <span>Restitution du matériel</span>
                   </label>
 
@@ -216,79 +206,25 @@ function MesCommandes() {
                     </p>
                   )}
 
-                  {commandeEdition === null &&
-                    commandeAnnulation?.commande_id ===
-                      commande.commande_id && (
-                      <>
-                        <label>
-                          <span>Mode de contact :</span>
+                  {commande.statut === "En attente" && (
+                    <>
+                      <button
+                        className="button"
+                        type="button"
+                        onClick={() => handleModifier(commande)}
+                      >
+                        Modifier
+                      </button>
 
-                          <select
-                            value={commandeAnnulation.mode_contact_annulation}
-                            onChange={(event) =>
-                              setCommandeAnnulation((ancienne) => ({
-                                ...ancienne,
-                                mode_contact_annulation: event.target.value,
-                              }))
-                            }
-                          >
-                            <option value="Mail">Mail</option>
-                            <option value="Téléphone">Téléphone</option>
-                          </select>
-                        </label>
-
-                        <label>
-                          <span>Motif d'annulation :</span>
-
-                          <textarea
-                            value={commandeAnnulation.motif_annulation}
-                            onChange={(event) =>
-                              setCommandeAnnulation((ancienne) => ({
-                                ...ancienne,
-                                motif_annulation: event.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-
-                        <button
-                          className="button"
-                          type="button"
-                          onClick={handleConfirmAnnulation}
-                        >
-                          Confirmer l'annulation
-                        </button>
-
-                        <button
-                          className="button"
-                          type="button"
-                          onClick={() => setCommandeAnnulation(null)}
-                        >
-                          Retour
-                        </button>
-                      </>
-                    )}
-
-                  {commande.statut === "En attente" &&
-                    commandeAnnulation === null && (
-                      <>
-                        <button
-                          className="button"
-                          type="button"
-                          onClick={() => handleModifier(commande)}
-                        >
-                          Modifier
-                        </button>
-
-                        <button
-                          className="button"
-                          type="button"
-                          onClick={() => handleAnnuler(commande)}
-                        >
-                          Annuler la commande
-                        </button>
-                      </>
-                    )}
+                      <button
+                        className="button"
+                        type="button"
+                        onClick={() => handleAnnuler(commande)}
+                      >
+                        Annuler la commande
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>

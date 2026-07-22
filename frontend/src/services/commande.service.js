@@ -114,7 +114,7 @@ async function updateCommande(id, commande) {
 async function annulerCommandeClient(id) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/commandes/${id}/annulation-client`, {
+  const response = await fetch(`${API_URL}/commandes/${id}/annulation`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -136,14 +136,17 @@ async function annulerCommandeClient(id) {
 async function annulerCommande(id, annulation) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/commandes/${id}/annulation`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+  const response = await fetch(
+    `${API_URL}/commandes/${id}/annulation-employe`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(annulation),
     },
-    body: JSON.stringify(annulation),
-  });
+  );
 
   const data = await response.json();
 

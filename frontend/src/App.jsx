@@ -17,6 +17,9 @@ import EmployeeMenus from "./pages/EmployeeMenus.jsx";
 import EmployeePlats from "./pages/EmployeePlats.jsx";
 import EmployeeHoraires from "./pages/EmployeeHoraires.jsx";
 
+import AdminSpace from "./pages/AdminSpace.jsx";
+import AdminUtilisateur from "./pages/AdminUtilisateur.jsx";
+
 import MesCommandes from "./pages/MesCommandes.jsx";
 
 import Login from "./pages/Login.jsx";
@@ -46,8 +49,26 @@ function App() {
         <Route
           path="/espace-employe"
           element={
-            <ProtectedRoute allowedRoles={[2]}>
+            <ProtectedRoute allowedRoles={[2, 3]}>
               <EmployeeSpace />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/espace-admin"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <AdminSpace />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/espace-admin/utilisateurs"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <AdminUtilisateur />
             </ProtectedRoute>
           }
         />
@@ -55,7 +76,7 @@ function App() {
         <Route
           path="/espace-employe/commandes"
           element={
-            <ProtectedRoute allowedRoles={[2]}>
+            <ProtectedRoute allowedRoles={[2, 3]}>
               <EmployeeCommandes />
             </ProtectedRoute>
           }
@@ -64,7 +85,7 @@ function App() {
         <Route
           path="/espace-employe/avis"
           element={
-            <ProtectedRoute allowedRoles={[2]}>
+            <ProtectedRoute allowedRoles={[2, 3]}>
               <EmployeeAvis />
             </ProtectedRoute>
           }
@@ -73,7 +94,7 @@ function App() {
         <Route
           path="/espace-employe/menus"
           element={
-            <ProtectedRoute allowedRoles={[2]}>
+            <ProtectedRoute allowedRoles={[2, 3]}>
               <EmployeeMenus />
             </ProtectedRoute>
           }
@@ -82,7 +103,7 @@ function App() {
         <Route
           path="/espace-employe/plats"
           element={
-            <ProtectedRoute allowedRoles={[2]}>
+            <ProtectedRoute allowedRoles={[2, 3]}>
               <EmployeePlats />
             </ProtectedRoute>
           }
@@ -91,7 +112,7 @@ function App() {
         <Route
           path="/espace-employe/horaires"
           element={
-            <ProtectedRoute allowedRoles={[2]}>
+            <ProtectedRoute allowedRoles={[2, 3]}>
               <EmployeeHoraires />
             </ProtectedRoute>
           }

@@ -13,7 +13,8 @@ const Utilisateur = {
           ville,
           pays,
           adresse_postale,
-          role_id
+          role_id,
+          actif
         FROM utilisateur
       `,
     );
@@ -33,7 +34,8 @@ const Utilisateur = {
           ville,
           pays,
           adresse_postale,
-          role_id
+          role_id,
+          actif
         FROM utilisateur
         WHERE utilisateur_id = ?
       `,
@@ -68,9 +70,10 @@ const Utilisateur = {
           ville,
           pays,
           adresse_postale,
-          role_id
+          role_id,
+          actif
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         utilisateur.email,
@@ -82,6 +85,7 @@ const Utilisateur = {
         utilisateur.pays,
         utilisateur.adresse_postale,
         utilisateur.role_id,
+        utilisateur.actif ?? true,
       ],
     );
 
@@ -113,6 +117,19 @@ const Utilisateur = {
     );
 
     return result;
+  },
+
+  async updateActif(id, actif) {
+    const [result] = await database.query(
+      `
+        UPDATE utilisateur
+        SET actif = ?
+        WHERE utilisateur_id = ?
+      `,
+      [actif, id],
+    );
+
+    return result.affectedRows > 0;
   },
 };
 

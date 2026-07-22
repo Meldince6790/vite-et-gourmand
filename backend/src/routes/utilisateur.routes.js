@@ -12,7 +12,8 @@ router.get("/me", authMiddleware, utilisateurController.getMe);
 // Modification du profil utilisateur connecté
 router.patch("/me", authMiddleware, utilisateurController.updateMe);
 
-// Liste des utilisateurs (administrateur uniquement)
+// Liste des utilisateurs
+// Accessible uniquement à l'administrateur
 router.get(
   "/",
   authMiddleware,
@@ -20,7 +21,26 @@ router.get(
   utilisateurController.getAll,
 );
 
-// Création compte client
+// Création d'un compte client
+// Route publique utilisée lors de l'inscription
 router.post("/", utilisateurController.create);
+
+// Création d'un compte employé
+// Accessible uniquement à l'administrateur
+router.post(
+  "/employe",
+  authMiddleware,
+  roleMiddleware(3),
+  utilisateurController.createEmploye,
+);
+
+// Activation / désactivation d'un compte employé
+// Accessible uniquement à l'administrateur
+router.patch(
+  "/:id/actif",
+  authMiddleware,
+  roleMiddleware(3),
+  utilisateurController.updateActif,
+);
 
 module.exports = router;

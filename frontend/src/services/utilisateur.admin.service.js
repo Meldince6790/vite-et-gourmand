@@ -1,33 +1,9 @@
 import API_URL from "../api/api.js";
 
-async function updateProfil(utilisateur) {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(`${API_URL}/utilisateurs/me`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(utilisateur),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Erreur lors de la modification du profil.",
-    );
-  }
-
-  return data.utilisateur;
-}
-
-async function getAllUtilisateurs() {
+async function getUtilisateurs() {
   const token = localStorage.getItem("token");
 
   const response = await fetch(`${API_URL}/utilisateurs`, {
-    method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -92,11 +68,10 @@ async function updateActif(id, actif) {
   return data;
 }
 
-const utilisateurService = {
-  updateProfil,
-  getAllUtilisateurs,
+const utilisateurAdminService = {
+  getUtilisateurs,
   createEmploye,
   updateActif,
 };
 
-export default utilisateurService;
+export default utilisateurAdminService;

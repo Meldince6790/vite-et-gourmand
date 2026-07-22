@@ -5,6 +5,7 @@ function validatePassword(password) {
   return (
     typeof password === "string" &&
     password.length >= 10 &&
+    password.length <= 255 &&
     /[A-Z]/.test(password) &&
     /[a-z]/.test(password) &&
     /\d/.test(password) &&
@@ -48,12 +49,79 @@ const utilisateurService = {
 
     const passwordHash = await bcrypt.hash(utilisateur.password, 10);
 
-    utilisateur.password = passwordHash;
+    const client = {
+      email: utilisateur.email,
+      password: passwordHash,
+      nom: utilisateur.nom || null,
+      prenom: utilisateur.prenom || null,
+      telephone: utilisateur.telephone || null,
+      ville: utilisateur.ville || null,
+      pays: utilisateur.pays || null,
+      adresse_postale: utilisateur.adresse_postale || null,
+      role_id: 1,
+      actif: true,
+    };
 
-    // Toute inscription publique crée un compte client
-    utilisateur.role_id = 1;
+    return await Utilisateur.create(client);
+  },
 
-    return await Utilisateur.create(utilisateur);
+  async createEmploye(utilisateur) {
+    if (!utilisateur.email || !utilisateur.password) {
+      throw new Error("L'adresse e-mail et le mot de passe sont obligatoires.");
+    }
+
+    const utilisateurExistant = await Utilisateur.findByEmail(
+      utilisateur.email,
+    );
+
+    if (utilisateurExistant) {
+      throw new Error("Cette adresse e-mail est déjà utilisée.");
+    }
+
+    if (!validatePassword(utilisateur.password)) {
+      throw new Error(
+        "Le mot de passe ne respecte pas les règles de sécurité.",
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(utilisateur.password, 10);
+
+    const employe = {
+      email: utilisateur.email,
+      password: passwordHash,
+      nom: utilisateur.nom || null,
+      prenom: utilisateur.prenom || null,
+      telephone: utilisateur.telephone || null,
+      ville: utilisateur.ville || null,
+      pays: utilisateur.pays || null,
+      adresse_postale: utilisateur.adresse_postale || null,
+      role_id: 2,
+      actif: true,
+    };
+
+    return await Utilisateur.create(employe);
+  },
+
+  async updateActif(id, actif) {
+    const utilisateur = await Utilisateur.findById(id);
+
+    if (!utilisateur) {
+      throw new Error("Utilisateur introuvable.");
+    }
+
+    if (utilisateur.role_id !== 2) {
+      throw new Error(
+        "Seuls les comptes employés peuvent être activés ou désactivés.",
+      );
+    }
+
+    if (utilisateur.actif === actif) {
+      throw new Error("Le compte possède déjà ce statut.");
+    }
+
+    await Utilisateur.updateActif(id, actif);
+
+    return await Utilisateur.findById(id);
   },
 
   async updateUtilisateur(id, donnees) {
@@ -63,8 +131,6 @@ const utilisateurService = {
       throw new Error("Utilisateur introuvable.");
     }
 
-    // Seuls ces champs sont modifiables par le client.
-    // Email, mot de passe et rôle sont volontairement exclus.
     const utilisateurModifie = {
       nom: donnees.nom,
       prenom: donnees.prenom,

@@ -9,8 +9,14 @@ function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role_id)) {
-    return <Navigate to="/" replace />;
+  if (allowedRoles) {
+    const roleAutorise =
+      allowedRoles.includes(user.role_id) ||
+      (user.role_id === 3 && allowedRoles.includes(2));
+
+    if (!roleAutorise) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return children;

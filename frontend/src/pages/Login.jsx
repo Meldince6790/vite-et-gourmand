@@ -22,7 +22,13 @@ function Login() {
 
       login(utilisateur);
 
-      navigate("/");
+      if (utilisateur.role_id === 3) {
+        navigate("/espace-admin");
+      } else if (utilisateur.role_id === 2) {
+        navigate("/espace-employe");
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       console.error(error);
 

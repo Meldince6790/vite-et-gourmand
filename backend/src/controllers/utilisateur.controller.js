@@ -116,6 +116,70 @@ const utilisateurController = {
       });
     }
   },
+
+  // Création d'un compte employé par un administrateur
+  async createEmploye(req, res) {
+    try {
+      const id = await utilisateurService.createEmploye(req.body);
+
+      res.status(201).json({
+        message: "Compte employé créé avec succès.",
+        utilisateur_id: id,
+      });
+    } catch (error) {
+      console.error(error);
+
+      if (error.message === "Cette adresse e-mail est déjà utilisée.") {
+        return res.status(409).json({
+          message: error.message,
+        });
+      }
+
+      if (
+        error.message ===
+        "Le mot de passe ne respecte pas les règles de sécurité."
+      ) {
+        return res.status(400).json({
+          message: error.message,
+        });
+      }
+
+      res.status(500).json({
+        message: "Erreur lors de la création du compte employé.",
+      });
+    }
+  },
+
+  // Activation / désactivation d'un compte employé
+  async updateActif(req, res) {
+    try {
+      const { actif } = req.body;
+
+      if (typeof actif !== "boolean") {
+        return res.status(400).json({
+          message: "La valeur actif doit être un booléen.",
+        });
+      }
+
+      await utilisateurService.updateActif(req.params.id, actif);
+
+      res.status(200).json({
+        message: "Statut du compte modifié avec succès.",
+      });
+    } catch (error) {
+      console.error(error);
+
+      if (error.message === "Utilisateur introuvable.") {
+        return res.status(404).json({
+          message: error.message,
+        });
+      }
+
+      res.status(400).json({
+        message: error.message,
+      });
+    }
+  },
 };
 
 module.exports = utilisateurController;

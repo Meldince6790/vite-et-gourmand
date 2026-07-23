@@ -292,7 +292,71 @@ Le projet a été découpé en plusieurs sprints correspondant aux grandes étap
 
 Cette organisation par étapes a permis de suivre l'évolution du projet, de prioriser les fonctionnalités principales et de valider progressivement les différents éléments développés.
 
-## 2.10 Conclusion des choix techniques
+---
+
+# 2.10 Modélisation de l'application
+
+Afin de préparer la réalisation de l'application, plusieurs éléments de modélisation ont été réalisés durant la phase de conception.
+
+Ces éléments permettent de représenter la structure de l'application, les interactions entre les acteurs et les échanges entre les différents composants techniques.
+
+---
+
+## 2.10.1 Diagramme de classes
+
+Le diagramme de classes présente la structure statique de l'application.
+
+Il permet d'identifier :
+
+- les principales entités métier ;
+- leurs attributs ;
+- leurs relations ;
+- les associations nécessaires au fonctionnement de l'application.
+
+Ce diagramme a notamment servi de base pour la conception de la base de données relationnelle MySQL/MariaDB.
+
+---
+
+## 2.10.2 Diagramme de cas d'utilisation
+
+Le diagramme de cas d'utilisation permet de représenter les interactions entre les acteurs et l'application.
+
+Les acteurs identifiés sont :
+
+- Visiteur ;
+- Client ;
+- Employé ;
+- Administrateur.
+
+Il permet de visualiser les fonctionnalités accessibles selon les rôles utilisateurs :
+
+- consultation des menus ;
+- gestion des commandes ;
+- gestion des menus et des plats ;
+- gestion des avis clients ;
+- gestion des comptes employés ;
+- consultation des statistiques.
+
+---
+
+## 2.10.3 Diagramme de séquence
+
+Le diagramme de séquence illustre le déroulement d'une fonctionnalité métier à travers les échanges entre les différents composants de l'application.
+
+Le scénario choisi correspond à la création d'une commande par un Client.
+
+Il représente les interactions entre :
+
+- le Client ;
+- l'interface frontend React ;
+- l'API backend Express ;
+- le middleware d'authentification JWT ;
+- le service de gestion des commandes ;
+- la base de données MySQL/MariaDB.
+
+Ce diagramme permet de comprendre le cheminement d'une requête depuis l'action utilisateur jusqu'à l'enregistrement des données.
+
+## 2.11 Conclusion des choix techniques
 
 Les choix technologiques réalisés répondent aux objectifs du projet :
 

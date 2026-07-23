@@ -1,3 +1,10 @@
+# Liens du projet
+
+Dépôt GitHub : https://github.com/Meldince6790/vite-et-gourmand
+
+Application déployée :
+À compléter
+
 # Vite & Gourmand
 
 Application web de gestion pour une entreprise de traiteur.
@@ -298,17 +305,20 @@ Les fonctionnalités sensibles sont protégées côté serveur.
 
 # Organisation Git
 
-Le développement a été organisé avec une approche basée sur les branches :
+Le projet utilise Git afin de conserver un historique des modifications et faciliter le suivi du développement.
 
-```
-main
- |
-develop
- |
-feature/*
-```
+La branche principale utilisée est :
 
-Les fonctionnalités ont été développées dans des branches dédiées puis fusionnées après validation.
+- `main` : contient la version stable de l'application.
+
+Les évolutions du projet ont été intégrées progressivement grâce à des commits réguliers permettant de suivre :
+
+- l'ajout des fonctionnalités ;
+- les corrections techniques ;
+- les modifications de structure ;
+- l'ajout des éléments de documentation.
+
+Le workflow complet avec une branche de développement et des branches dédiées aux fonctionnalités n'a pas été appliqué sur cette version du projet en raison des contraintes de temps liées à la réalisation de l'ECF.
 
 ---
 

@@ -305,22 +305,46 @@ Les fonctionnalités sensibles sont protégées côté serveur.
 
 # Organisation Git
 
-Le projet utilise Git afin de conserver un historique des modifications et faciliter le suivi du développement.
+Le projet utilise Git afin de conserver un historique des modifications, faciliter le suivi du développement et sécuriser l'évolution de l'application.
 
-La branche principale utilisée est :
+L'organisation du dépôt repose désormais sur un workflow basé sur plusieurs branches.
 
-- `main` : contient la version stable de l'application.
+## Branches principales
 
-Les évolutions du projet ont été intégrées progressivement grâce à des commits réguliers permettant de suivre :
+- `main` : contient la version stable de l'application. Cette branche correspond aux versions validées et prêtes à être présentées ou déployées.
 
-- l'ajout des fonctionnalités ;
-- les corrections techniques ;
-- les modifications de structure ;
-- l'ajout des éléments de documentation.
+- `developpement` : branche d'intégration regroupant les nouvelles fonctionnalités avant leur validation finale et leur fusion dans `main`.
 
-Le workflow complet avec une branche de développement et des branches dédiées aux fonctionnalités n'a pas été appliqué sur cette version du projet en raison des contraintes de temps liées à la réalisation de l'ECF.
+## Branches de fonctionnalités
 
----
+Chaque évolution importante du projet est développée sur une branche dédiée créée depuis `developpement` :
+
+```bash
+feature/nom-de-la-fonctionnalite
+```
+
+Exemples :
+
+```bash
+feature/gestion-commandes
+feature/statistiques
+feature/authentification
+feature/amelioration-interface
+```
+
+Ces branches permettent d'isoler le développement de chaque fonctionnalité, de limiter les risques de régression et de faciliter les tests avant intégration.
+
+## Processus d'intégration
+
+Le cycle de développement suivi est le suivant :
+
+1. Création d'une branche `feature/*` depuis `developpement`.
+2. Développement et tests de la fonctionnalité.
+3. Fusion de la branche de fonctionnalité dans `developpement` après validation.
+4. Tests globaux de l'application.
+5. Fusion de `developpement` dans `main` lorsque la version est considérée comme stable.
+
+## Cette organisation permet de conserver une version stable de l'application tout en facilitant l'ajout de nouvelles fonctionnalités, les corrections techniques et la maintenance du projet.
 
 # Structure du projet
 

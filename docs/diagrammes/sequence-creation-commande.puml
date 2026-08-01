@@ -1,0 +1,150 @@
+@startuml sequence-creation-commande
+title Diagramme de séquence — Création d'une commande client
+
+actor "Client" as Client
+participant "Page Commander\n(Commander.jsx)" as Page
+participant "Service commande FE\n(commande.service.js)" as CmdFe
+participant "API Express\n(POST /commandes)" as API
+participant "authMiddleware" as AuthMw
+participant "roleMiddleware" as RoleMw
+participant "Contrôleur commande\n(commande.controller.js)" as Ctrl
+participant "Service commande\n(commande.service.js)" as CmdBe
+participant "Modèle Menu" as Menu
+participant "Modèle Commande" as CmdModel
+database "MySQL" as MySQL
+participant "Service statistiques" as Stats
+database "MongoDB" as Mongo
+
+Client -> Page : Valide le formulaire\nde commande
+activate Page
+
+Page -> CmdFe : createCommande(body +\ntoken Bearer)
+activate CmdFe
+
+CmdFe -> API : POST /commandes\nAuthorization: Bearer …
+activate API
+
+API -> AuthMw : Vérifie le JWT
+activate AuthMw
+
+alt Token manquant ou invalide
+
+  AuthMw --> API : 401 Accès refusé
+  API --> CmdFe : 401
+  CmdFe --> Page : Error(message)
+  Page --> Client : Affiche l'erreur
+
+else Token valide
+
+  AuthMw --> API : req.user renseigné
+  deactivate AuthMw
+
+  API -> RoleMw : role_id ∈ {1} ?
+  activate RoleMw
+
+  alt Rôle non autorisé (pas client)
+
+    RoleMw --> API : 403 Accès interdit
+    API --> CmdFe : 403
+    CmdFe --> Page : Error(message)
+    Page --> Client : Affiche l'erreur
+
+  else Rôle client (role_id = 1)
+
+    RoleMw --> API : autorisé
+    deactivate RoleMw
+
+    API -> Ctrl : createCommande(req, res)
+    activate Ctrl
+
+    note right of Ctrl
+      utilisateur_id du body frontend
+      est ignoré / écrasé par
+      req.user.utilisateur_id (JWT)
+    end note
+
+    Ctrl -> CmdBe : createCommande(commande)
+    activate CmdBe
+
+    CmdBe -> Menu : findById(menu_id)
+    activate Menu
+    Menu -> MySQL : SELECT menu
+    MySQL --> Menu : menu
+    Menu --> CmdBe : menu
+    deactivate Menu
+
+    alt Menu introuvable, champs invalides\nou stock insuffisant
+
+      CmdBe --> Ctrl : Error(message métier)
+      Ctrl --> API : 400 / 404
+      API --> CmdFe : erreur
+      CmdFe --> Page : Error(message)
+      Page --> Client : Affiche l'erreur
+
+    else Validations OK
+
+      CmdBe -> Menu : hasStock(menu_id, personnes)
+      Menu -> MySQL : contrôle quantite_restante
+      MySQL --> Menu : disponible
+      Menu --> CmdBe : true
+
+      note right of CmdBe
+        Calcul prix_menu
+        (remise -10% si seuil atteint)
+        et prix_livraison
+        (si distance_km > 0)
+      end note
+
+      CmdBe -> CmdModel : create(commande)
+      activate CmdModel
+      CmdModel -> MySQL : INSERT commande
+      MySQL --> CmdModel : commande_id
+      CmdModel --> CmdBe : commande_id
+      deactivate CmdModel
+
+      CmdBe -> Menu : decreaseStock(…)
+      Menu -> MySQL : UPDATE quantite_restante
+      MySQL --> Menu : OK
+      Menu --> CmdBe : OK
+
+      opt Mise à jour des statistiques MongoDB
+
+        CmdBe -> Stats : updateStatistiqueCommande(…)
+        activate Stats
+        Stats -> Mongo : findOne / save Statistique
+
+        alt Échec MongoDB
+          Mongo --> Stats : erreur
+          Stats --> CmdBe : exception capturée
+          note right of CmdBe
+            Erreur journalisée (console).
+            La commande MySQL n'est pas annulée.
+          end note
+        else Succès MongoDB
+          Mongo --> Stats : OK
+          Stats --> CmdBe : statistiques à jour
+        end
+
+        deactivate Stats
+
+      end
+
+      CmdBe --> Ctrl : commande_id
+      deactivate CmdBe
+      Ctrl --> API : 201 { message, commande_id }
+      deactivate Ctrl
+      API --> CmdFe : 201
+      deactivate API
+      CmdFe --> Page : succès
+      deactivate CmdFe
+      Page --> Client : Affiche le message de succès
+
+    end
+
+  end
+
+end
+
+deactivate Page
+
+@enduml

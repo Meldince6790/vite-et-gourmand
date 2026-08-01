@@ -1,0 +1,89 @@
+@startuml sequence-login
+title Diagramme de séquence — Connexion utilisateur
+
+actor "Utilisateur" as User
+participant "Page Login\n(Login.jsx)" as Login
+participant "Service auth FE\n(auth.service.js)" as AuthFe
+participant "API Express\n(POST /auth/login)" as API
+participant "Contrôleur auth\n(auth.controller.js)" as Ctrl
+participant "Service auth BE\n(auth.service.js)" as AuthBe
+database "MySQL" as MySQL
+participant "bcrypt" as Bcrypt
+participant "jsonwebtoken" as Jwt
+participant "AuthContext" as Ctx
+
+User -> Login : Soumet le formulaire\n(email, password)
+activate Login
+
+Login -> AuthFe : login(email, password)
+activate AuthFe
+
+AuthFe -> API : POST /auth/login\n{ email, password }
+activate API
+
+API -> Ctrl : login(req, res)
+activate Ctrl
+
+Ctrl -> AuthBe : login(email, password)
+activate AuthBe
+
+AuthBe -> MySQL : SELECT * FROM utilisateur\nWHERE email = ?
+activate MySQL
+MySQL --> AuthBe : ligne utilisateur (ou vide)
+deactivate MySQL
+
+alt Email inconnu, mot de passe incorrect\nou compte inactif (actif falsy)
+
+  AuthBe --> Ctrl : Error("Identifiants incorrects.")
+  Ctrl --> API : 401 { message: "Identifiants incorrects." }
+  API --> AuthFe : 401
+  AuthFe --> Login : Error(message)
+  Login --> User : Affiche l'erreur
+
+else Identifiants valides et compte actif
+
+  AuthBe -> Bcrypt : compare(password, hash)
+  activate Bcrypt
+  Bcrypt --> AuthBe : true
+  deactivate Bcrypt
+
+  note right of AuthBe
+    Vérification de utilisateur.actif
+    après bcrypt.compare
+  end note
+
+  AuthBe -> Jwt : sign({ utilisateur_id, role_id, email })
+  activate Jwt
+  Jwt --> AuthBe : token JWT
+  deactivate Jwt
+
+  AuthBe --> Ctrl : { utilisateur_id, email, nom, prenom, role_id, token }
+  deactivate AuthBe
+
+  Ctrl --> API : 200 JSON (utilisateur + token)
+  deactivate Ctrl
+  API --> AuthFe : 200
+  deactivate API
+
+  AuthFe --> Login : données utilisateur
+  deactivate AuthFe
+
+  Login -> Ctx : login(utilisateur)
+  activate Ctx
+  Ctx -> Ctx : localStorage.setItem\n(utilisateur, token)
+  Ctx --> Login : session mise à jour
+  deactivate Ctx
+
+  alt role_id = 3 (Administrateur)
+    Login --> User : navigate(/espace-admin)
+  else role_id = 2 (Employé)
+    Login --> User : navigate(/espace-employe)
+  else Client
+    Login --> User : navigate(/)
+  end
+
+end
+
+deactivate Login
+
+@enduml

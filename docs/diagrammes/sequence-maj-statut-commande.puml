@@ -1,0 +1,121 @@
+@startuml sequence-maj-statut-commande
+title Diagramme de séquence — Mise à jour du statut d'une commande
+
+actor "Employé /\nAdministrateur" as Staff
+participant "Page EmployeeCommandes\n(EmployeeCommandes.jsx)" as Page
+participant "Service commande FE\n(commande.service.js)" as CmdFe
+participant "API Express\n(PATCH /commandes/{id}/statut)" as API
+participant "authMiddleware" as AuthMw
+participant "roleMiddleware" as RoleMw
+participant "Contrôleur commande\n(commande.controller.js)" as Ctrl
+participant "Service commande\n(commande.service.js)" as CmdBe
+participant "Modèle Commande" as CmdModel
+database "MySQL" as MySQL
+
+Staff -> Page : Sélectionne un nouveau statut\npuis valide
+activate Page
+
+Page -> CmdFe : updateStatut(id, statut)
+activate CmdFe
+
+CmdFe -> API : PATCH /commandes/{id}/statut\n{ statut }\nAuthorization: Bearer …
+activate API
+
+API -> AuthMw : Vérifie le JWT
+activate AuthMw
+
+alt Token manquant ou invalide
+
+  AuthMw --> API : 401 Accès refusé
+  API --> CmdFe : 401
+  CmdFe --> Page : Error(message)
+  Page --> Staff : Affiche l'erreur
+
+else Token valide
+
+  AuthMw --> API : req.user renseigné
+  deactivate AuthMw
+
+  API -> RoleMw : role_id ∈ {2, 3} ?
+  activate RoleMw
+
+  alt Rôle client (role_id = 1) ou autre rôle interdit
+
+    RoleMw --> API : 403 Accès interdit
+    API --> CmdFe : 403
+    CmdFe --> Page : Error(message)
+    Page --> Staff : Affiche l'erreur
+
+  else Employé ou Administrateur
+
+    RoleMw --> API : autorisé
+    deactivate RoleMw
+
+    API -> Ctrl : updateStatut(req, res)
+    activate Ctrl
+
+    Ctrl -> CmdBe : updateStatut(id, statut)
+    activate CmdBe
+
+    CmdBe -> CmdModel : exists(id)
+    activate CmdModel
+    CmdModel -> MySQL : SELECT commande_id
+    MySQL --> CmdModel : trouvé / introuvable
+    CmdModel --> CmdBe : booléen
+    deactivate CmdModel
+
+    alt Commande introuvable
+
+      CmdBe --> Ctrl : Error("Commande introuvable.")
+      Ctrl --> API : 404
+      API --> CmdFe : 404
+      CmdFe --> Page : Error(message)
+      Page --> Staff : Affiche l'erreur
+
+    else Statut non autorisé
+
+      CmdBe --> Ctrl : Error("Statut de commande invalide.")
+      Ctrl --> API : 400 / 409
+      API --> CmdFe : erreur
+      CmdFe --> Page : Error(message)
+      Page --> Staff : Affiche l'erreur
+
+    else Statut valide
+
+      CmdBe -> CmdModel : updateStatut(id, statut)
+      activate CmdModel
+      CmdModel -> MySQL : UPDATE commande SET statut
+      MySQL --> CmdModel : OK
+      CmdModel --> CmdBe : OK
+      deactivate CmdModel
+
+      CmdBe --> Ctrl : succès
+      deactivate CmdBe
+      Ctrl --> API : 200 { message de succès }
+      deactivate Ctrl
+      API --> CmdFe : 200
+      deactivate API
+
+      CmdFe --> Page : succès
+      deactivate CmdFe
+
+      Page -> CmdFe : getCommandes()\n(rafraîchissement)
+      activate CmdFe
+      CmdFe -> API : GET /commandes\nBearer …
+      activate API
+      API --> CmdFe : liste des commandes
+      deactivate API
+      CmdFe --> Page : données à jour
+      deactivate CmdFe
+
+      Page --> Staff : Affiche le message\net la liste actualisée
+
+    end
+
+  end
+
+end
+
+deactivate Page
+
+@enduml

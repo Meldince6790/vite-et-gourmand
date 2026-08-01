@@ -25,6 +25,10 @@ const authService = {
       throw new Error("Identifiants incorrects.");
     }
 
+    if (!utilisateur.actif) {
+      throw new Error("Identifiants incorrects.");
+    }
+
     const token = jwt.sign(
       {
         utilisateur_id: utilisateur.utilisateur_id,

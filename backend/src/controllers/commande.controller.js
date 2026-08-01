@@ -41,7 +41,10 @@ const commandeController = {
 
   async getCommandeById(req, res) {
     try {
-      const commande = await commandeService.getCommandeById(req.params.id);
+      const commande = await commandeService.getCommandeById(
+        req.params.id,
+        req.user,
+      );
 
       res.status(200).json(commande);
     } catch (error) {

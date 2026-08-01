@@ -20,14 +20,27 @@ const commandeService = {
     return await Commande.findAll();
   },
 
-  async getCommandeById(id) {
+  async getCommandeById(id, user) {
     const commande = await Commande.findById(id);
 
     if (!commande) {
       throw new Error("Commande introuvable.");
     }
 
-    return commande;
+    const roleId = Number(user.role_id);
+
+    if (roleId === 2 || roleId === 3) {
+      return commande;
+    }
+
+    if (
+      roleId === 1 &&
+      Number(commande.utilisateur_id) === Number(user.utilisateur_id)
+    ) {
+      return commande;
+    }
+
+    throw new Error("Commande introuvable.");
   },
 
   async getCommandesByUtilisateurId(utilisateurId) {

@@ -1,0 +1,99 @@
+@startsalt
+' WIREFRAME — BASSE FIDÉLITÉ
+' Desktop Catalogue des menus — ~1280 px (indicatif)
+{
+{#
+WIREFRAME — BASSE FIDÉLITÉ | Desktop Catalogue des menus (~1280 px)
+.
+{+
+Vite & Gourmand | Accueil | Menus | Contact | [Connexion]
+}
+.
+{+
+Catalogue des menus
+}
+.
+{+
+Filtres
+.
+Prix maximum | "_______ €"
+Fourchette de prix | "0 – 50 €"
+Thème | "Tous          "
+Régime | "Tous          "
+Nb min. personnes | "___"
+.
+[Réinitialiser] | [Appliquer]
+}
+.
+{+
+Grille de menus
+.
+{
+{+
+[Image menu]
+.
+Titre menu A
+Description courte…
+Min. X pers.
+Prix : __ €
+[Voir le détail]
+} |
+{+
+[Image menu]
+.
+Titre menu B
+Description courte…
+Min. X pers.
+Prix : __ €
+[Voir le détail]
+} |
+{+
+[Image menu]
+.
+Titre menu C
+Description courte…
+Min. X pers.
+Prix : __ €
+[Voir le détail]
+}
+}
+.
+{
+{+
+[Image menu]
+.
+Titre menu D
+Description courte…
+Min. X pers.
+Prix : __ €
+[Voir le détail]
+} |
+{+
+[Image menu]
+.
+Titre menu E
+Description courte…
+Min. X pers.
+Prix : __ €
+[Voir le détail]
+} |
+{+
+[Image menu]
+.
+Titre menu F
+Description courte…
+Min. X pers.
+Prix : __ €
+[Voir le détail]
+}
+}
+}
+.
+{+
+Pied de page
+.
+Horaires d'ouverture | Mentions légales | CGV
+}
+}
+}
+@endsalt

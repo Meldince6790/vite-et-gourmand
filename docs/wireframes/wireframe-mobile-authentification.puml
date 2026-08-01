@@ -1,0 +1,59 @@
+@startsalt
+' WIREFRAME — BASSE FIDÉLITÉ
+' Mobile Authentification — ~375 px (indicatif)
+{
+{#
+WIREFRAME — BASSE FIDÉLITÉ
+Mobile Authentification (~375 px)
+.
+{+
+Vite & Gourmand | [≡]
+}
+.
+{+
+Mon compte
+}
+.
+{+
+{/ <b>Connexion | Inscription }
+.
+Connexion
+.
+E-mail       | "______________"
+Mot de passe | "____________"
+.
+[Se connecter]
+.
+Mot de passe oublié ?
+}
+.
+----
+.
+{+
+{/ Connexion | <b>Inscription }
+.
+Inscription
+.
+Nom          | "______________"
+Prénom       | "______________"
+Tél. / GSM   | "______________"
+Adresse      | "______________"
+E-mail       | "______________"
+Mot de passe | "____________"
+Confirmation | "____________"
+.
+Règles mot de passe :
+— min. 10 caractères
+— majuscule
+— minuscule
+— chiffre
+— caractère spécial
+.
+[Créer mon compte]
+.
+Un e-mail de bienvenue sera
+envoyé après l'inscription.
+}
+}
+}
+@endsalt

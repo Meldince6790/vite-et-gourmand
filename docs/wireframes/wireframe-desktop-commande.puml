@@ -1,0 +1,70 @@
+@startsalt
+' WIREFRAME — BASSE FIDÉLITÉ
+' Desktop Commande d'un menu — ~1280 px (indicatif)
+{
+{#
+WIREFRAME — BASSE FIDÉLITÉ | Desktop Commande d'un menu (~1280 px)
+.
+{+
+Vite & Gourmand | Accueil | Menus | Contact | [Connexion]
+}
+.
+{+
+Commander un menu
+.
+Menu sélectionné : Titre du menu
+Description courte — Min. X pers. — Prix unitaire : __ €
+}
+.
+{
+{+
+Informations client
+.
+Nom       | "________________"
+Prénom    | "________________"
+E-mail    | "________________"
+Téléphone | "________________"
+} |
+{+
+Informations prestation
+.
+Adresse     | "________________"
+Date        | "__/__/________"
+Heure livr. | "__:__"
+Lieu        | "________________"
+}
+}
+.
+{
+{+
+Menu sélectionné
+.
+[Image menu]
+Titre du menu
+.
+Nombre de personnes | "____"
+} |
+{+
+Récapitulatif des prix
+.
+Prix menu  | ______ €
+Livraison  | ______ €
+Remise     | - ____ €
+.
+Total      | ______ €
+.
+[Valider la commande]
+.
+Note : un e-mail de confirmation
+sera envoyé après validation.
+}
+}
+.
+{+
+Pied de page
+.
+Horaires d'ouverture | Mentions légales | CGV
+}
+}
+}
+@endsalt

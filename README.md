@@ -112,6 +112,77 @@ Installer :
 
 ---
 
+# Installation avec Docker (développement)
+
+Cette configuration lance l'environnement de développement complet avec Docker Compose :
+
+- frontend (Vite, port hôte **5173**) ;
+- backend (Express, port hôte **3000**) ;
+- MariaDB (port hôte **3307**, débogage local) ;
+- MongoDB (port hôte **27017**, débogage local).
+
+## Prérequis Docker
+
+- Docker Desktop (ou Docker Engine + Compose v2)
+
+## Configuration
+
+Les valeurs par défaut du `docker-compose.yml` suffisent pour un démarrage local.
+
+Pour personnaliser les secrets ou identifiants :
+
+1. Copier le fichier d'exemple :
+
+```bash
+cp .env.example .env
+```
+
+2. Adapter si besoin les valeurs de `.env` (mots de passe, `JWT_SECRET`).  
+   Ne pas committer le fichier `.env` (ignoré par Git à la racine).
+
+Sous Docker Compose, les noms d'hôte internes `mysql` et `mongo` sont injectés automatiquement pour le backend.  
+`VITE_API_URL` et `CORS_ORIGIN` restent basés sur `localhost` car le navigateur accède aux ports publiés sur la machine hôte.
+
+## Lancement
+
+À la racine du projet :
+
+```bash
+docker compose up --build
+```
+
+Ou en arrière-plan :
+
+```bash
+docker compose up --build -d
+```
+
+Applications :
+
+- Frontend : http://localhost:5173
+- Backend / API : http://localhost:3000
+
+Ports bases de données (débogage uniquement) :
+
+- MariaDB : `localhost:3307` → conteneur `3306` (évite le conflit avec XAMPP sur 3306)
+- MongoDB : `localhost:27017`
+
+Le fichier `database/vite_gourmand.sql` est importé automatiquement au **premier** démarrage du volume MySQL.
+
+## Arrêt
+
+```bash
+docker compose down
+```
+
+Pour supprimer aussi les volumes (réinitialise les bases) :
+
+```bash
+docker compose down -v
+```
+
+---
+
 # Installation de la base de données
 
 ## MySQL / MariaDB

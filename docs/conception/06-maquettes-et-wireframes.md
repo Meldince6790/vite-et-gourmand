@@ -12,20 +12,18 @@ Les wireframes basse fidélité servent à :
 - clarifier les parcours utilisateur (navigation, filtres, commande, authentification) ;
 - distinguer ce qui est déjà implémenté de ce qui est prévu par le sujet ECF.
 
-Le sujet demande **3 écrans desktop** et **3 écrans mobile**. Les six wireframes ci-dessous répondent à cette exigence. Les mockups haute fidélité seront produits ensuite (Figma).
-
----
+## Le sujet demande l’export de wireframes et de mockups pour **3 écrans bureautiques** et **3 écrans mobiles**. Les six wireframes ci-dessous constituent la première étape de ce livrable.
 
 ## 2. Écrans retenus
 
-| # | Support | Écran | Fichiers |
-|---|---------|-------|----------|
-| 1 | Desktop | Accueil | [SVG](../wireframes/wireframe-desktop-accueil.svg) · [PlantUML](../wireframes/wireframe-desktop-accueil.puml) |
-| 2 | Desktop | Catalogue des menus | [SVG](../wireframes/wireframe-desktop-menus.svg) · [PlantUML](../wireframes/wireframe-desktop-menus.puml) |
-| 3 | Desktop | Commande d’un menu | [SVG](../wireframes/wireframe-desktop-commande.svg) · [PlantUML](../wireframes/wireframe-desktop-commande.puml) |
-| 4 | Mobile | Accueil | [SVG](../wireframes/wireframe-mobile-accueil.svg) · [PlantUML](../wireframes/wireframe-mobile-accueil.puml) |
-| 5 | Mobile | Catalogue des menus | [SVG](../wireframes/wireframe-mobile-menus.svg) · [PlantUML](../wireframes/wireframe-mobile-menus.puml) |
-| 6 | Mobile | Authentification (Connexion / Inscription) | [SVG](../wireframes/wireframe-mobile-authentification.svg) · [PlantUML](../wireframes/wireframe-mobile-authentification.puml) |
+| #   | Support | Écran                                      | Fichiers                                                                                                                      |
+| --- | ------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Desktop | Accueil                                    | [SVG](../wireframes/wireframe-desktop-accueil.svg) · [PlantUML](../wireframes/wireframe-desktop-accueil.puml)                 |
+| 2   | Desktop | Catalogue des menus                        | [SVG](../wireframes/wireframe-desktop-menus.svg) · [PlantUML](../wireframes/wireframe-desktop-menus.puml)                     |
+| 3   | Desktop | Commande d’un menu                         | [SVG](../wireframes/wireframe-desktop-commande.svg) · [PlantUML](../wireframes/wireframe-desktop-commande.puml)               |
+| 4   | Mobile  | Accueil                                    | [SVG](../wireframes/wireframe-mobile-accueil.svg) · [PlantUML](../wireframes/wireframe-mobile-accueil.puml)                   |
+| 5   | Mobile  | Catalogue des menus                        | [SVG](../wireframes/wireframe-mobile-menus.svg) · [PlantUML](../wireframes/wireframe-mobile-menus.puml)                       |
+| 6   | Mobile  | Authentification (Connexion / Inscription) | [SVG](../wireframes/wireframe-mobile-authentification.svg) · [PlantUML](../wireframes/wireframe-mobile-authentification.puml) |
 
 ---
 

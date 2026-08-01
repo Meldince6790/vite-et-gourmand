@@ -138,7 +138,14 @@ function App() {
           }
         />
 
-        <Route path="/mes-commandes" element={<MesCommandes />} />
+        <Route
+          path="/mes-commandes"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <MesCommandes />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/login" element={<Login />} />
 

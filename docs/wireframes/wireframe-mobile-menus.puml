@@ -1,0 +1,54 @@
+@startsalt
+' WIREFRAME — BASSE FIDÉLITÉ
+' Mobile Catalogue des menus — ~375 px (indicatif)
+{
+{#
+WIREFRAME — BASSE FIDÉLITÉ
+Mobile Catalogue menus (~375 px)
+.
+{+
+Vite & Gourmand | [≡]
+}
+.
+{+
+Catalogue des menus
+}
+.
+{+
+[Filtres]
+.
+Panneau filtres (replié)
+— Prix max / fourchette
+— Thème / régime
+— Nb min. personnes
+— [Appliquer]
+}
+.
+{+
+[Image menu]
+Titre menu A
+Min. X pers. — __ €
+[Voir le détail]
+}
+.
+{+
+[Image menu]
+Titre menu B
+Min. X pers. — __ €
+[Voir le détail]
+}
+.
+{+
+[Image menu]
+Titre menu C
+Min. X pers. — __ €
+[Voir le détail]
+}
+.
+{+
+Pied de page
+Horaires | Mentions | CGV
+}
+}
+}
+@endsalt

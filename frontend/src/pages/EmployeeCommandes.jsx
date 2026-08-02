@@ -121,10 +121,26 @@ function EmployeeCommandes() {
   }
 
   async function handleAnnulerCommande(id) {
+    const annulation = annulations[id];
+
+    if (
+      !annulation?.mode_contact_annulation ||
+      !annulation?.motif_annulation?.trim()
+    ) {
+      setError(
+        "Veuillez renseigner le mode de contact et le motif d'annulation.",
+      );
+      return;
+    }
+
     try {
-      await commandeService.annulerCommande(id, annulations[id]);
+      await commandeService.annulerCommande(id, {
+        mode_contact_annulation: annulation.mode_contact_annulation,
+        motif_annulation: annulation.motif_annulation.trim(),
+      });
 
       setMessage("Commande annulée avec succès.");
+      setError("");
 
       setAnnulations((ancien) => {
         const copie = { ...ancien };

@@ -1,7 +1,9 @@
 const database = require("../config/database");
 const CommandeRepository = require("../repositories/CommandeRepository");
 const Menu = require("../models/menu.model");
+const Utilisateur = require("../models/utilisateur.model");
 const statistiqueServiceModule = require("./statistique.service");
+const emailServiceModule = require("./email.service");
 const Commande = require("../domain/Commande");
 
 const STATUTS_AUTORISES = new Set([
@@ -24,12 +26,52 @@ class CommandeService {
     statistiqueService,
     CommandeDomain,
     database,
+    emailService,
+    utilisateurModel,
+    logger = console,
   }) {
     this.commandeRepository = commandeRepository;
     this.menuModel = menuModel;
     this.statistiqueService = statistiqueService;
     this.Commande = CommandeDomain;
     this.database = database;
+    this.emailService = emailService;
+    this.utilisateurModel = utilisateurModel;
+    this.logger = logger;
+  }
+
+  async getClientPourEmail(utilisateurId) {
+    const utilisateur = await this.utilisateurModel.findById(utilisateurId);
+
+    if (!utilisateur || !utilisateur.email) {
+      return null;
+    }
+
+    return utilisateur;
+  }
+
+  async envoyerEmailAnnulation(commande) {
+    try {
+      const client = await this.getClientPourEmail(commande.utilisateur_id);
+
+      if (!client) {
+        return;
+      }
+
+      await this.emailService.sendOrderCancellationEmail({
+        to: client.email,
+        prenom: client.prenom,
+        commande: {
+          ...commande,
+          statut: "Annulée",
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        "Erreur lors de l'envoi de l'e-mail d'annulation de commande :",
+        error,
+      );
+    }
   }
 
   async withTransaction(work) {
@@ -155,8 +197,30 @@ class CommandeService {
         menu,
       );
     } catch (error) {
-      console.error(
+      this.logger.error(
         "Erreur lors de la mise à jour des statistiques MongoDB :",
+        error,
+      );
+    }
+
+    try {
+      const client = await this.getClientPourEmail(
+        nouvelleCommande.utilisateur_id,
+      );
+
+      if (client) {
+        await this.emailService.sendOrderConfirmationEmail({
+          to: client.email,
+          prenom: client.prenom,
+          commande: {
+            ...nouvelleCommande,
+            commande_id: commandeId,
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        "Erreur lors de l'envoi de l'e-mail de confirmation de commande :",
         error,
       );
     }
@@ -194,8 +258,8 @@ class CommandeService {
         throw new Error("Cette commande est déjà annulée.");
       }
 
-      return await this.withTransaction(async (connection) => {
-        const result = await this.commandeRepository.updateStatut(
+      const result = await this.withTransaction(async (connection) => {
+        const updated = await this.commandeRepository.updateStatut(
           id,
           statut,
           connection,
@@ -211,8 +275,12 @@ class CommandeService {
           throw new Error("La mise à jour du stock a échoué.");
         }
 
-        return result;
+        return updated;
       });
+
+      await this.envoyerEmailAnnulation(commande);
+
+      return result;
     }
 
     return await this.commandeRepository.updateStatut(id, statut);
@@ -229,7 +297,7 @@ class CommandeService {
       throw new Error("Cette commande est déjà annulée.");
     }
 
-    if (!data.mode_contact_annulation) {
+    if (!data?.mode_contact_annulation) {
       throw new Error("Le mode de contact est obligatoire.");
     }
 
@@ -237,7 +305,7 @@ class CommandeService {
       throw new Error("Le mode de contact doit être Téléphone ou Mail.");
     }
 
-    if (!data.motif_annulation) {
+    if (!data?.motif_annulation) {
       throw new Error("Le motif d'annulation est obligatoire.");
     }
 
@@ -247,8 +315,8 @@ class CommandeService {
       date_annulation: new Date(),
     };
 
-    return await this.withTransaction(async (connection) => {
-      const result = await this.commandeRepository.updateAnnulation(
+    const result = await this.withTransaction(async (connection) => {
+      const updated = await this.commandeRepository.updateAnnulation(
         id,
         annulation,
         connection,
@@ -264,8 +332,12 @@ class CommandeService {
         throw new Error("La mise à jour du stock a échoué.");
       }
 
-      return result;
+      return updated;
     });
+
+    await this.envoyerEmailAnnulation(commande);
+
+    return result;
   }
 
   async annulerCommandeClient(id, utilisateurId) {
@@ -281,8 +353,8 @@ class CommandeService {
       throw new Error("Cette commande ne peut plus être annulée.");
     }
 
-    return await this.withTransaction(async (connection) => {
-      const result = await this.commandeRepository.updateStatut(
+    const result = await this.withTransaction(async (connection) => {
+      const updated = await this.commandeRepository.updateStatut(
         id,
         "Annulée",
         connection,
@@ -298,8 +370,12 @@ class CommandeService {
         throw new Error("La mise à jour du stock a échoué.");
       }
 
-      return result;
+      return updated;
     });
+
+    await this.envoyerEmailAnnulation(commandeExistante);
+
+    return result;
   }
 
   async updateCommande(id, utilisateurId, data) {
@@ -426,6 +502,9 @@ const commandeService = new CommandeService({
   statistiqueService: statistiqueServiceModule,
   CommandeDomain: Commande,
   database,
+  emailService: emailServiceModule,
+  utilisateurModel: Utilisateur,
+  logger: console,
 });
 
 module.exports = commandeService;

@@ -60,6 +60,13 @@ function createTransactionalDatabase({
   return { database, events, connection };
 }
 
+const CLIENT = {
+  utilisateur_id: 10,
+  email: "claire@example.com",
+  nom: "Durand",
+  prenom: "Claire",
+};
+
 function createMocks(overrides = {}) {
   const calls = {
     create: [],
@@ -71,6 +78,10 @@ function createMocks(overrides = {}) {
     increaseStock: [],
     hasStock: [],
     updateStatistiqueCommande: [],
+    sendOrderConfirmationEmail: [],
+    sendOrderCancellationEmail: [],
+    findUtilisateurById: [],
+    loggerErrors: [],
   };
 
   const commandeRepository = {
@@ -123,6 +134,44 @@ function createMocks(overrides = {}) {
     ...overrides.statistiqueService,
   };
 
+  const sendOrderConfirmationEmailImpl =
+    overrides.emailService?.sendOrderConfirmationEmail ??
+    (async () => ({ ok: true, provider: "log", id: "log-test" }));
+
+  const sendOrderCancellationEmailImpl =
+    overrides.emailService?.sendOrderCancellationEmail ??
+    (async () => ({ ok: true, provider: "log", id: "log-cancel" }));
+
+  const emailService = {
+    ...overrides.emailService,
+    sendOrderConfirmationEmail: async (payload) => {
+      calls.sendOrderConfirmationEmail.push(payload);
+      return sendOrderConfirmationEmailImpl(payload);
+    },
+    sendOrderCancellationEmail: async (payload) => {
+      calls.sendOrderCancellationEmail.push(payload);
+      return sendOrderCancellationEmailImpl(payload);
+    },
+  };
+
+  const findUtilisateurByIdImpl =
+    overrides.utilisateurModel?.findById ?? (async () => CLIENT);
+
+  const utilisateurModel = {
+    ...overrides.utilisateurModel,
+    findById: async (id) => {
+      calls.findUtilisateurById.push(id);
+      return findUtilisateurByIdImpl(id);
+    },
+  };
+
+  const logger = {
+    error: (...args) => {
+      calls.loggerErrors.push(args);
+    },
+    ...overrides.logger,
+  };
+
   const transactional =
     overrides.database === undefined
       ? createTransactionalDatabase()
@@ -138,6 +187,9 @@ function createMocks(overrides = {}) {
     statistiqueService,
     CommandeDomain: overrides.CommandeDomain ?? Commande,
     database: transactional.database,
+    emailService,
+    utilisateurModel,
+    logger,
   });
 
   return {
@@ -146,6 +198,9 @@ function createMocks(overrides = {}) {
     commandeRepository,
     menuModel,
     statistiqueService,
+    emailService,
+    utilisateurModel,
+    logger,
     database: transactional.database,
     events: transactional.events,
     connection: transactional.connection,
@@ -407,6 +462,7 @@ describe("CommandeService.createCommande", () => {
     });
     assert.equal(calls.decreaseStock.length, 0);
     assert.equal(calls.updateStatistiqueCommande.length, 0);
+    assert.equal(calls.sendOrderConfirmationEmail.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
@@ -414,6 +470,122 @@ describe("CommandeService.createCommande", () => {
       "release",
     ]);
     assert.equal(events.includes("commit"), false);
+  });
+
+  it("envoie un e-mail de confirmation une fois après création réussie", async () => {
+    const { database, events, connection } = createTransactionalDatabase();
+    const order = [];
+    const { service, calls } = createMocks({
+      database,
+      events,
+      connection,
+      emailService: {
+        sendOrderConfirmationEmail: async () => {
+          order.push("email");
+          return { ok: true, provider: "log", id: "log-test" };
+        },
+      },
+    });
+
+    const id = await service.createCommande(baseInput());
+
+    assert.equal(id, 42);
+    assert.equal(calls.sendOrderConfirmationEmail.length, 1);
+    assert.deepEqual(calls.findUtilisateurById, [10]);
+    assert.equal(calls.sendOrderConfirmationEmail[0].to, CLIENT.email);
+    assert.equal(calls.sendOrderConfirmationEmail[0].prenom, CLIENT.prenom);
+    assert.equal(
+      calls.sendOrderConfirmationEmail[0].commande.commande_id,
+      42,
+    );
+    assert.equal(
+      calls.sendOrderConfirmationEmail[0].commande.utilisateur_id,
+      10,
+    );
+    assert.ok(events.includes("commit"));
+    assert.ok(events.indexOf("release") >= 0);
+    assert.ok(events.indexOf("commit") < events.indexOf("release"));
+    // Mail uniquement après commit/release
+    assert.deepEqual(
+      [events[2], events[3], order[0]],
+      ["commit", "release", "email"],
+    );
+  });
+
+  it("crée la commande même si l'envoi d'e-mail échoue", async () => {
+    const { service, calls } = createMocks({
+      emailService: {
+        sendOrderConfirmationEmail: async () => {
+          throw new Error("smtp down");
+        },
+      },
+    });
+
+    const id = await service.createCommande(baseInput());
+
+    assert.equal(id, 42);
+    assert.equal(calls.create.length, 1);
+    assert.equal(calls.sendOrderConfirmationEmail.length, 1);
+    assert.equal(calls.loggerErrors.length, 1);
+    assert.match(
+      String(calls.loggerErrors[0][0]),
+      /confirmation de commande/,
+    );
+  });
+
+  it("n'envoie aucun e-mail si l'utilisateur est absent", async () => {
+    const { service, calls } = createMocks({
+      utilisateurModel: { findById: async () => undefined },
+    });
+
+    const id = await service.createCommande(baseInput());
+
+    assert.equal(id, 42);
+    assert.equal(calls.findUtilisateurById.length, 1);
+    assert.equal(calls.sendOrderConfirmationEmail.length, 0);
+  });
+
+  it("n'envoie aucun e-mail si l'utilisateur n'a pas d'email", async () => {
+    const { service, calls } = createMocks({
+      utilisateurModel: {
+        findById: async () => ({
+          ...CLIENT,
+          email: null,
+        }),
+      },
+    });
+
+    const id = await service.createCommande(baseInput());
+
+    assert.equal(id, 42);
+    assert.equal(calls.sendOrderConfirmationEmail.length, 0);
+  });
+
+  it("n'envoie aucun e-mail en cas de rollback transactionnel", async () => {
+    const { service, calls, events } = createMocks({
+      menuModel: { decreaseStock: async () => false },
+    });
+
+    await assert.rejects(() => service.createCommande(baseInput()), {
+      message: "La mise à jour du stock a échoué.",
+    });
+    assert.equal(calls.sendOrderConfirmationEmail.length, 0);
+    assert.equal(calls.findUtilisateurById.length, 0);
+    assert.equal(events.includes("commit"), false);
+    assert.ok(events.includes("rollback"));
+  });
+
+  it("n'envoie aucun e-mail si la validation métier échoue", async () => {
+    const { service, calls } = createMocks({
+      menuModel: { hasStock: async () => false },
+    });
+
+    await assert.rejects(() => service.createCommande(baseInput()), {
+      message: "Le stock disponible est insuffisant pour cette commande.",
+    });
+    assert.equal(calls.create.length, 0);
+    assert.equal(calls.sendOrderConfirmationEmail.length, 0);
+    assert.equal(calls.findUtilisateurById.length, 0);
   });
 });
 
@@ -460,6 +632,17 @@ describe("CommandeService.annulerCommandeClient", () => {
       ["begin", ...order, "commit", "release"],
       ["begin", "update", "increase", "commit", "release"],
     );
+    assert.equal(calls.sendOrderCancellationEmail.length, 1);
+    assert.equal(calls.sendOrderCancellationEmail[0].to, CLIENT.email);
+    assert.equal(calls.sendOrderCancellationEmail[0].prenom, CLIENT.prenom);
+    assert.equal(
+      calls.sendOrderCancellationEmail[0].commande.statut,
+      "Annulée",
+    );
+    assert.equal(
+      calls.sendOrderCancellationEmail[0].commande.commande_id,
+      ORDER.commande_id,
+    );
   });
 
   it("refuse l'annulation si le statut n'est pas En attente", async () => {
@@ -474,6 +657,7 @@ describe("CommandeService.annulerCommandeClient", () => {
     });
     assert.equal(calls.updateStatut.length, 0);
     assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 
@@ -496,17 +680,19 @@ describe("CommandeService.annulerCommandeClient", () => {
       message: "Cette commande est déjà annulée.",
     });
     assert.equal(calls.increaseStock.length, 1);
+    assert.equal(calls.sendOrderCancellationEmail.length, 1);
     assert.equal(events.length, eventsAfterFirst.length);
   });
 
   it("rejette si increaseStock échoue à l'annulation client", async () => {
-    const { service, events } = createMocks({
+    const { service, calls, events } = createMocks({
       menuModel: { increaseStock: async () => false },
     });
 
     await assert.rejects(() => service.annulerCommandeClient(1, 10), {
       message: "La mise à jour du stock a échoué.",
     });
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
@@ -528,6 +714,7 @@ describe("CommandeService.annulerCommandeClient", () => {
       message: "update failed",
     });
     assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
@@ -581,6 +768,12 @@ describe("CommandeService.annulerCommande", () => {
       ["begin", ...order, "commit", "release"],
       ["begin", "update", "increase", "commit", "release"],
     );
+    assert.equal(calls.sendOrderCancellationEmail.length, 1);
+    assert.equal(calls.sendOrderCancellationEmail[0].to, CLIENT.email);
+    assert.equal(
+      calls.sendOrderCancellationEmail[0].commande.statut,
+      "Annulée",
+    );
   });
 
   it("refuse une seconde annulation employé sans restock", async () => {
@@ -602,17 +795,19 @@ describe("CommandeService.annulerCommande", () => {
       message: "Cette commande est déjà annulée.",
     });
     assert.equal(calls.increaseStock.length, 1);
+    assert.equal(calls.sendOrderCancellationEmail.length, 1);
     assert.equal(events.length, eventsAfterFirst.length);
   });
 
   it("rejette si increaseStock échoue à l'annulation employé", async () => {
-    const { service, events } = createMocks({
+    const { service, calls, events } = createMocks({
       menuModel: { increaseStock: async () => false },
     });
 
     await assert.rejects(() => service.annulerCommande(1, annulationData), {
       message: "La mise à jour du stock a échoué.",
     });
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
@@ -634,12 +829,69 @@ describe("CommandeService.annulerCommande", () => {
       message: "update failed",
     });
     assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
       "rollback",
       "release",
     ]);
+  });
+
+  it("rejette avec erreur métier si data est undefined", async () => {
+    const { service, calls, events } = createMocks();
+
+    await assert.rejects(() => service.annulerCommande(1, undefined), {
+      message: "Le mode de contact est obligatoire.",
+    });
+    assert.equal(calls.updateAnnulation.length, 0);
+    assert.equal(calls.updateStatut.length, 0);
+    assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(events.includes("begin"), false);
+  });
+
+  it("rejette avec erreur métier si data est null", async () => {
+    const { service, calls, events } = createMocks();
+
+    await assert.rejects(() => service.annulerCommande(1, null), {
+      message: "Le mode de contact est obligatoire.",
+    });
+    assert.equal(calls.updateAnnulation.length, 0);
+    assert.equal(calls.updateStatut.length, 0);
+    assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(events.includes("begin"), false);
+  });
+
+  it("rejette avec erreur métier si data est un objet vide", async () => {
+    const { service, calls, events } = createMocks();
+
+    await assert.rejects(() => service.annulerCommande(1, {}), {
+      message: "Le mode de contact est obligatoire.",
+    });
+    assert.equal(calls.updateAnnulation.length, 0);
+    assert.equal(calls.updateStatut.length, 0);
+    assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(events.includes("begin"), false);
+  });
+
+  it("rejette si le mode est présent sans motif", async () => {
+    const { service, calls, events } = createMocks();
+
+    await assert.rejects(
+      () =>
+        service.annulerCommande(1, {
+          mode_contact_annulation: "Mail",
+        }),
+      { message: "Le motif d'annulation est obligatoire." },
+    );
+    assert.equal(calls.updateAnnulation.length, 0);
+    assert.equal(calls.updateStatut.length, 0);
+    assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(events.includes("begin"), false);
   });
 });
 
@@ -885,6 +1137,11 @@ describe("CommandeService.updateStatut", () => {
       ["begin", ...order, "commit", "release"],
       ["begin", "update", "increase", "commit", "release"],
     );
+    assert.equal(calls.sendOrderCancellationEmail.length, 1);
+    assert.equal(
+      calls.sendOrderCancellationEmail[0].commande.statut,
+      "Annulée",
+    );
   });
 
   it("refuse le passage à Annulée si déjà annulée sans restock", async () => {
@@ -899,6 +1156,7 @@ describe("CommandeService.updateStatut", () => {
     });
     assert.equal(calls.updateStatut.length, 0);
     assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 
@@ -911,17 +1169,19 @@ describe("CommandeService.updateStatut", () => {
       { id: 1, statut: "Acceptée", connection: null },
     ]);
     assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 
   it("rejette si increaseStock échoue lors du passage à Annulée", async () => {
-    const { service, events } = createMocks({
+    const { service, calls, events } = createMocks({
       menuModel: { increaseStock: async () => false },
     });
 
     await assert.rejects(() => service.updateStatut(1, "Annulée"), {
       message: "La mise à jour du stock a échoué.",
     });
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
@@ -943,12 +1203,77 @@ describe("CommandeService.updateStatut", () => {
       message: "update failed",
     });
     assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
       "rollback",
       "release",
     ]);
+  });
+});
+
+describe("CommandeService e-mails d'annulation", () => {
+  const annulationData = {
+    mode_contact_annulation: "Mail",
+    motif_annulation: "Indisponible",
+  };
+
+  it("n'envoie aucun e-mail si l'utilisateur est absent", async () => {
+    const { service, calls } = createMocks({
+      utilisateurModel: { findById: async () => undefined },
+    });
+
+    const result = await service.annulerCommandeClient(1, 10);
+
+    assert.equal(result, true);
+    assert.equal(calls.findUtilisateurById.length, 1);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
+  });
+
+  it("n'envoie aucun e-mail si l'utilisateur n'a pas d'email", async () => {
+    const { service, calls } = createMocks({
+      utilisateurModel: {
+        findById: async () => ({ ...CLIENT, email: "" }),
+      },
+    });
+
+    const result = await service.annulerCommande(1, annulationData);
+
+    assert.equal(result, true);
+    assert.equal(calls.sendOrderCancellationEmail.length, 0);
+  });
+
+  it("conserve le succès d'annulation si l'envoi d'e-mail échoue", async () => {
+    const { service, calls } = createMocks({
+      emailService: {
+        sendOrderCancellationEmail: async () => {
+          throw new Error("smtp down");
+        },
+      },
+    });
+
+    const result = await service.updateStatut(1, "Annulée");
+
+    assert.equal(result, true);
+    assert.equal(calls.sendOrderCancellationEmail.length, 1);
+    assert.equal(calls.loggerErrors.length, 1);
+    assert.match(String(calls.loggerErrors[0][0]), /annulation de commande/);
+  });
+
+  it("n'envoie qu'un seul e-mail par voie d'annulation réussie", async () => {
+    const { service, calls } = createMocks();
+
+    await service.annulerCommandeClient(1, 10);
+    assert.equal(calls.sendOrderCancellationEmail.length, 1);
+
+    const { service: serviceEmploye, calls: callsEmploye } = createMocks();
+    await serviceEmploye.annulerCommande(1, annulationData);
+    assert.equal(callsEmploye.sendOrderCancellationEmail.length, 1);
+
+    const { service: serviceStatut, calls: callsStatut } = createMocks();
+    await serviceStatut.updateStatut(1, "Annulée");
+    assert.equal(callsStatut.sendOrderCancellationEmail.length, 1);
   });
 });
 

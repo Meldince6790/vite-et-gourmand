@@ -104,6 +104,103 @@ function createStatistiqueService({
       });
     },
 
+    /**
+     * Recalcule les agrégats Mongo à partir des commandes actives (non annulées).
+     * Non destructif : aucun document n'est supprimé.
+     */
+    async recalculerStatistiques(commandesActives = []) {
+      const agregats = new Map();
+
+      for (const commande of commandesActives) {
+        const menuId = Number(commande.menu_id);
+        const periode = calculerPeriode(commande.date_commande);
+        const cle = `${menuId}|${periode}`;
+        const chiffreAffaires = calculerChiffreAffaires(commande);
+        const existant = agregats.get(cle);
+
+        if (existant) {
+          existant.nombre_commandes += 1;
+          existant.chiffre_affaires += chiffreAffaires;
+          if (commande.nom_menu) {
+            existant.nom_menu = commande.nom_menu;
+          }
+        } else {
+          agregats.set(cle, {
+            menu_id: menuId,
+            periode,
+            nom_menu: commande.nom_menu,
+            nombre_commandes: 1,
+            chiffre_affaires: chiffreAffaires,
+          });
+        }
+      }
+
+      const rapport = {
+        commandesLues: commandesActives.length,
+        agregatsCalcules: agregats.size,
+        documentsCrees: 0,
+        documentsMisAJour: 0,
+        documentsRemisAZero: 0,
+      };
+
+      for (const agregat of agregats.values()) {
+        const document = await StatistiqueModel.findOne({
+          menu_id: agregat.menu_id,
+          periode: agregat.periode,
+        });
+
+        if (!document) {
+          const nouveau = new StatistiqueModel({
+            menu_id: agregat.menu_id,
+            nom_menu: agregat.nom_menu,
+            nombre_commandes: agregat.nombre_commandes,
+            chiffre_affaires: agregat.chiffre_affaires,
+            periode: agregat.periode,
+          });
+
+          await nouveau.save();
+          rapport.documentsCrees += 1;
+          continue;
+        }
+
+        const inchange =
+          Number(document.nombre_commandes) === agregat.nombre_commandes &&
+          Number(document.chiffre_affaires) === agregat.chiffre_affaires &&
+          document.nom_menu === agregat.nom_menu;
+
+        if (!inchange) {
+          document.nombre_commandes = agregat.nombre_commandes;
+          document.chiffre_affaires = agregat.chiffre_affaires;
+          document.nom_menu = agregat.nom_menu;
+          await document.save();
+          rapport.documentsMisAJour += 1;
+        }
+      }
+
+      const documentsExistants = await StatistiqueModel.find({});
+
+      for (const document of documentsExistants) {
+        const cle = `${Number(document.menu_id)}|${document.periode}`;
+
+        if (agregats.has(cle)) {
+          continue;
+        }
+
+        const dejaAZero =
+          Number(document.nombre_commandes) === 0 &&
+          Number(document.chiffre_affaires) === 0;
+
+        if (!dejaAZero) {
+          document.nombre_commandes = 0;
+          document.chiffre_affaires = 0;
+          await document.save();
+          rapport.documentsRemisAZero += 1;
+        }
+      }
+
+      return rapport;
+    },
+
     // Récupération des statistiques avec filtres simples
     async getStatistiques(filters = {}) {
       const query = {};

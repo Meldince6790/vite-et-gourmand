@@ -1,6 +1,8 @@
-const Commande = require("../models/commande.model");
+const database = require("../config/database");
+const CommandeRepository = require("../repositories/CommandeRepository");
 const Menu = require("../models/menu.model");
-const statistiqueService = require("./statistique.service");
+const statistiqueServiceModule = require("./statistique.service");
+const Commande = require("../domain/Commande");
 
 const STATUTS_AUTORISES = new Set([
   "En attente",
@@ -15,13 +17,25 @@ const STATUTS_AUTORISES = new Set([
 
 const MODES_CONTACT_AUTORISES = new Set(["Téléphone", "Mail"]);
 
-const commandeService = {
+class CommandeService {
+  constructor({
+    commandeRepository,
+    menuModel,
+    statistiqueService,
+    CommandeDomain,
+  }) {
+    this.commandeRepository = commandeRepository;
+    this.menuModel = menuModel;
+    this.statistiqueService = statistiqueService;
+    this.Commande = CommandeDomain;
+  }
+
   async getAllCommandes() {
-    return await Commande.findAll();
-  },
+    return await this.commandeRepository.findAll();
+  }
 
   async getCommandeById(id, user) {
-    const commande = await Commande.findById(id);
+    const commande = await this.commandeRepository.findById(id);
 
     if (!commande) {
       throw new Error("Commande introuvable.");
@@ -41,14 +55,14 @@ const commandeService = {
     }
 
     throw new Error("Commande introuvable.");
-  },
+  }
 
   async getCommandesByUtilisateurId(utilisateurId) {
-    return await Commande.findByUtilisateurId(utilisateurId);
-  },
+    return await this.commandeRepository.findByUtilisateurId(utilisateurId);
+  }
 
   async createCommande(commande) {
-    const menu = await Menu.findById(commande.menu_id);
+    const menu = await this.menuModel.findById(commande.menu_id);
 
     if (!menu) {
       throw new Error("Menu introuvable.");
@@ -76,7 +90,7 @@ const commandeService = {
       );
     }
 
-    const stockDisponible = await Menu.hasStock(
+    const stockDisponible = await this.menuModel.hasStock(
       commande.menu_id,
       commande.nombre_personne,
     );
@@ -87,44 +101,20 @@ const commandeService = {
       );
     }
 
-    let prixMenu =
-      Number(menu.prix_par_personne) * Number(commande.nombre_personne);
+    const nouvelleCommande = this.Commande.initialiserCreation(commande, menu);
 
-    if (commande.nombre_personne >= Number(menu.nombre_personne_minimum) + 5) {
-      prixMenu *= 0.9;
-    }
+    const commandeId = await this.commandeRepository.create(nouvelleCommande);
 
-    commande.prix_menu = Number(prixMenu.toFixed(2));
-
-    let prixLivraison = 0;
-
-    if (commande.distance_km > 0) {
-      prixLivraison = 5 + 0.59 * commande.distance_km;
-    }
-
-    commande.prix_livraison = Number(prixLivraison.toFixed(2));
-
-    commande.numero_commande = `CMD-${Date.now()}`;
-    commande.date_commande = new Date();
-    commande.statut = "En attente";
-
-    if (commande.pret_materiel === undefined) {
-      commande.pret_materiel = false;
-    }
-
-    if (commande.restitution_materiel === undefined) {
-      commande.restitution_materiel = false;
-    }
-
-    const commandeId = await Commande.create(commande);
-
-    await Menu.decreaseStock(commande.menu_id, commande.nombre_personne);
+    await this.menuModel.decreaseStock(
+      nouvelleCommande.menu_id,
+      nouvelleCommande.nombre_personne,
+    );
 
     // Mise à jour des statistiques MongoDB
     try {
-      await statistiqueService.updateStatistiqueCommande(
+      await this.statistiqueService.updateStatistiqueCommande(
         {
-          ...commande,
+          ...nouvelleCommande,
           commande_id: commandeId,
         },
         menu,
@@ -137,10 +127,10 @@ const commandeService = {
     }
 
     return commandeId;
-  },
+  }
 
   async getCommandeClient(id, utilisateurId) {
-    const commande = await Commande.findById(id);
+    const commande = await this.commandeRepository.findById(id);
 
     if (!commande) {
       throw new Error("Commande introuvable.");
@@ -151,10 +141,10 @@ const commandeService = {
     }
 
     return commande;
-  },
+  }
 
   async updateStatut(id, statut) {
-    const commandeExiste = await Commande.exists(id);
+    const commandeExiste = await this.commandeRepository.exists(id);
 
     if (!commandeExiste) {
       throw new Error("Commande introuvable.");
@@ -164,11 +154,11 @@ const commandeService = {
       throw new Error("Statut de commande invalide.");
     }
 
-    return await Commande.updateStatut(id, statut);
-  },
+    return await this.commandeRepository.updateStatut(id, statut);
+  }
 
   async annulerCommande(id, data) {
-    const commande = await Commande.findById(id);
+    const commande = await this.commandeRepository.findById(id);
 
     if (!commande) {
       throw new Error("Commande introuvable.");
@@ -186,45 +176,54 @@ const commandeService = {
       throw new Error("Le motif d'annulation est obligatoire.");
     }
 
-    const result = await Commande.updateAnnulation(id, {
+    const result = await this.commandeRepository.updateAnnulation(id, {
       mode_contact_annulation: data.mode_contact_annulation,
       motif_annulation: data.motif_annulation,
       date_annulation: new Date(),
     });
 
-    await Menu.increaseStock(commande.menu_id, commande.nombre_personne);
+    await this.menuModel.increaseStock(
+      commande.menu_id,
+      commande.nombre_personne,
+    );
 
     return result;
-  },
+  }
 
   async annulerCommandeClient(id, utilisateurId) {
-    const commande = await this.getCommandeClient(id, utilisateurId);
+    const commandeExistante = await this.getCommandeClient(id, utilisateurId);
+    const commandeMetier = new this.Commande(commandeExistante);
 
-    if (commande.statut !== "En attente") {
+    if (!commandeMetier.peutEtreAnnuleeParClient()) {
       throw new Error("Cette commande ne peut plus être annulée.");
     }
 
-    const result = await Commande.updateStatut(id, "Annulée");
+    const result = await this.commandeRepository.updateStatut(id, "Annulée");
 
-    await Menu.increaseStock(commande.menu_id, commande.nombre_personne);
+    await this.menuModel.increaseStock(
+      commandeExistante.menu_id,
+      commandeExistante.nombre_personne,
+    );
 
     return result;
-  },
+  }
 
   async updateCommande(id, utilisateurId, data) {
-    const commande = await this.getCommandeClient(id, utilisateurId);
+    const commandeExistante = await this.getCommandeClient(id, utilisateurId);
+    const commandeMetier = new this.Commande(commandeExistante);
 
-    if (commande.statut !== "En attente") {
+    if (!commandeMetier.peutEtreModifieeParClient()) {
       throw new Error("Cette commande ne peut plus être modifiée.");
     }
 
-    const menu = await Menu.findById(commande.menu_id);
+    const menu = await this.menuModel.findById(commandeExistante.menu_id);
 
     if (!menu) {
       throw new Error("Menu introuvable.");
     }
 
-    const nombrePersonne = data.nombre_personne ?? commande.nombre_personne;
+    const nombrePersonne =
+      data.nombre_personne ?? commandeExistante.nombre_personne;
 
     if (nombrePersonne < menu.nombre_personne_minimum) {
       throw new Error(
@@ -232,39 +231,46 @@ const commandeService = {
       );
     }
 
-    let prixMenu = Number(menu.prix_par_personne) * Number(nombrePersonne);
+    return await this.commandeRepository.update(id, {
+      date_prestation:
+        data.date_prestation ?? commandeExistante.date_prestation,
 
-    if (nombrePersonne >= Number(menu.nombre_personne_minimum) + 5) {
-      prixMenu *= 0.9;
-    }
+      heure_livraison:
+        data.heure_livraison ?? commandeExistante.heure_livraison,
 
-    return await Commande.update(id, {
-      date_prestation: data.date_prestation ?? commande.date_prestation,
-
-      heure_livraison: data.heure_livraison ?? commande.heure_livraison,
-
-      adresse_livraison: data.adresse_livraison ?? commande.adresse_livraison,
+      adresse_livraison:
+        data.adresse_livraison ?? commandeExistante.adresse_livraison,
 
       nombre_personne: nombrePersonne,
 
-      pret_materiel: data.pret_materiel ?? commande.pret_materiel,
+      pret_materiel: data.pret_materiel ?? commandeExistante.pret_materiel,
 
       restitution_materiel:
-        data.restitution_materiel ?? commande.restitution_materiel,
+        data.restitution_materiel ?? commandeExistante.restitution_materiel,
 
-      prix_menu: Number(prixMenu.toFixed(2)),
+      prix_menu: this.Commande.calculerPrixMenu(menu, nombrePersonne),
     });
-  },
+  }
 
   async deleteCommande(id) {
-    const commandeExiste = await Commande.exists(id);
+    const commandeExiste = await this.commandeRepository.exists(id);
 
     if (!commandeExiste) {
       throw new Error("Commande introuvable.");
     }
 
-    return await Commande.delete(id);
-  },
-};
+    return await this.commandeRepository.delete(id);
+  }
+}
+
+const commandeRepository = new CommandeRepository(database);
+
+const commandeService = new CommandeService({
+  commandeRepository,
+  menuModel: Menu,
+  statistiqueService: statistiqueServiceModule,
+  CommandeDomain: Commande,
+});
 
 module.exports = commandeService;
+module.exports.CommandeService = CommandeService;

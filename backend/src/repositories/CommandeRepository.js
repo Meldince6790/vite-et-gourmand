@@ -1,8 +1,10 @@
-const database = require("../config/database");
+class CommandeRepository {
+  constructor(database) {
+    this.database = database;
+  }
 
-const Commande = {
   async findAll() {
-    const [rows] = await database.query(
+    const [rows] = await this.database.query(
       `
         SELECT
           commande.*,
@@ -16,10 +18,10 @@ const Commande = {
     );
 
     return rows;
-  },
+  }
 
   async findById(id) {
-    const [rows] = await database.query(
+    const [rows] = await this.database.query(
       `
         SELECT *
         FROM commande
@@ -29,10 +31,10 @@ const Commande = {
     );
 
     return rows[0];
-  },
+  }
 
   async findByUtilisateurId(utilisateurId) {
-    const [rows] = await database.query(
+    const [rows] = await this.database.query(
       `
         SELECT *
         FROM commande
@@ -43,10 +45,10 @@ const Commande = {
     );
 
     return rows;
-  },
+  }
 
   async create(commande) {
-    const [result] = await database.query(
+    const [result] = await this.database.query(
       `
         INSERT INTO commande (
           numero_commande,
@@ -83,10 +85,10 @@ const Commande = {
     );
 
     return result.insertId;
-  },
+  }
 
   async updateStatut(id, statut) {
-    const [result] = await database.query(
+    const [result] = await this.database.query(
       `
         UPDATE commande
         SET statut = ?
@@ -96,10 +98,10 @@ const Commande = {
     );
 
     return result.affectedRows > 0;
-  },
+  }
 
   async updateAnnulation(id, annulation) {
-    const [result] = await database.query(
+    const [result] = await this.database.query(
       `
         UPDATE commande
         SET
@@ -119,10 +121,10 @@ const Commande = {
     );
 
     return result.affectedRows > 0;
-  },
+  }
 
   async update(id, commande) {
-    const [result] = await database.query(
+    const [result] = await this.database.query(
       `
         UPDATE commande
         SET
@@ -148,10 +150,10 @@ const Commande = {
     );
 
     return result.affectedRows > 0;
-  },
+  }
 
   async delete(id) {
-    const [result] = await database.query(
+    const [result] = await this.database.query(
       `
         DELETE FROM commande
         WHERE commande_id = ?
@@ -160,10 +162,10 @@ const Commande = {
     );
 
     return result.affectedRows > 0;
-  },
+  }
 
   async exists(id) {
-    const [rows] = await database.query(
+    const [rows] = await this.database.query(
       `
         SELECT commande_id
         FROM commande
@@ -173,7 +175,7 @@ const Commande = {
     );
 
     return rows.length > 0;
-  },
-};
+  }
+}
 
-module.exports = Commande;
+module.exports = CommandeRepository;

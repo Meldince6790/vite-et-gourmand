@@ -155,6 +155,15 @@ MySQL/MariaDB     MongoDB
 Données métier    Statistiques
 ```
 
+Au sein du backend, la logique métier des commandes est structurée selon une approche Domain / Repository :
+
+- le domaine (`domain/Commande.js`) concentre les règles de création et de validation d’une commande ;
+- le repository (`repositories/CommandeRepository.js`) assure la persistance SQL (création, lecture, mise à jour, annulation) ;
+- les services orchestrent les règles métier, les transactions et les effets de bord (stock, statistiques, e-mails) ;
+- les contrôleurs exposent ces opérations via l’API REST.
+
+Cette organisation limite le couplage entre les règles métier et l’accès aux données.
+
 ---
 
 ## 2.5 Choix du frontend
@@ -191,16 +200,30 @@ Ce choix permet :
 
 - de développer une API REST légère et performante ;
 - d'utiliser JavaScript sur l'ensemble de la chaîne de développement ;
-- de structurer l'application avec des contrôleurs, services et modèles ;
+- de structurer l'application avec des contrôleurs, services, modèles, ainsi qu’une couche Domain / Repository pour les commandes ;
 - de gérer les règles métier côté serveur.
 
 L’API backend assure notamment :
 
-- l’authentification des utilisateurs ;
+- l’authentification et l’inscription des utilisateurs ;
 - la gestion des rôles ;
 - la validation des données ;
 - les opérations CRUD sur les différentes ressources ;
+- la gestion transactionnelle des commandes et du stock des menus ;
+- le dépôt et la modération des avis clients ;
+- l’envoi d’e-mails transactionnels ;
 - le calcul et l’enregistrement des statistiques.
+
+Les opérations sensibles sur les commandes (création, modification de quantité, annulation) s’exécutent dans une transaction MySQL (`withTransaction`). La création ou l’augmentation de quantité décrémente le stock du menu ; l’annulation ou la diminution de quantité le restaure. En cas d’échec, la transaction est annulée afin de préserver la cohérence entre commande et stock.
+
+Un service d’e-mails (`email.service.js`) centralise l’envoi des messages :
+
+- contact : message principal vers l’adresse configurée, puis accusé de réception au visiteur ;
+- bienvenue : après inscription d’un client (envoi non bloquant) ;
+- confirmation de commande : après création réussie (après commit) ;
+- annulation de commande : après annulation client, employé ou passage au statut « Annulée ».
+
+Le fournisseur est configurable (`EMAIL_PROVIDER=log` en développement, ou Resend en envoi réel).
 
 ---
 
@@ -210,7 +233,7 @@ Deux solutions de stockage ont été utilisées afin d’adapter la technologie 
 
 ### MySQL / MariaDB
 
-MySQL (via MariaDB avec XAMPP) est utilisé pour les données métier.
+MySQL (via MariaDB, principalement exécuté avec Docker Compose) est utilisé pour les données métier.
 
 Ce choix est adapté aux données nécessitant :
 
@@ -261,11 +284,15 @@ Le système d’authentification repose sur :
 
 Trois rôles principaux sont définis :
 
-| Rôle           | Droits                                          |
-| -------------- | ----------------------------------------------- |
-| Client         | Consultation des menus et création de commandes |
-| Employé        | Gestion des menus, plats, commandes et horaires |
-| Administrateur | Gestion des employés et accès aux statistiques  |
+| Rôle           | Droits                                                                 |
+| -------------- | ---------------------------------------------------------------------- |
+| Client         | Inscription, consultation des menus, commandes, dépôt d’avis           |
+| Employé        | Gestion des menus, plats, commandes, horaires et modération des avis   |
+| Administrateur | Gestion des employés et accès aux statistiques                         |
+
+L’inscription client est disponible depuis l’interface de connexion. Elle crée uniquement un compte au rôle Client (le `role_id` éventuel du corps de requête est ignoré). Le mot de passe doit respecter les règles de complexité définies côté serveur (longueur, majuscule, minuscule, chiffre et caractère spécial). Un e-mail de bienvenue est ensuite tenté sans bloquer la création du compte.
+
+Le dépôt d’avis est réservé aux clients disposant d’au moins une commande au statut « Terminée ». La note est un entier de 1 à 5, le commentaire est obligatoire (500 caractères maximum) et le statut initial est forcé à « En attente ». Un second avis est refusé tant qu’un avis « En attente » ou « Validé » existe déjà ; un nouvel avis est possible uniquement si le précédent a été « Refusé ». Les employés modèrent ensuite les avis (validation ou refus) ; seuls les avis « Validé » sont affichés sur la page d’accueil.
 
 Les principales mesures de sécurité mises en place sont :
 
@@ -381,8 +408,8 @@ Le développement de l'application a été réalisé dans un environnement local
 - Visual Studio Code : éditeur de développement ;
 - Git : gestionnaire de versions ;
 - GitHub : hébergement du dépôt et suivi du développement ;
-- XAMPP : environnement local permettant d'exécuter MariaDB/MySQL ;
-- MongoDB : stockage des données statistiques ;
+- Docker Compose : environnement local principal (frontend, backend, MariaDB et MongoDB) ;
+- XAMPP : option secondaire éventuelle pour exécuter MariaDB/MySQL hors Docker ;
 - Node.js : environnement d'exécution du backend.
 
 ---
@@ -398,7 +425,7 @@ Les principales versions utilisées durant le développement sont :
 | React       | 19.x                                                   |
 | Vite        | Dernière version stable utilisée lors du développement |
 | Express.js  | 5.x                                                    |
-| MariaDB     | 10.4.x                                                 |
+| MariaDB     | 10.11 (image Docker `mariadb:10.11`)                   |
 | MongoDB     | Version compatible avec l'environnement local          |
 
 ---
@@ -502,11 +529,15 @@ Les actions réalisées sont :
 
 Le projet utilise Git comme outil de gestion de versions afin de conserver un historique des modifications et assurer le suivi du développement.
 
-Le dépôt utilise une branche principale :
+Le dépôt s'organise autour des branches suivantes :
 
-- `main` : contient la version stable de l'application.
+- `main` : version stable de l'application ;
+- `developpement` : branche d'intégration des fonctionnalités en cours ;
+- `feature/*` : branches dédiées à une fonctionnalité ou un lot de travail (par exemple inscription, e-mails, statistiques, avis, pages légales).
 
-Les évolutions du projet ont été enregistrées sous forme de commits réguliers permettant de suivre :
+Les évolutions sont développées sur une branche `feature/*`, puis intégrées dans `developpement` (notamment via pull requests) avant consolidation éventuelle sur `main`.
+
+Les commits réguliers permettent de suivre :
 
 - l'ajout des fonctionnalités ;
 - les corrections techniques ;
@@ -539,6 +570,15 @@ Avant le déploiement, plusieurs éléments doivent être configurés :
 - import des données nécessaires au fonctionnement de l'application.
 
 Les informations sensibles, comme les identifiants de connexion aux bases de données ou la clé secrète JWT, sont stockées dans des variables d'environnement et ne sont pas intégrées directement dans le code source.
+
+Pour le développement local, l’environnement principal repose sur Docker Compose (`docker-compose.yml` à la racine du dépôt). Une commande `docker compose up` démarre :
+
+- le frontend (port 5173) ;
+- le backend (port 3000) ;
+- MariaDB (port hôte 3307 vers 3306 du conteneur) ;
+- MongoDB (port 27017).
+
+Le fichier `.env.example` à la racine décrit les variables attendues. MariaDB importe automatiquement `database/vite_gourmand.sql` au premier démarrage du volume. Un développement hors Docker reste possible (Node.js local + bases installées séparément), en adaptant notamment `DB_HOST`, `DB_PORT` et `MONGO_URI`.
 
 ---
 
@@ -599,8 +639,9 @@ Lors de la création ou de l'annulation d'une commande, les indicateurs statisti
 
 Afin de faciliter la maintenance de l'application, un script de resynchronisation est également disponible :
 
-````bash
+```bash
 npm run stats:resync
+```
 
 ---
 
@@ -613,7 +654,7 @@ Depuis le dossier backend :
 ```bash
 cd backend
 npm install
-````
+```
 
 La configuration de l'application est réalisée grâce à un fichier `.env` contenant les paramètres nécessaires :
 
@@ -630,9 +671,17 @@ JWT_SECRET=
 JWT_EXPIRES=
 
 MONGO_URI=
+
+CORS_ORIGIN=http://localhost:5173
+
+EMAIL_PROVIDER=log
+EMAIL_FROM=
+CONTACT_TO=
+RESEND_API_KEY=
+FRONTEND_URL=http://localhost:5173
 ```
 
-Les variables d'environnement permettent de séparer la configuration du code source et de sécuriser les informations sensibles.
+Les variables d'environnement permettent de séparer la configuration du code source et de sécuriser les informations sensibles. `CORS_ORIGIN` définit l’origine autorisée par l’API. Les variables `EMAIL_*`, `CONTACT_TO`, `RESEND_API_KEY` et `FRONTEND_URL` paramètrent le service d’e-mails (`log` par défaut, sans appel réseau ; `resend` pour un envoi réel).
 
 Le serveur backend peut ensuite être démarré avec :
 
@@ -642,10 +691,12 @@ npm start
 
 Une fois lancé, le backend expose une API REST permettant :
 
-- la gestion des utilisateurs ;
+- l'inscription et la gestion des utilisateurs ;
 - la consultation et la gestion des menus ;
 - la gestion des plats ;
 - la gestion des commandes ;
+- le dépôt et la modération des avis ;
+- le traitement des messages de contact ;
 - l'accès aux statistiques.
 
 ---
@@ -697,10 +748,9 @@ Dans le cadre de ce projet, certaines améliorations pourraient être envisagée
 - mise en place d'un hébergement cloud adapté ;
 - configuration d'un certificat HTTPS ;
 - automatisation des déploiements avec une chaîne CI/CD ;
-- conteneurisation de l'application avec Docker ;
 - ajout d'outils de supervision et de sauvegarde automatisée.
 
-Ces évolutions permettraient d'améliorer la fiabilité, la sécurité et la maintenabilité de l'application dans un environnement professionnel.
+La conteneurisation locale avec Docker Compose est déjà en place pour le développement. Les évolutions ci-dessus permettraient d'améliorer la fiabilité, la sécurité et la maintenabilité de l'application dans un environnement de production professionnel.
 
 ---
 
@@ -714,9 +764,24 @@ Ces tests ont permis de vérifier le bon fonctionnement des différentes fonctio
 
 ## 3.6.1 Tests du backend
 
-Les tests du backend ont principalement été réalisés à l'aide d'un outil de test d'API afin de vérifier les différentes routes exposées par Express.
+Les tests du backend combinent des vérifications manuelles via un outil de test d’API et une suite automatisée exécutée avec le moteur de test natif de Node.js.
 
-Les vérifications effectuées concernent notamment :
+Depuis le dossier backend :
+
+```bash
+npm test
+```
+
+Cette commande lance les tests unitaires couvrant notamment :
+
+- les commandes (création, annulation, stock, transactions) ;
+- les statistiques MongoDB ;
+- les avis clients (règles de dépôt et de validation) ;
+- l’authentification ;
+- le service et les modèles d’e-mails ;
+- le contrôleur de contact.
+
+Des vérifications manuelles complètent cette suite :
 
 - le démarrage correct du serveur API ;
 - la connexion à la base de données MySQL/MariaDB ;
@@ -726,11 +791,13 @@ Les vérifications effectuées concernent notamment :
 
 Les principales fonctionnalités testées sont :
 
-- authentification des utilisateurs ;
+- authentification et inscription des utilisateurs ;
 - récupération des menus ;
 - récupération des plats ;
 - gestion des utilisateurs ;
-- gestion des commandes ;
+- gestion des commandes et du stock ;
+- dépôt et modération des avis ;
+- envoi des e-mails transactionnels ;
 - consultation des données liées aux tables de référence.
 
 ---
@@ -748,11 +815,11 @@ Les tests ont permis de vérifier :
 Les différents profils utilisateurs ont été vérifiés :
 
 - Client :
-  - accès aux fonctionnalités liées aux commandes ;
+  - accès aux fonctionnalités liées aux commandes et au dépôt d'avis ;
   - impossibilité d'accéder aux fonctions réservées aux employés.
 
 - Employé :
-  - accès à la gestion de l'activité ;
+  - accès à la gestion de l'activité et à la modération des avis ;
   - impossibilité d'accéder aux fonctions administrateur.
 
 - Administrateur :
@@ -774,8 +841,11 @@ Les pages principales vérifiées sont :
 
 - page d'accueil ;
 - consultation des menus ;
-- connexion utilisateur ;
-- page de contact.
+- connexion et inscription utilisateur ;
+- espace client et suivi des commandes ;
+- dépôt d'avis depuis les commandes terminées ;
+- page de contact ;
+- pages légales (mentions et CGV).
 
 ---
 
@@ -786,23 +856,27 @@ La validation fonctionnelle a été réalisée en vérifiant que les fonctionnal
 Les principaux scénarios vérifiés sont :
 
 - consultation des menus par un visiteur ;
-- connexion d'un utilisateur ;
+- inscription d'un client puis connexion ;
 - accès selon le rôle attribué ;
 - récupération des informations depuis la base de données ;
-- création et gestion des commandes selon les règles définies.
+- création et gestion des commandes selon les règles définies (stock et annulation) ;
+- envoi des e-mails de contact, de bienvenue, de confirmation et d'annulation ;
+- dépôt d'un avis après commande terminée, puis modération par un employé ;
+- affichage des avis validés sur la page d'accueil.
 
 ---
 
 ## 3.6.5 Limites identifiées
 
-Certaines fonctionnalités prévues dans le cahier des charges n'ont pas pu être finalisées dans le temps imparti :
+Les fonctionnalités métier principales prévues pour l'ECF sont opérationnelles (inscription client, e-mails automatiques, statistiques MongoDB, avis, pages légales, horaires dans le pied de page, formulaire de contact).
 
-- création complète d'un compte client depuis l'interface ;
-- envoi automatique d'e-mails ;
-- finalisation complète du module statistique ;
-- déploiement complet en environnement de production.
+Les principales limites restantes concernent surtout la mise en production et le polish :
 
-Ces éléments pourront être ajoutés dans une évolution future de l'application.
+- déploiement complet en environnement de production (hébergement cloud, HTTPS) ;
+- finalisation de l'expérience utilisateur (responsive, états de chargement homogènes) ;
+- supervision et sauvegardes automatisées en production.
+
+Ces éléments pourront être traités dans une évolution ultérieure de l'application.
 
 ---
 
@@ -836,44 +910,41 @@ La mise en place d'une authentification JWT et d'une gestion des rôles permet �
 
 ## 3.7.2 Limites actuelles
 
-Dans le cadre du temps disponible pour la réalisation de l'ECF, certaines fonctionnalités, améliorations et livrables prévus initialement n'ont pas pu être finalisés :
+Les fonctionnalités initialement présentées comme manquantes ont été livrées au fil du développement : inscription client, e-mails automatiques, module de statistiques (avec resynchronisation), pages légales (mentions et CGV), horaires dans le pied de page, traitement des demandes de contact, maquettes graphiques et environnement Docker Compose local.
 
-- création complète d'un compte client depuis l'interface utilisateur ;
-- automatisation de l'envoi des e-mails ;
-- finalisation complète du tableau de statistiques ;
-- mise en production complète de l'application ;
-- finalisation complète de l'identité visuelle et de l'expérience utilisateur ;
-- réalisation des maquettes graphiques prévues dans le cadre de l'ECF ;
-- intégration des pages d'informations légales (mentions légales et conditions générales de vente) ;
-- affichage des horaires d'ouverture dans le pied de page ;
-- connexion du formulaire de contact à un système de traitement des demandes.
+Dans le cadre du temps disponible pour la réalisation de l'ECF, les principales limites restantes sont :
 
-L'interface actuelle privilégie la simplicité, la lisibilité et le bon fonctionnement des fonctionnalités principales. Le travail d'amélioration graphique, d'enrichissement des composants visuels et d'ajout des informations complémentaires pourra être réalisé dans une évolution future de l'application.
+- mise en production complète de l'application (hébergement cloud, HTTPS) ;
+- finalisation de l'identité visuelle et de l'expérience utilisateur (notamment le responsive et l'homogénéité des états de chargement) ;
+- supervision et sauvegardes automatisées hors environnement local.
 
-Ces choix ont permis de concentrer les efforts sur la mise en place d'une architecture fonctionnelle, sécurisée et maintenable, conformément aux objectifs principaux du projet.
+L'interface actuelle privilégie la simplicité, la lisibilité et le bon fonctionnement des fonctionnalités principales. Le polish graphique et le durcissement de la production pourront être réalisés dans une évolution future.
+
+Ces choix ont permis de concentrer les efforts sur une architecture fonctionnelle, sécurisée et maintenable, conformément aux objectifs principaux du projet.
 
 ---
 
 ## 3.7.3 Améliorations futures
 
-Plusieurs évolutions pourraient être envisagées afin d'améliorer l'application :
+Plusieurs évolutions pourraient être envisagées afin d'améliorer l'application, au-delà des fonctionnalités déjà livrées :
 
 ### Fonctionnalités supplémentaires
 
-- ajout d'un parcours complet d'inscription client ;
-- mise en place d'un système d'envoi d'e-mails automatiques ;
-- ajout d'un espace client plus complet ;
-- amélioration du suivi des commandes ;
-- enrichissement du tableau de bord administrateur.
+- enrichissement de l'espace client (historique, notifications) ;
+- amélioration du suivi des commandes côté interface ;
+- enrichissement du tableau de bord administrateur ;
+- amélioration du responsive et de l'expérience utilisateur.
 
 ### Améliorations techniques
 
-- automatisation des tests ;
+- enrichissement de la couverture des tests automatisés ;
 - mise en place d'une intégration continue ;
-- déploiement automatisé ;
-- conteneurisation avec Docker ;
+- déploiement automatisé vers un environnement de production ;
+- configuration HTTPS et hébergement cloud ;
 - amélioration du système de logs ;
 - mise en place de sauvegardes automatisées des bases de données.
+
+La conteneurisation locale avec Docker Compose est déjà disponible pour le développement ; les évolutions techniques ci-dessus portent principalement sur la production et l'industrialisation.
 
 ---
 

@@ -46,7 +46,12 @@ const authService = {
       email: utilisateur.email,
       nom: utilisateur.nom,
       prenom: utilisateur.prenom,
+      telephone: utilisateur.telephone,
+      ville: utilisateur.ville,
+      pays: utilisateur.pays,
+      adresse_postale: utilisateur.adresse_postale,
       role_id: utilisateur.role_id,
+      actif: utilisateur.actif,
       token,
     };
   },

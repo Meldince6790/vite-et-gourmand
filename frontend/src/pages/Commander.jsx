@@ -14,7 +14,6 @@ function Commander() {
 
   const [menu, setMenu] = useState(null);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const [commande, setCommande] = useState({
     adresse_livraison: "",
@@ -25,11 +24,6 @@ function Commander() {
   });
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
     async function loadMenu() {
       try {
         const data = await menuService.getMenuById(id);
@@ -43,7 +37,7 @@ function Commander() {
     }
 
     loadMenu();
-  }, [id, navigate, user]);
+  }, [id]);
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
@@ -56,6 +50,7 @@ function Commander() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    setError("");
 
     try {
       const nouvelleCommande = {
@@ -66,13 +61,11 @@ function Commander() {
 
       await commandeService.createCommande(nouvelleCommande);
 
-      setSuccess("Commande créée avec succès.");
-      setError("");
+      navigate("/mes-commandes", { replace: true });
     } catch (error) {
       console.error("Erreur lors de la création de la commande :", error);
 
       setError(error.message);
-      setSuccess("");
     }
   }
 
@@ -84,14 +77,20 @@ function Commander() {
     return <p>Chargement...</p>;
   }
 
-  const prixMenu =
-    Number(menu.prix_par_personne) * Number(commande.nombre_personne || 0);
+  const nb = Number(commande.nombre_personne) || 0;
+  const prixParPersonne = Number(menu.prix_par_personne);
+  const minimum = Number(menu.nombre_personne_minimum);
+  const prixBrut = prixParPersonne * nb;
+  const remiseApplicable = nb >= minimum + 5;
+  const prixMenu = Number(
+    (remiseApplicable ? prixBrut * 0.9 : prixBrut).toFixed(2),
+  );
+  const prixLivraison = 0;
+  const total = Number((prixMenu + prixLivraison).toFixed(2));
 
   return (
     <section className="section">
       <h1>Commander un menu</h1>
-
-      {success && <p>{success}</p>}
 
       {error && <p>{error}</p>}
 
@@ -179,11 +178,41 @@ function Commander() {
           <span> Prêt de matériel</span>
         </label>
 
-        <h3>Résumé</h3>
+        <h3>Résumé estimatif</h3>
 
-        <p>
-          Prix menu estimé :<strong> {prixMenu.toFixed(2)} €</strong>
+        <p className="commande-recap-note">
+          Estimation indicative. Le montant définitif est calculé par le
+          serveur.
         </p>
+
+        <ul className="commande-recap">
+          <li>
+            <span>Nombre de personnes</span>
+            <strong>{nb}</strong>
+          </li>
+          <li>
+            <span>Prix par personne</span>
+            <strong>{prixParPersonne.toFixed(2)} €</strong>
+          </li>
+          {remiseApplicable ? (
+            <li>
+              <span>Remise</span>
+              <strong>−10 %</strong>
+            </li>
+          ) : null}
+          <li>
+            <span>Prix du menu</span>
+            <strong>{prixMenu.toFixed(2)} €</strong>
+          </li>
+          <li>
+            <span>Livraison</span>
+            <strong>{prixLivraison.toFixed(2)} €</strong>
+          </li>
+          <li className="commande-recap-total">
+            <span>Total</span>
+            <strong>{total.toFixed(2)} €</strong>
+          </li>
+        </ul>
 
         <button type="submit">Valider la commande</button>
       </form>

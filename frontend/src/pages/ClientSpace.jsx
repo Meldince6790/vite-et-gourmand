@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import useAuth from "../hooks/useAuth";
 import commandeService from "../services/commande.service";
@@ -68,10 +69,6 @@ function ClientSpace() {
       setError(error.message);
       setSuccess("");
     }
-  }
-
-  if (error && commandes.length === 0) {
-    return <p>{error}</p>;
   }
 
   return (
@@ -195,6 +192,12 @@ function ClientSpace() {
       <section>
         <h2>Mes commandes</h2>
 
+        <p>
+          <Link className="button" to="/mes-commandes">
+            Gérer mes commandes
+          </Link>
+        </p>
+
         {commandes.length === 0 ? (
           <p>Aucune commande trouvée.</p>
         ) : (
@@ -233,23 +236,11 @@ function ClientSpace() {
                   <strong>Livraison :</strong> {commande.prix_livraison} €
                 </p>
 
-                {commande.pret_materiel && (
+                {Boolean(commande.pret_materiel) ? (
                   <p>
                     <strong>Matériel :</strong> prêt demandé
                   </p>
-                )}
-
-                {commande.statut === "En attente" && (
-                  <div>
-                    <button type="button">Modifier</button>
-
-                    <button type="button">Annuler</button>
-                  </div>
-                )}
-
-                {commande.statut !== "En attente" && (
-                  <button type="button">Voir le suivi</button>
-                )}
+                ) : null}
               </div>
             ))}
           </div>

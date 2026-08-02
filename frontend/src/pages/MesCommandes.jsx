@@ -3,6 +3,14 @@ import { useEffect, useState } from "react";
 import commandeService from "../services/commande.service";
 import "../styles/pages.css";
 
+function toDateInputValue(value) {
+  if (!value) {
+    return "";
+  }
+
+  return String(value).slice(0, 10);
+}
+
 function MesCommandes() {
   const [commandes, setCommandes] = useState([]);
   const [commandeEdition, setCommandeEdition] = useState(null);
@@ -23,6 +31,7 @@ function MesCommandes() {
         }
 
         setCommandes(data);
+        setError("");
       } catch (error) {
         if (actif) {
           console.error(
@@ -47,6 +56,7 @@ function MesCommandes() {
       const data = await commandeService.getMesCommandes();
 
       setCommandes(data);
+      setError("");
     } catch (error) {
       setError(error.message);
     }
@@ -55,6 +65,7 @@ function MesCommandes() {
   function handleModifier(commande) {
     setCommandeEdition({
       ...commande,
+      date_prestation: toDateInputValue(commande.date_prestation),
     });
   }
 
@@ -109,15 +120,13 @@ function MesCommandes() {
     }
   }
 
-  if (error) {
-    return <p>{error}</p>;
-  }
-
   return (
     <section className="section">
       <h1>Mes commandes</h1>
 
       {message && <p>{message}</p>}
+
+      {error && <p>{error}</p>}
 
       {commandes.length === 0 ? (
         <p>Aucune commande trouvée.</p>
@@ -236,11 +245,11 @@ function MesCommandes() {
                     <strong>Livraison :</strong> {commande.prix_livraison} €
                   </p>
 
-                  {commande.pret_materiel && (
+                  {Boolean(commande.pret_materiel) ? (
                     <p>
                       <strong>Matériel :</strong> prêt demandé
                     </p>
-                  )}
+                  ) : null}
 
                   {commande.statut === "En attente" &&
                     commandeAnnulation?.commande_id ===

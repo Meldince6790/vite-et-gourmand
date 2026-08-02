@@ -17,8 +17,11 @@ const ORDER = {
   statut: "En attente",
   nombre_personne: 10,
   date_prestation: "2026-09-01",
+  date_commande: "2026-08-02T12:00:00.000Z",
   heure_livraison: "12:00",
   adresse_livraison: "1 rue Test",
+  prix_menu: 100,
+  prix_livraison: 0,
   pret_materiel: false,
   restitution_materiel: false,
 };
@@ -78,6 +81,7 @@ function createMocks(overrides = {}) {
     increaseStock: [],
     hasStock: [],
     updateStatistiqueCommande: [],
+    retirerStatistiqueCommande: [],
     sendOrderConfirmationEmail: [],
     sendOrderCancellationEmail: [],
     findUtilisateurById: [],
@@ -127,11 +131,24 @@ function createMocks(overrides = {}) {
     ...overrides.menuModel,
   };
 
+  const updateStatistiqueCommandeImpl =
+    overrides.statistiqueService?.updateStatistiqueCommande ??
+    (async () => undefined);
+
+  const retirerStatistiqueCommandeImpl =
+    overrides.statistiqueService?.retirerStatistiqueCommande ??
+    (async () => undefined);
+
   const statistiqueService = {
+    ...overrides.statistiqueService,
     updateStatistiqueCommande: async (commande, menu) => {
       calls.updateStatistiqueCommande.push({ commande, menu });
+      return updateStatistiqueCommandeImpl(commande, menu);
     },
-    ...overrides.statistiqueService,
+    retirerStatistiqueCommande: async (commande) => {
+      calls.retirerStatistiqueCommande.push(commande);
+      return retirerStatistiqueCommandeImpl(commande);
+    },
   };
 
   const sendOrderConfirmationEmailImpl =
@@ -643,6 +660,8 @@ describe("CommandeService.annulerCommandeClient", () => {
       calls.sendOrderCancellationEmail[0].commande.commande_id,
       ORDER.commande_id,
     );
+    assert.equal(calls.retirerStatistiqueCommande.length, 1);
+    assert.equal(calls.retirerStatistiqueCommande[0].commande_id, 1);
   });
 
   it("refuse l'annulation si le statut n'est pas En attente", async () => {
@@ -658,6 +677,7 @@ describe("CommandeService.annulerCommandeClient", () => {
     assert.equal(calls.updateStatut.length, 0);
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 
@@ -681,6 +701,7 @@ describe("CommandeService.annulerCommandeClient", () => {
     });
     assert.equal(calls.increaseStock.length, 1);
     assert.equal(calls.sendOrderCancellationEmail.length, 1);
+    assert.equal(calls.retirerStatistiqueCommande.length, 1);
     assert.equal(events.length, eventsAfterFirst.length);
   });
 
@@ -693,6 +714,7 @@ describe("CommandeService.annulerCommandeClient", () => {
       message: "La mise à jour du stock a échoué.",
     });
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
@@ -715,12 +737,31 @@ describe("CommandeService.annulerCommandeClient", () => {
     });
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
       "rollback",
       "release",
     ]);
+  });
+
+  it("conserve l'annulation SQL si Mongo échoue", async () => {
+    const { service, calls } = createMocks({
+      statistiqueService: {
+        retirerStatistiqueCommande: async () => {
+          throw new Error("mongo down");
+        },
+      },
+    });
+
+    const result = await service.annulerCommandeClient(1, 10);
+
+    assert.equal(result, true);
+    assert.equal(calls.updateStatut.length, 1);
+    assert.equal(calls.retirerStatistiqueCommande.length, 1);
+    assert.equal(calls.loggerErrors.length, 1);
+    assert.match(String(calls.loggerErrors[0][0]), /statistiques MongoDB/);
   });
 });
 
@@ -774,6 +815,7 @@ describe("CommandeService.annulerCommande", () => {
       calls.sendOrderCancellationEmail[0].commande.statut,
       "Annulée",
     );
+    assert.equal(calls.retirerStatistiqueCommande.length, 1);
   });
 
   it("refuse une seconde annulation employé sans restock", async () => {
@@ -796,6 +838,7 @@ describe("CommandeService.annulerCommande", () => {
     });
     assert.equal(calls.increaseStock.length, 1);
     assert.equal(calls.sendOrderCancellationEmail.length, 1);
+    assert.equal(calls.retirerStatistiqueCommande.length, 1);
     assert.equal(events.length, eventsAfterFirst.length);
   });
 
@@ -808,6 +851,7 @@ describe("CommandeService.annulerCommande", () => {
       message: "La mise à jour du stock a échoué.",
     });
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
@@ -830,6 +874,7 @@ describe("CommandeService.annulerCommande", () => {
     });
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
@@ -848,6 +893,7 @@ describe("CommandeService.annulerCommande", () => {
     assert.equal(calls.updateStatut.length, 0);
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 
@@ -861,6 +907,7 @@ describe("CommandeService.annulerCommande", () => {
     assert.equal(calls.updateStatut.length, 0);
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 
@@ -874,6 +921,7 @@ describe("CommandeService.annulerCommande", () => {
     assert.equal(calls.updateStatut.length, 0);
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 
@@ -891,6 +939,7 @@ describe("CommandeService.annulerCommande", () => {
     assert.equal(calls.updateStatut.length, 0);
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 });
@@ -1142,6 +1191,7 @@ describe("CommandeService.updateStatut", () => {
       calls.sendOrderCancellationEmail[0].commande.statut,
       "Annulée",
     );
+    assert.equal(calls.retirerStatistiqueCommande.length, 1);
   });
 
   it("refuse le passage à Annulée si déjà annulée sans restock", async () => {
@@ -1157,6 +1207,7 @@ describe("CommandeService.updateStatut", () => {
     assert.equal(calls.updateStatut.length, 0);
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 
@@ -1170,6 +1221,7 @@ describe("CommandeService.updateStatut", () => {
     ]);
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.equal(events.includes("begin"), false);
   });
 
@@ -1182,6 +1234,7 @@ describe("CommandeService.updateStatut", () => {
       message: "La mise à jour du stock a échoué.",
     });
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
@@ -1204,12 +1257,64 @@ describe("CommandeService.updateStatut", () => {
     });
     assert.equal(calls.increaseStock.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
       "rollback",
       "release",
     ]);
+  });
+});
+
+describe("CommandeService statistiques annulation", () => {
+  const baseInput = () => ({
+    menu_id: 1,
+    utilisateur_id: 10,
+    date_prestation: "2026-09-01",
+    heure_livraison: "12:00",
+    adresse_livraison: "1 rue Test",
+    nombre_personne: 10,
+  });
+
+  const annulationData = {
+    mode_contact_annulation: "Mail",
+    motif_annulation: "Indisponible",
+  };
+
+  it("crée puis annule : +1 puis -1 Mongo", async () => {
+    const { service, calls } = createMocks();
+
+    await service.createCommande(baseInput());
+    await service.annulerCommandeClient(1, 10);
+
+    assert.equal(calls.updateStatistiqueCommande.length, 1);
+    assert.equal(calls.retirerStatistiqueCommande.length, 1);
+  });
+
+  it("n'appelle pas Mongo si déjà annulée", async () => {
+    const { service, calls } = createMocks({
+      commandeRepository: {
+        findById: async () => ({ ...ORDER, statut: "Annulée" }),
+      },
+    });
+
+    await assert.rejects(() => service.annulerCommande(1, annulationData), {
+      message: "Cette commande est déjà annulée.",
+    });
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
+    assert.equal(calls.updateStatistiqueCommande.length, 0);
+  });
+
+  it("n'appelle pas Mongo en cas de rollback d'annulation", async () => {
+    const { service, calls } = createMocks({
+      menuModel: { increaseStock: async () => false },
+    });
+
+    await assert.rejects(() => service.updateStatut(1, "Annulée"), {
+      message: "La mise à jour du stock a échoué.",
+    });
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
   });
 });
 

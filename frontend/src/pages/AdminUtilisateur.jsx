@@ -86,7 +86,7 @@ function AdminUtilisateur() {
       {error && <p>{error}</p>}
       {message && <p>{message}</p>}
 
-      <form onSubmit={handleSubmit}>
+      <form className="form form-employe" onSubmit={handleSubmit}>
         <h2>Créer un compte employé</h2>
 
         <label>
@@ -133,7 +133,7 @@ function AdminUtilisateur() {
           />
         </label>
 
-        <button className="button" type="submit">
+        <button className="button button-compact" type="submit">
           Créer l'employé
         </button>
       </form>
@@ -142,20 +142,25 @@ function AdminUtilisateur() {
 
       <div className="cards">
         {utilisateurs.map((utilisateur) => (
-          <div className="card" key={utilisateur.utilisateur_id}>
-            <h3>{utilisateur.email}</h3>
+          <div
+            className="card card-dashboard"
+            key={utilisateur.utilisateur_id}
+          >
+            <div className="card-body">
+              <h3>{utilisateur.email}</h3>
 
-            <p>
-              {utilisateur.prenom || ""} {utilisateur.nom || ""}
-            </p>
+              <p>
+                {utilisateur.prenom || ""} {utilisateur.nom || ""}
+              </p>
 
-            <p>
-              Statut :{" "}
-              <strong>{utilisateur.actif ? "Actif" : "Désactivé"}</strong>
-            </p>
+              <p>
+                Statut :{" "}
+                <strong>{utilisateur.actif ? "Actif" : "Désactivé"}</strong>
+              </p>
+            </div>
 
             <button
-              className="button"
+              className="button button-compact"
               type="button"
               onClick={() => handleToggleActif(utilisateur)}
             >

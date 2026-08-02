@@ -3,20 +3,13 @@ import { useEffect, useState } from "react";
 import useAuth from "../hooks/useAuth";
 import commandeService from "../services/commande.service";
 import avisService from "../services/avis.service";
+import { formatDateFr, toDateInputValue } from "../utils/date.js";
 import "../styles/pages.css";
 
 const AVIS_FORM_INITIAL = {
   note: "5",
   description: "",
 };
-
-function toDateInputValue(value) {
-  if (!value) {
-    return "";
-  }
-
-  return String(value).slice(0, 10);
-}
 
 function aUnAvisActif(avisListe, utilisateurId) {
   return avisListe.some(
@@ -300,7 +293,7 @@ function MesCommandes() {
                 <>
                   <p>
                     <strong>Date de prestation :</strong>{" "}
-                    {commande.date_prestation}
+                    {formatDateFr(commande.date_prestation)}
                   </p>
 
                   <p>

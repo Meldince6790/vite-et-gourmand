@@ -183,7 +183,7 @@ function EmployeeMenus() {
       {error && <p>{error}</p>}
       {message && <p>{message}</p>}
 
-      <form onSubmit={handleSubmit}>
+      <form className="form form-employe" onSubmit={handleSubmit}>
         <h2>{menuEdition ? "Modifier un menu" : "Créer un menu"}</h2>
 
         <label>
@@ -289,7 +289,9 @@ function EmployeeMenus() {
           </select>
         </label>
 
-        <button className="button">{menuEdition ? "Modifier" : "Créer"}</button>
+        <button className="button button-compact" type="submit">
+          {menuEdition ? "Modifier" : "Créer"}
+        </button>
       </form>
 
       <h2>Menus existants</h2>
@@ -320,11 +322,11 @@ function EmployeeMenus() {
             <h4>Plats :</h4>
 
             {platsMenus[menu.menu_id]?.map((plat) => (
-              <p key={plat.plat_id}>
-                {plat.titre_plat}
+              <p className="inline-action-row" key={plat.plat_id}>
+                <span>{plat.titre_plat}</span>
 
                 <button
-                  className="button"
+                  className="button button-compact"
                   type="button"
                   onClick={() => handleRetirerPlat(menu.menu_id, plat.plat_id)}
                 >
@@ -348,29 +350,31 @@ function EmployeeMenus() {
               ))}
             </select>
 
-            <button
-              className="button"
-              type="button"
-              onClick={() => handleAjouterPlat(menu.menu_id)}
-            >
-              Ajouter
-            </button>
+            <div className="card-actions">
+              <button
+                className="button button-compact"
+                type="button"
+                onClick={() => handleAjouterPlat(menu.menu_id)}
+              >
+                Ajouter
+              </button>
 
-            <button
-              className="button"
-              type="button"
-              onClick={() => handleModifier(menu)}
-            >
-              Modifier
-            </button>
+              <button
+                className="button button-compact"
+                type="button"
+                onClick={() => handleModifier(menu)}
+              >
+                Modifier
+              </button>
 
-            <button
-              className="button"
-              type="button"
-              onClick={() => handleSupprimer(menu.menu_id)}
-            >
-              Supprimer
-            </button>
+              <button
+                className="button button-compact"
+                type="button"
+                onClick={() => handleSupprimer(menu.menu_id)}
+              >
+                Supprimer
+              </button>
+            </div>
           </div>
         ))}
       </div>

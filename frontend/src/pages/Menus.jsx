@@ -4,6 +4,7 @@ import menuService from "../services/menu.service";
 import themeService from "../services/theme.service";
 import regimeService from "../services/regime.service";
 import MenuCard from "../components/MenuCard.jsx";
+import { getMenuImageSrc } from "../data/menuImages.js";
 import "../styles/pages.css";
 
 const FILTRES_VIDES = {
@@ -104,97 +105,110 @@ function Menus() {
   }
 
   return (
-    <div>
-      <section className="section">
-        <h1>Nos menus</h1>
+    <div className="catalogue">
+      <header className="catalogue-header">
+        <div className="catalogue-header-main">
+          <h1 className="catalogue-title">Catalogue des menus</h1>
 
-        <p>Découvrez nos propositions adaptées à vos événements.</p>
+          {error && <p className="catalogue-error">{error}</p>}
 
-        {error && <p>{error}</p>}
+          {!error && (
+            <form className="menu-filters" onSubmit={handleAppliquer}>
+              <h2>Filtres</h2>
 
-        {!error && (
-          <form className="menu-filters" onSubmit={handleAppliquer}>
-            <h2>Filtres</h2>
+              <div className="menu-filters-grid">
+                <label htmlFor="filtre-theme">
+                  Thème
+                  <select
+                    id="filtre-theme"
+                    name="theme"
+                    value={filtres.theme}
+                    onChange={handleFiltreChange}
+                  >
+                    <option value="">Tous les thèmes</option>
+                    {themes.map((theme) => (
+                      <option key={theme.theme_id} value={theme.libelle}>
+                        {theme.libelle}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <div className="menu-filters-grid">
-              <label htmlFor="filtre-theme">
-                Thème
-                <select
-                  id="filtre-theme"
-                  name="theme"
-                  value={filtres.theme}
-                  onChange={handleFiltreChange}
+                <label htmlFor="filtre-regime">
+                  Régime alimentaire
+                  <select
+                    id="filtre-regime"
+                    name="regime"
+                    value={filtres.regime}
+                    onChange={handleFiltreChange}
+                  >
+                    <option value="">Tous les régimes</option>
+                    {regimes.map((regime) => (
+                      <option key={regime.regime_id} value={regime.libelle}>
+                        {regime.libelle}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label htmlFor="filtre-personnes">
+                  Nb min. pers.
+                  <input
+                    id="filtre-personnes"
+                    type="number"
+                    name="nombrePersonnes"
+                    min="1"
+                    step="1"
+                    value={filtres.nombrePersonnes}
+                    onChange={handleFiltreChange}
+                    placeholder="Ex. 15"
+                  />
+                </label>
+
+                <label htmlFor="filtre-prix">
+                  Prix maximum (€ / pers.)
+                  <input
+                    id="filtre-prix"
+                    type="number"
+                    name="prixMaximum"
+                    min="0"
+                    step="0.01"
+                    value={filtres.prixMaximum}
+                    onChange={handleFiltreChange}
+                    placeholder="Ex. 40"
+                  />
+                </label>
+              </div>
+
+              <div className="menu-filters-actions">
+                <button
+                  type="button"
+                  className="menu-filters-reset"
+                  onClick={handleReinitialiser}
                 >
-                  <option value="">Tous les thèmes</option>
-                  {themes.map((theme) => (
-                    <option key={theme.theme_id} value={theme.libelle}>
-                      {theme.libelle}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  Réinitialiser
+                </button>
 
-              <label htmlFor="filtre-regime">
-                Régime alimentaire
-                <select
-                  id="filtre-regime"
-                  name="regime"
-                  value={filtres.regime}
-                  onChange={handleFiltreChange}
-                >
-                  <option value="">Tous les régimes</option>
-                  {regimes.map((regime) => (
-                    <option key={regime.regime_id} value={regime.libelle}>
-                      {regime.libelle}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                <button type="submit" className="button menu-filters-apply">
+                  Appliquer
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
 
-              <label htmlFor="filtre-prix">
-                Prix maximum (€ / personne)
-                <input
-                  id="filtre-prix"
-                  type="number"
-                  name="prixMaximum"
-                  min="0"
-                  step="0.01"
-                  value={filtres.prixMaximum}
-                  onChange={handleFiltreChange}
-                  placeholder="Ex. 40"
-                />
-              </label>
+        <div className="catalogue-hero-media">
+          <img
+            src="/images/catalogue-hero.webp"
+            alt="Buffet traiteur pour le catalogue des menus"
+            width="710"
+            height="210"
+          />
+        </div>
+      </header>
 
-              <label htmlFor="filtre-personnes">
-                Nombre de personnes
-                <input
-                  id="filtre-personnes"
-                  type="number"
-                  name="nombrePersonnes"
-                  min="1"
-                  step="1"
-                  value={filtres.nombrePersonnes}
-                  onChange={handleFiltreChange}
-                  placeholder="Ex. 15"
-                />
-              </label>
-            </div>
-
-            <div className="menu-filters-actions">
-              <button
-                type="button"
-                className="menu-filters-reset"
-                onClick={handleReinitialiser}
-              >
-                Réinitialiser
-              </button>
-
-              <button type="submit" className="button menu-filters-apply">
-                Appliquer
-              </button>
-            </div>
-          </form>
-        )}
+      <section className="catalogue-results" aria-label="Menus disponibles">
+        <h2 className="catalogue-results-title">Menus</h2>
 
         <div className="menu-grid">
           {menusFiltres.length > 0 ? (
@@ -209,6 +223,7 @@ function Menus() {
                 regime={menu.regime}
                 minPersonnes={menu.nombre_personne_minimum}
                 quantiteRestante={menu.quantite_restante}
+                imageSrc={getMenuImageSrc(menu.menu_id)}
               />
             ))
           ) : (

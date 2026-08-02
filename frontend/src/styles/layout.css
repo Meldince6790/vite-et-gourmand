@@ -2,12 +2,28 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .header {
   background-color: var(--primary-color);
   color: white;
-  padding: 1rem 2rem;
+  padding: 1rem var(--space-lg);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 1rem;
+  row-gap: 0.75rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1.35rem;
+  font-weight: 700;
+  min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .main {
@@ -15,13 +31,17 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: var(--space-lg);
+  min-width: 0;
 }
 
 .footer {
-  background-color: var(--secondary-color);
-  padding: 2rem;
+  background-color: var(--surface-color);
+  padding: 1.75rem var(--space-lg);
   color: var(--text-color);
+  border-top: 1px solid var(--border-color);
+  box-shadow: 0 -1px 4px rgba(47, 93, 80, 0.06);
+  font-family: var(--font-body);
 }
 
 .footer-columns {
@@ -29,26 +49,27 @@
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
-  gap: 2rem;
+  gap: var(--space-lg);
   justify-content: space-between;
   text-align: left;
 }
 
 .footer-column {
   flex: 1;
-  min-width: 180px;
+  min-width: 160px;
 }
 
 .footer-column:first-child {
   flex: 1.4;
-  min-width: 260px;
+  min-width: 200px;
 }
 
 .footer-column h3 {
+  font-family: var(--font-heading);
   color: var(--primary-color);
   margin-top: 0;
   margin-bottom: 0.75rem;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
 }
 
 .footer-horaires {
@@ -69,18 +90,85 @@
   margin-bottom: 0.35rem;
 }
 
-@media (max-width: 640px) {
-  .footer-horaires {
-    grid-template-columns: 1fr;
-  }
+.footer-column p,
+.footer-horaires-list li {
+  color: var(--text-color);
+  line-height: 1.5;
 }
 
 .footer-links a {
   color: var(--primary-color);
   text-decoration: none;
+  font-weight: 600;
 }
 
-.footer-links a:hover {
-  color: var(--accent-color);
+.footer-links a:hover,
+.footer-links a:focus-visible {
+  color: var(--primary-color-dark);
   text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0.85rem 1rem;
+  }
+
+  .header h1 {
+    font-size: 1.15rem;
+  }
+
+  .main {
+    padding: 1.25rem 1rem;
+  }
+
+  /* Footer compact — aligné maquette mobile (~100–120 px) */
+  .footer {
+    padding: 0.5rem 1rem 0.55rem;
+    box-shadow: none;
+  }
+
+  .footer-columns {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 0.15rem 0.75rem;
+    align-items: start;
+  }
+
+  .footer-column,
+  .footer-column:first-child {
+    flex: initial;
+    min-width: 0;
+  }
+
+  .footer-column h3 {
+    margin: 0 0 0.2rem;
+    font-size: 0.85rem;
+  }
+
+  /* Titres décoratifs inutiles sur mobile */
+  .footer-column:nth-child(2) h3,
+  .footer-column:nth-child(3) {
+    display: none;
+  }
+
+  .footer-horaires {
+    grid-template-columns: 1fr 1fr;
+    gap: 0 0.5rem;
+  }
+
+  .footer-horaires-list li,
+  .footer-links li {
+    margin-bottom: 0;
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
+
+  .footer-links {
+    margin-top: 0;
+  }
+
+  .footer-links a {
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
 }

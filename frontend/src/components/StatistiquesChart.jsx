@@ -10,6 +10,12 @@ import {
 
 import { Bar } from "react-chartjs-2";
 
+import {
+  borderColorsForCount,
+  colorsForCount,
+  hoverColorsForCount,
+} from "./chartPalette.js";
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -27,14 +33,19 @@ function StatistiquesChart({ statistiques }) {
         )
       : 0;
 
+  const barCount = statistiques.length;
+
   const data = {
     labels: statistiques.map((statistique) => statistique.menu),
 
     datasets: [
       {
         label: "Nombre de commandes",
-
         data: statistiques.map((statistique) => statistique.total_commandes),
+        backgroundColor: colorsForCount(barCount),
+        hoverBackgroundColor: hoverColorsForCount(barCount),
+        borderColor: borderColorsForCount(barCount),
+        borderWidth: 1,
       },
     ],
   };

@@ -26,6 +26,8 @@ import MesCommandes from "./pages/MesCommandes.jsx";
 
 import Login from "./pages/Login.jsx";
 import Contact from "./pages/Contact.jsx";
+import MentionsLegales from "./pages/MentionsLegales.jsx";
+import CGV from "./pages/CGV.jsx";
 
 function App() {
   return (
@@ -157,6 +159,10 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route path="/contact" element={<Contact />} />
+
+        <Route path="/mentions-legales" element={<MentionsLegales />} />
+
+        <Route path="/cgv" element={<CGV />} />
       </Route>
     </Routes>
   );

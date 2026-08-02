@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "node src/app.js",
-    "test": "node --test src/services/commande.service.test.js src/services/auth.service.test.js"
+    "test": "node --test src/services/commande.service.test.js src/services/auth.service.test.js src/services/email.service.test.js src/services/email.templates.test.js src/controllers/contact.controller.test.js"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +19,8 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.8.0",
-    "mysql2": "^3.22.6"
+    "mysql2": "^3.22.6",
+    "resend": "^6.18.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

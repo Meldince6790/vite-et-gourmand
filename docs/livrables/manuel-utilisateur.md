@@ -62,7 +62,8 @@ Il peut accéder aux informations publiques sans disposer de compte.
 
 Les fonctionnalités disponibles sont :
 
-- consultation des menus proposés ;
+- consultation et filtrage des menus proposés ;
+- consultation du détail d'un menu ;
 - consultation des informations de contact.
 
 ---
@@ -71,14 +72,25 @@ Les fonctionnalités disponibles sont :
 
 Depuis la page dédiée aux menus, le visiteur peut consulter les différentes offres proposées par l'entreprise.
 
-Chaque menu présente les informations principales :
+Il peut filtrer le catalogue selon :
+
+- le thème ;
+- le régime alimentaire ;
+- le prix maximum ;
+- le nombre de personnes.
+
+Le filtrage est lancé uniquement après un clic sur « Appliquer ». Le bouton « Réinitialiser » restaure l'affichage de l'ensemble du catalogue. Si aucun menu ne correspond aux critères choisis, le message « Aucun menu ne correspond à vos critères. » est affiché.
+
+Chaque carte menu présente les informations principales :
 
 - nom du menu ;
 - description ;
 - thème associé ;
 - régime alimentaire ;
 - nombre minimum de personnes ;
-- prix par personne.
+- prix par personne ;
+- quantité restante ;
+- indication d'indisponibilité lorsque la quantité restante est nulle.
 
 Le visiteur peut ainsi consulter les différentes prestations disponibles avant de créer une commande.
 
@@ -90,10 +102,14 @@ Lorsqu'un menu est sélectionné, l'utilisateur peut accéder à une vue détail
 
 Cette page permet notamment de consulter :
 
-- la composition du menu ;
-- les différents plats proposés ;
-- les informations liées aux allergènes ;
-- les conditions associées au menu.
+- le thème et le régime alimentaire ;
+- le prix par personne ;
+- le nombre minimum de personnes ;
+- la quantité restante ;
+- les conditions associées au menu ;
+- la composition du menu et les plats proposés ;
+- les allergènes associés à chaque plat ;
+- une information sur la remise de 10 % applicable uniquement lorsque le nombre de personnes atteint le seuil affiché (nombre minimum de personnes + 5).
 
 Cette étape permet au visiteur de choisir une prestation adaptée à ses besoins.
 
@@ -101,17 +117,15 @@ Cette étape permet au visiteur de choisir une prestation adaptée à ses besoin
 
 ## 3.3 Accès au formulaire de contact
 
-La page de contact permet au visiteur d'accéder à un formulaire lui permettant de préparer une demande auprès de l'entreprise.
+La page de contact permet au visiteur d'envoyer une demande au traiteur.
 
-Cette page présente une interface comprenant les champs nécessaires à la saisie d'un message.
+Le formulaire comporte les champs suivants :
 
-Dans la version actuelle de l'application, le formulaire est uniquement présent à titre d'interface utilisateur et n'est pas encore relié à un système de traitement des demandes.
+- nom ;
+- e-mail ;
+- message.
 
-Cette fonctionnalité pourra être complétée dans une évolution future avec :
-
-- l'envoi automatique des messages ;
-- la transmission des demandes à l'entreprise ;
-- l'ajout d'une gestion des demandes de contact.
+Lors de l'envoi, la demande est transmise à l'entreprise et un accusé de réception est envoyé à l'adresse e-mail indiquée par le visiteur.
 
 ---
 
@@ -167,17 +181,13 @@ L'accès aux fonctionnalités est ensuite adapté selon les droits associés au 
 
 ## 4.2 Consultation des menus
 
-Une fois connecté, le client peut consulter les menus disponibles proposés par l'entreprise.
+Une fois connecté, le client dispose des mêmes possibilités de consultation et de filtrage du catalogue que le visiteur.
 
-Les informations affichées permettent de choisir une prestation adaptée :
+Il peut notamment :
 
-- nom du menu ;
-- description ;
-- composition ;
-- régime alimentaire ;
-- thème ;
-- prix par personne ;
-- nombre minimum de personnes.
+- filtrer les menus par thème, régime alimentaire, prix maximum et nombre de personnes ;
+- consulter les cartes menus (thème, régime, prix par personne, nombre minimum de personnes, quantité restante) ;
+- ouvrir le détail d'un menu (composition, allergènes, conditions, stock et information sur la remise éventuelle).
 
 Le client peut ainsi identifier le menu correspondant à ses besoins avant de réaliser une commande.
 

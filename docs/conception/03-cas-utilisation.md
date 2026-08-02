@@ -51,7 +51,22 @@ Le visiteur peut consulter l’ensemble des menus disponibles.
 
 #### Fonctionnalités :
 - affichage des menus
-- consultation du détail d’un menu
+- filtrage côté interface selon :
+  - le thème ;
+  - le régime alimentaire ;
+  - le prix maximum ;
+  - le nombre de personnes
+- combinaison de plusieurs critères (logique ET)
+- action « Appliquer » pour lancer le filtrage
+- action « Réinitialiser » pour restaurer l’ensemble du catalogue
+- affichage d’un message si aucun menu ne correspond
+- consultation du détail d’un menu :
+  - thème, régime, prix par personne, nombre minimum de personnes ;
+  - quantité restante ;
+  - conditions ;
+  - composition du menu (plats) ;
+  - allergènes associés à chaque plat ;
+  - information sur la remise de 10 % applicable uniquement lorsque le nombre de personnes atteint le seuil prévu
 
 ---
 
@@ -193,7 +208,7 @@ L’administrateur dispose des mêmes droits qu’un employé.
 
 ## 7. 🧩 Synthèse fonctionnelle
 
-- Visiteur : consultation des menus, avis publiés, horaires, pages légales et formulaire de contact
+- Visiteur : catalogue filtrable, détail des menus, avis publiés, horaires, pages légales et formulaire de contact
 - Client : profil, commandes (création, suivi, modification et annulation), dépôt d’avis
 - Employé : gestion du catalogue, des horaires, des commandes, du matériel et modération des avis
 - Administrateur : gestion des employés, supervision opérationnelle, statistiques et chiffre d’affaires

@@ -72,11 +72,30 @@ Chaque règle précise son origine, son emplacement d'implémentation et son ét
 
 ## Consultation
 
-| ID     | Origine               | Implémentation | Statut    | Règle métier                                                                                                  |
-| ------ | --------------------- | -------------- | --------- | ------------------------------------------------------------------------------------------------------------- |
-| RM-012 | 📋 Cahier des charges | Front + Back   | 🧪 Testée | Les visiteurs peuvent consulter les menus disponibles.                                                        |
-| RM-013 | 📋 Cahier des charges | Front + Back   | 🧪 Testée | Le détail d'un menu affiche son titre, sa description, son thème, son régime, son prix et ses plats associés. |
-| RM-014 | ⚙️ Conception         | Back + BDD     | 🧪 Testée | Les menus sont récupérés depuis la base MySQL.                                                                |
+| ID     | Origine               | Implémentation | Statut    | Règle métier                                                                                                                          |
+| ------ | --------------------- | -------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| RM-012 | 📋 Cahier des charges | Front + Back   | 🧪 Testée | Les visiteurs peuvent consulter les menus disponibles.                                                                                |
+| RM-013 | 📋 Cahier des charges | Front + Back   | 🧪 Testée | Le détail d'un menu affiche l'ensemble des informations nécessaires à sa consultation.                                                |
+| RM-014 | ⚙️ Conception         | Back + BDD     | 🧪 Testée | Les menus sont récupérés depuis la base MySQL.                                                                                        |
+| RM-061 | ⚙️ Conception         | Front          | 🧪 Testée | Le catalogue public peut être filtré côté interface selon le thème, le régime alimentaire, le prix maximum et le nombre de personnes. |
+| RM-062 | ⚙️ Conception         | Front          | 🧪 Testée | Plusieurs filtres actifs se combinent avec une logique ET.                                                                            |
+| RM-063 | ⚙️ Conception         | Front          | 🧪 Testée | L'action « Réinitialiser » restaure l'ensemble du catalogue et affiche un message lorsqu'aucun résultat ne correspond aux critères.   |
+
+#### Détail de la règle RM-013
+
+Le détail d'un menu affiche :
+
+- le titre ;
+- la description ;
+- le thème ;
+- le régime alimentaire ;
+- le prix par personne ;
+- le nombre minimum de personnes ;
+- la quantité restante ;
+- les conditions du menu ;
+- les plats associés ;
+- les allergènes des plats ;
+- l'information relative à la remise de 10 % lorsque le seuil applicable est atteint.
 
 ## Gestion
 
@@ -90,12 +109,12 @@ Chaque règle précise son origine, son emplacement d'implémentation et son ét
 
 # 4. Gestion des plats et associations
 
-| ID     | Origine               | Implémentation | Statut    | Règle métier                                                              |
-| ------ | --------------------- | -------------- | --------- | ------------------------------------------------------------------------- |
-| RM-018 | 📋 Cahier des charges | Front + Back   | 🧪 Testée | Les plats associés à un menu sont visibles lors de sa consultation.       |
-| RM-019 | ⚙️ Conception         | BDD            | 🧪 Testée | Un plat peut appartenir à plusieurs menus grâce aux tables d'association. |
-| RM-020 | ⚙️ Conception         | BDD            | 🧪 Testée | Les allergènes sont gérés par association entre plats et allergènes.      |
-| RM-021 | 📋 Cahier des charges | Back           | 🧪 Testée | La gestion des plats est réservée aux utilisateurs autorisés.             |
+| ID     | Origine               | Implémentation     | Statut    | Règle métier                                                                                                        |
+| ------ | --------------------- | ------------------ | --------- | ------------------------------------------------------------------------------------------------------------------- |
+| RM-018 | 📋 Cahier des charges | Front + Back       | 🧪 Testée | Les plats associés à un menu sont visibles lors de sa consultation.                                                 |
+| RM-019 | ⚙️ Conception         | BDD                | 🧪 Testée | Un plat peut appartenir à plusieurs menus grâce aux tables d'association.                                           |
+| RM-020 | ⚙️ Conception         | Front + Back + BDD | 🧪 Testée | Les allergènes sont gérés par association entre plats et allergènes et sont affichés dans le détail public du menu. |
+| RM-021 | 📋 Cahier des charges | Back               | 🧪 Testée | La gestion des plats est réservée aux utilisateurs autorisés.                                                       |
 
 ---
 
@@ -194,6 +213,7 @@ Les fonctionnalités principales développées et validées concernent :
 - l'architecture API Node.js / Express ;
 - la connexion MySQL et l'environnement Docker Compose local ;
 - la gestion des menus, plats et associations ;
+- le catalogue public filtrable et le détail enrichi des menus (stock, conditions, allergènes, information de remise) ;
 - l'inscription client et l'authentification JWT ;
 - la gestion des rôles et la protection des routes ;
 - la gestion complète des commandes (stock, statuts, annulations, calculs tarifaires) ;

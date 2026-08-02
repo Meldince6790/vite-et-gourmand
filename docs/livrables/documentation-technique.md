@@ -164,6 +164,8 @@ Au sein du backend, la logique métier des commandes est structurée selon une a
 
 Cette organisation limite le couplage entre les règles métier et l’accès aux données.
 
+Le détail public d’un menu (`GET /menus/:id`) renvoie les plats enrichis avec leurs allergènes, ce qui permet à l’interface d’afficher la composition complète en un seul appel. Le filtrage du catalogue public est réalisé côté React à partir de la liste déjà chargée (`GET /menus`), sans paramètre de requête backend, en s’appuyant également sur les listes de thèmes et de régimes (`GET /themes`, `GET /regimes`).
+
 ---
 
 ## 2.5 Choix du frontend
@@ -692,7 +694,8 @@ npm start
 Une fois lancé, le backend expose une API REST permettant :
 
 - l'inscription et la gestion des utilisateurs ;
-- la consultation et la gestion des menus ;
+- la consultation et la gestion des menus (dont le détail enrichi avec les allergènes des plats) ;
+- la consultation des thèmes et des régimes ;
 - la gestion des plats ;
 - la gestion des commandes ;
 - le dépôt et la modération des avis ;
@@ -840,7 +843,8 @@ Les tests frontend ont permis de vérifier :
 Les pages principales vérifiées sont :
 
 - page d'accueil ;
-- consultation des menus ;
+- catalogue des menus avec filtres côté interface ;
+- détail complet d'un menu ;
 - connexion et inscription utilisateur ;
 - espace client et suivi des commandes ;
 - dépôt d'avis depuis les commandes terminées ;
@@ -856,6 +860,9 @@ La validation fonctionnelle a été réalisée en vérifiant que les fonctionnal
 Les principaux scénarios vérifiés sont :
 
 - consultation des menus par un visiteur ;
+- filtrage du catalogue (critère isolé, critères combinés, réinitialisation, aucun résultat) ;
+- consultation du détail complet d'un menu (stock, conditions, allergènes, information de remise) ;
+- affichage d'un stock nul et d'un plat sans allergène renseigné ;
 - inscription d'un client puis connexion ;
 - accès selon le rôle attribué ;
 - récupération des informations depuis la base de données ;
@@ -868,7 +875,7 @@ Les principaux scénarios vérifiés sont :
 
 ## 3.6.5 Limites identifiées
 
-Les fonctionnalités métier principales prévues pour l'ECF sont opérationnelles (inscription client, e-mails automatiques, statistiques MongoDB, avis, pages légales, horaires dans le pied de page, formulaire de contact).
+Les fonctionnalités métier principales prévues pour l'ECF sont opérationnelles (inscription client, e-mails automatiques, statistiques MongoDB, avis, catalogue filtrable et détail enrichi des menus, pages légales, horaires dans le pied de page, formulaire de contact).
 
 Les principales limites restantes concernent surtout la mise en production et le polish :
 

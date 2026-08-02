@@ -1,98 +1,64 @@
 @startsalt
-' WIREFRAME — BASSE FIDÉLITÉ
-' Desktop Catalogue des menus — ~1280 px (indicatif)
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Desktop Menus (blocs fonctionnels)
 {
-{#
-WIREFRAME — BASSE FIDÉLITÉ | Desktop Catalogue des menus (~1280 px)
-.
+WIREFRAME — BASSE FIDÉLITÉ — Desktop Menus
+----
 {+
-Vite & Gourmand | Accueil | Menus | Contact | [Connexion]
+Logo | Navigation
 }
-.
-{+
-Catalogue des menus
-}
-.
+----
+Catalogue
+----
+{
 {+
 Filtres
 .
-Prix maximum | "_______ €"
-Fourchette de prix | "0 – 50 €"
-Thème | "Tous          "
-Régime | "Tous          "
-Nb min. personnes | "___"
+Thème
+Régime
+Nb min. pers.
+Fourchette de prix
 .
 [Réinitialiser] | [Appliquer]
-}
-.
+} |
 {+
-Grille de menus
 .
+.
+Image
+.
+.
+}
+}
+----
 {
 {+
-[Image menu]
-.
-Titre menu A
-Description courte…
-Min. X pers.
-Prix : __ €
-[Voir le détail]
+Image
+Titre menu
+Infos menu
 } |
 {+
-[Image menu]
-.
-Titre menu B
-Description courte…
-Min. X pers.
-Prix : __ €
-[Voir le détail]
+Image
+Titre menu
+Infos menu
 } |
 {+
-[Image menu]
-.
-Titre menu C
-Description courte…
-Min. X pers.
-Prix : __ €
-[Voir le détail]
+Image
+Titre menu
+Infos menu
 }
 }
-.
+----
 {
 {+
-[Image menu]
-.
-Titre menu D
-Description courte…
-Min. X pers.
-Prix : __ €
-[Voir le détail]
+Horaires
 } |
 {+
-[Image menu]
-.
-Titre menu E
-Description courte…
-Min. X pers.
-Prix : __ €
-[Voir le détail]
+Mentions légales
 } |
 {+
-[Image menu]
-.
-Titre menu F
-Description courte…
-Min. X pers.
-Prix : __ €
-[Voir le détail]
-}
-}
-}
-.
-{+
-Pied de page
-.
-Horaires d'ouverture | Mentions légales | CGV
+CGV
 }
 }
 }

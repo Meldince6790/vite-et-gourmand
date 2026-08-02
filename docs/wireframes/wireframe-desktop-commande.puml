@@ -1,69 +1,58 @@
 @startsalt
-' WIREFRAME — BASSE FIDÉLITÉ
-' Desktop Commande d'un menu — ~1280 px (indicatif)
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Desktop Commande (blocs fonctionnels)
 {
-{#
-WIREFRAME — BASSE FIDÉLITÉ | Desktop Commande d'un menu (~1280 px)
-.
+WIREFRAME — BASSE FIDÉLITÉ — Desktop Commande
+----
 {+
-Vite & Gourmand | Accueil | Menus | Contact | [Connexion]
+Logo | Navigation
 }
-.
-{+
-Commander un menu
-.
-Menu sélectionné : Titre du menu
-Description courte — Min. X pers. — Prix unitaire : __ €
-}
-.
+----
+Commande
+----
 {
-{+
-Informations client
-.
-Nom       | "________________"
-Prénom    | "________________"
-E-mail    | "________________"
-Téléphone | "________________"
-} |
-{+
-Informations prestation
-.
-Adresse     | "________________"
-Date        | "__/__/________"
-Heure livr. | "__:__"
-Lieu        | "________________"
-}
-}
-.
 {
 {+
 Menu sélectionné
 .
-[Image menu]
-Titre du menu
+Titre menu
+Infos menu
+}
 .
-Nombre de personnes | "____"
+{+
+Formulaire
+.
+Date
+Heure
+Nb personnes
+Matériel Oui / Non
+Adresse
+Infos complémentaires
+}
 } |
 {+
-Récapitulatif des prix
+Récapitulatif
 .
-Prix menu  | ______ €
-Livraison  | ______ €
-Remise     | - ____ €
+Ligne récap 1
+Ligne récap 2
+Ligne récap 3
+Total
 .
-Total      | ______ €
-.
-[Valider la commande]
-.
-Note : un e-mail de confirmation
-sera envoyé après validation.
+[Valider]
 }
 }
-.
+----
+{
 {+
-Pied de page
-.
-Horaires d'ouverture | Mentions légales | CGV
+Horaires
+} |
+{+
+Mentions légales
+} |
+{+
+CGV
 }
 }
 }

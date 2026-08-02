@@ -1,69 +1,54 @@
 @startsalt
-' WIREFRAME — BASSE FIDÉLITÉ
-' Desktop Accueil — ~1280 px (indicatif)
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Desktop Accueil (blocs fonctionnels)
 {
-{#
-WIREFRAME — BASSE FIDÉLITÉ | Desktop Accueil (~1280 px)
-.
+WIREFRAME — BASSE FIDÉLITÉ — Desktop Accueil
+----
 {+
-Vite & Gourmand | Accueil | Menus | Contact | [Connexion]
+Logo | Navigation
 }
-.
-{+
-Hero
-.
-[ Image hero / placeholder ]
-.
-Slogan : Traiteur événementiel, rapide et gourmand
-.
-[Découvrir nos menus]
-}
-.
-{+
-Présentation de l'entreprise
-.
-Texte court : histoire, valeurs, engagement qualité…
-(zone de contenu placeholder)
-}
-.
-{+
-Professionnalisme / équipe
-.
-[ Photo équipe ] | Description du savoir-faire
-.                 | et de l'accompagnement client
-}
-.
-{+
-Avis clients validés
-.
+----
 {
 {+
-Avis 1
-Note : 5/5
-Commentaire client…
-— Prénom
+Contenu principal
+.
+Titre
+Texte
+.
+[Bouton]
 } |
 {+
-Avis 2
-Note : 5/5
-Commentaire client…
-— Prénom
+.
+.
+Image
+.
+.
+}
+}
+----
+{
+{+
+Avis client
 } |
 {+
-Avis 3
-Note : 4/5
-Commentaire client…
-— Prénom
-}
-}
-}
-.
+Avis client
+} |
 {+
-Pied de page
-.
-Horaires d'ouverture | Mentions légales | CGV
-.
-© Vite & Gourmand
+Avis client
+}
+}
+----
+{
+{+
+Horaires
+} |
+{+
+Mentions légales
+} |
+{+
+CGV
 }
 }
 }

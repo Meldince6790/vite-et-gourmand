@@ -20,10 +20,10 @@ Le système distingue clairement les utilisateurs publics et les utilisateurs in
 Utilisateur non authentifié pouvant consulter le site et utiliser le formulaire de contact.
 
 ### 👤 Client
-Utilisateur authentifié pouvant passer commande et suivre ses commandes.
+Utilisateur authentifié pouvant gérer son profil, passer commande, suivre ses commandes et déposer un avis.
 
 ### 🧑‍💼 Employé
-Utilisateur interne chargé du traitement opérationnel des commandes, du catalogue et des demandes issues du formulaire de contact.
+Utilisateur interne chargé du traitement opérationnel des commandes, du catalogue et de la modération des avis.
 
 ### 🧑‍🍳 Administrateur
 Utilisateur principal du système disposant de droits étendus de gestion, de supervision et d’analyse.
@@ -41,6 +41,8 @@ Le visiteur peut accéder aux pages suivantes :
 - Mentions légales  
 - CGV  
 
+Il peut également consulter les horaires d’ouverture affichés dans le pied de page.
+
 ---
 
 ### 🍽️ Consultation du catalogue
@@ -49,12 +51,7 @@ Le visiteur peut consulter l’ensemble des menus disponibles.
 
 #### Fonctionnalités :
 - affichage des menus
-- filtrage par :
-  - prix
-  - thème
-  - régime alimentaire
-  - nombre de personnes
-- consultation du détail d’un menu (données stockées en base de données)
+- consultation du détail d’un menu
 
 ---
 
@@ -63,9 +60,9 @@ Le visiteur peut consulter l’ensemble des menus disponibles.
 Le visiteur peut envoyer un message au prestataire via un formulaire de contact.
 
 #### Fonctionnalités :
-- titre du message
-- message détaillé
-- email
+- nom
+- e-mail
+- message
 - envoi du formulaire
 
 ---
@@ -98,15 +95,23 @@ Le client peut passer commande.
 - accès à la page de commande (authentification obligatoire)
 - sélection du menu
 - définition du nombre de personnes
+- contrôle de la disponibilité du menu
+- mise à jour du stock lors de la création, de la modification ou de l’annulation
 - validation de commande
+- envoi d’un e-mail de confirmation ou d’annulation selon l’action réalisée
+- modification d’une commande uniquement lorsqu’elle est au statut « En attente »
+- annulation d’une commande selon les règles métier
 
 ---
 
 ### 👤 Espace utilisateur
 
 #### Fonctionnalités :
-- consultation des commandes
+- consultation et modification du profil
+- consultation de l’historique des commandes
 - suivi des statuts de commande
+- dépôt d’un avis après une commande au statut « Terminée »
+- avis soumis au statut « En attente » avant modération
 
 ---
 
@@ -129,12 +134,14 @@ Accès après authentification.
 - consultation des commandes
 - filtrage par statut et client
 - mise à jour des statuts :
+  - en attente
   - acceptée
   - en préparation
   - en cours de livraison
   - livrée
   - en attente de retour de matériel
   - terminée
+  - annulée
 
 ---
 
@@ -146,9 +153,8 @@ Accès après authentification.
 ---
 
 ### 📦 Gestion du matériel prêté
-- suivi des retours
-- notification client
-- pénalités selon CGV
+- suivi du prêt de matériel
+- suivi de la restitution du matériel
 
 ---
 
@@ -162,8 +168,7 @@ Accès après authentification.
 ## 6. 🧑‍🍳 Administrateur
 
 ### 👨‍💼 Gestion des employés
-- création de comptes employés (email + mot de passe)
-- envoi d’un email d’activation
+- création directe de comptes employés par l’administrateur (email + mot de passe)
 - désactivation de comptes
 - impossibilité de créer un administrateur via l’application
 
@@ -177,7 +182,6 @@ L’administrateur dispose des mêmes droits qu’un employé.
 ### 📊 Analyse des ventes
 - nombre de commandes par menu
 - comparaison via graphiques
-- base de données non relationnelle
 
 ---
 
@@ -189,10 +193,10 @@ L’administrateur dispose des mêmes droits qu’un employé.
 
 ## 7. 🧩 Synthèse fonctionnelle
 
-- Visiteur : consultation et contact
-- Client : commande et suivi
-- Employé : gestion opérationnelle
-- Administrateur : supervision et analyse
+- Visiteur : consultation des menus, avis publiés, horaires, pages légales et formulaire de contact
+- Client : profil, commandes (création, suivi, modification et annulation), dépôt d’avis
+- Employé : gestion du catalogue, des horaires, des commandes, du matériel et modération des avis
+- Administrateur : gestion des employés, supervision opérationnelle, statistiques et chiffre d’affaires
 
 ---
 

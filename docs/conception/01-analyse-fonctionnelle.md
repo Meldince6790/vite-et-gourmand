@@ -44,9 +44,11 @@ Le visiteur accède librement au site sans être authentifié.
 Il peut notamment :
 
 - consulter les menus ;
-- rechercher des prestations ;
 - consulter les avis publiés ;
-- accéder au formulaire de contact ;
+- consulter les horaires d'ouverture dans le pied de page ;
+- consulter les mentions légales ;
+- consulter les conditions générales de vente ;
+- utiliser le formulaire de contact ;
 - créer un compte client.
 
 ---
@@ -61,8 +63,9 @@ Il peut :
 - consulter les menus ;
 - passer une commande ;
 - suivre ses commandes ;
-- annuler une commande selon les règles métier ;
-- déposer un avis après une prestation.
+- modifier une commande uniquement lorsqu'elle est au statut « En attente » ;
+- annuler une commande selon les règles métier prévues ;
+- déposer un avis après une commande au statut « Terminée ».
 
 ---
 
@@ -79,6 +82,8 @@ L'employé participe à la gestion quotidienne de l'activité.
 Il peut :
 
 - gérer les menus ;
+- gérer les plats ;
+- gérer les horaires ;
 - gérer les commandes ;
 - modérer les avis clients.
 

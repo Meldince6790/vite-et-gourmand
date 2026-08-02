@@ -7,7 +7,7 @@
     "start": "node src/app.js",
     "dev": "node src/app.js",
     "stats:resync": "node scripts/resync-statistiques.js",
-    "test": "node --test src/services/commande.service.test.js src/services/statistique.service.test.js src/services/avis.service.test.js src/services/auth.service.test.js src/services/email.service.test.js src/services/email.templates.test.js src/controllers/contact.controller.test.js"
+    "test": "node --test src/services/commande.service.test.js src/services/statistique.service.test.js src/services/avis.service.test.js src/services/auth.service.test.js src/services/email.service.test.js src/services/email.templates.test.js src/controllers/contact.controller.test.js src/models/menu.model.test.js src/services/menu.service.test.js"
   },
   "keywords": [],
   "author": "",

@@ -44,6 +44,8 @@ Le visiteur accède librement au site sans être authentifié.
 Il peut notamment :
 
 - consulter les menus ;
+- filtrer les menus selon le thème, le régime alimentaire, le prix et le nombre de personnes ;
+- consulter le détail complet d'un menu (composition, allergènes, conditions, quantité restante et information tarifaire) ;
 - consulter les avis publiés ;
 - consulter les horaires d'ouverture dans le pied de page ;
 - consulter les mentions légales ;

@@ -1,6 +1,7 @@
-const database = require("../config/database");
+const defaultDatabase = require("../config/database");
 
-const Menu = {
+function createMenuModel(database = defaultDatabase) {
+  return {
   async findAll() {
     const [rows] = await database.query(
       `
@@ -56,7 +57,48 @@ const Menu = {
       [id],
     );
 
-    menu.plats = plats;
+    let allergenesRows = [];
+
+    if (plats.length > 0) {
+      const platIds = plats.map((plat) => plat.plat_id);
+      const placeholders = platIds.map(() => "?").join(", ");
+
+      const [rows] = await database.query(
+        `
+          SELECT
+            plat_allergene.plat_id,
+            allergene.allergene_id,
+            allergene.libelle
+          FROM plat_allergene
+          JOIN allergene
+            ON plat_allergene.allergene_id = allergene.allergene_id
+          WHERE plat_allergene.plat_id IN (${placeholders})
+        `,
+        platIds,
+      );
+
+      allergenesRows = rows;
+    }
+
+    const allergenesByPlatId = new Map();
+
+    for (const row of allergenesRows) {
+      if (!allergenesByPlatId.has(row.plat_id)) {
+        allergenesByPlatId.set(row.plat_id, []);
+      }
+
+      allergenesByPlatId.get(row.plat_id).push({
+        allergene_id: row.allergene_id,
+        libelle: row.libelle,
+      });
+    }
+
+    menu.plats = plats.map((plat) => ({
+      plat_id: plat.plat_id,
+      titre_plat: plat.titre_plat,
+      photo: plat.photo,
+      allergenes: allergenesByPlatId.get(plat.plat_id) || [],
+    }));
 
     return menu;
   },
@@ -273,6 +315,10 @@ const Menu = {
 
     return result.affectedRows > 0;
   },
-};
+  };
+}
+
+const Menu = createMenuModel();
 
 module.exports = Menu;
+module.exports.createMenuModel = createMenuModel;

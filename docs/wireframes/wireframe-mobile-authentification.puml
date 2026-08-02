@@ -1,58 +1,59 @@
 @startsalt
-' WIREFRAME — BASSE FIDÉLITÉ
-' Mobile Authentification — ~375 px (indicatif)
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Mobile Authentification (blocs fonctionnels)
 {
-{#
-WIREFRAME — BASSE FIDÉLITÉ
-Mobile Authentification (~375 px)
-.
+WIREFRAME — BASSE FIDÉLITÉ — Mobile Authentification
+----
 {+
-Vite & Gourmand | [≡]
+Logo | Menu
 }
-.
-{+
+----
 Mon compte
-}
-.
+----
 {+
-{/ <b>Connexion | Inscription }
+{+
+Connexion | Inscription
+}
 .
 Connexion
 .
-E-mail       | "______________"
-Mot de passe | "____________"
+E-mail
+Mot de passe
 .
 [Se connecter]
 .
-Mot de passe oublié ?
+Lien oublié
 }
-.
 ----
-.
 {+
-{/ Connexion | <b>Inscription }
+{+
+Connexion | Inscription
+}
 .
 Inscription
 .
-Nom          | "______________"
-Prénom       | "______________"
-Tél. / GSM   | "______________"
-Adresse      | "______________"
-E-mail       | "______________"
-Mot de passe | "____________"
-Confirmation | "____________"
+Nom
+Prénom
+Téléphone
+Adresse
+E-mail
+Mot de passe
+Confirmation
 .
-Règles mot de passe :
-— min. 10 caractères
-— majuscule
-— minuscule
-— chiffre
-— caractère spécial
+Règles mdp
 .
-[Créer mon compte]
-.
-Un e-mail de bienvenue sera
-envoyé après l'inscription.
+[Créer compte]
+}
+----
+{
+{+
+Horaires
+} |
+{+
+Mentions légales
+CGV
 }
 }
 }

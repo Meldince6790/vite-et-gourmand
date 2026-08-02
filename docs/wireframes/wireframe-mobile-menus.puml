@@ -1,53 +1,70 @@
 @startsalt
-' WIREFRAME — BASSE FIDÉLITÉ
-' Mobile Catalogue des menus — ~375 px (indicatif)
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Mobile Menus (blocs fonctionnels)
 {
-{#
-WIREFRAME — BASSE FIDÉLITÉ
-Mobile Catalogue menus (~375 px)
-.
+WIREFRAME — BASSE FIDÉLITÉ — Mobile Menus
+----
 {+
-Vite & Gourmand | [≡]
+Logo | Menu
+}
+----
+Catalogue
+----
+{+
+Filtres
+.
+{
+Thème | Régime
+}
+{
+Nb min. pers. | Fourchette de prix
 }
 .
-{+
-Catalogue des menus
+[Réinitialiser] | [Appliquer]
 }
-.
+----
 {+
-[Filtres]
-.
-Panneau filtres (replié)
-— Prix max / fourchette
-— Thème / régime
-— Nb min. personnes
-— [Appliquer]
+{
+Image
+} |
+{
+Titre menu
+Infos menu
+[Voir détail]
 }
-.
-{+
-[Image menu]
-Titre menu A
-Min. X pers. — __ €
-[Voir le détail]
 }
-.
+----
 {+
-[Image menu]
-Titre menu B
-Min. X pers. — __ €
-[Voir le détail]
+{
+Image
+} |
+{
+Titre menu
+Infos menu
+[Voir détail]
 }
-.
-{+
-[Image menu]
-Titre menu C
-Min. X pers. — __ €
-[Voir le détail]
 }
-.
+----
 {+
-Pied de page
-Horaires | Mentions | CGV
+{
+Image
+} |
+{
+Titre menu
+Infos menu
+[Voir détail]
+}
+}
+----
+{
+{+
+Horaires
+} |
+{+
+Mentions légales
+CGV
 }
 }
 }

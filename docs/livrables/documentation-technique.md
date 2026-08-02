@@ -591,6 +591,17 @@ Une base dédiée est utilisée afin de conserver les données nécessaires aux 
 
 La connexion à MongoDB est configurée grâce aux variables d'environnement du backend afin de ne pas exposer les informations sensibles dans le code source.
 
+### Resynchronisation des statistiques MongoDB
+
+Les statistiques utilisées par l'espace administrateur sont stockées dans MongoDB sous forme d'agrégats calculés à partir des commandes enregistrées dans la base de données MySQL/MariaDB.
+
+Lors de la création ou de l'annulation d'une commande, les indicateurs statistiques sont automatiquement mis à jour afin de conserver la cohérence des données affichées dans les tableaux de bord administrateur.
+
+Afin de faciliter la maintenance de l'application, un script de resynchronisation est également disponible :
+
+````bash
+npm run stats:resync
+
 ---
 
 ## 3.5.3 Déploiement du backend
@@ -602,7 +613,7 @@ Depuis le dossier backend :
 ```bash
 cd backend
 npm install
-```
+````
 
 La configuration de l'application est réalisée grâce à un fichier `.env` contenant les paramètres nécessaires :
 

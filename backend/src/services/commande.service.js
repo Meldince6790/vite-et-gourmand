@@ -74,6 +74,17 @@ class CommandeService {
     }
   }
 
+  async appliquerStatistiqueAnnulation(commande) {
+    try {
+      await this.statistiqueService.retirerStatistiqueCommande(commande);
+    } catch (error) {
+      this.logger.error(
+        "Erreur lors de la mise à jour des statistiques MongoDB (annulation) :",
+        error,
+      );
+    }
+  }
+
   async withTransaction(work) {
     const connection = await this.database.getConnection();
 
@@ -278,6 +289,7 @@ class CommandeService {
         return updated;
       });
 
+      await this.appliquerStatistiqueAnnulation(commande);
       await this.envoyerEmailAnnulation(commande);
 
       return result;
@@ -335,6 +347,7 @@ class CommandeService {
       return updated;
     });
 
+    await this.appliquerStatistiqueAnnulation(commande);
     await this.envoyerEmailAnnulation(commande);
 
     return result;
@@ -373,6 +386,7 @@ class CommandeService {
       return updated;
     });
 
+    await this.appliquerStatistiqueAnnulation(commandeExistante);
     await this.envoyerEmailAnnulation(commandeExistante);
 
     return result;

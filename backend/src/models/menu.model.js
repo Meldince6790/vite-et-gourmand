@@ -227,8 +227,9 @@ const Menu = {
 
   // Gestion du stock
 
-  async hasStock(id, quantite = 1) {
-    const [rows] = await database.query(
+  async hasStock(id, quantite = 1, connection = null) {
+    const db = connection ?? database;
+    const [rows] = await db.query(
       `
         SELECT quantite_restante
         FROM menu
@@ -244,8 +245,9 @@ const Menu = {
     return rows[0].quantite_restante >= quantite;
   },
 
-  async decreaseStock(id, quantite) {
-    await database.query(
+  async decreaseStock(id, quantite, connection = null) {
+    const db = connection ?? database;
+    const [result] = await db.query(
       `
         UPDATE menu
         SET quantite_restante = quantite_restante - ?
@@ -254,10 +256,13 @@ const Menu = {
       `,
       [quantite, id, quantite],
     );
+
+    return result.affectedRows > 0;
   },
 
-  async increaseStock(id, quantite) {
-    await database.query(
+  async increaseStock(id, quantite, connection = null) {
+    const db = connection ?? database;
+    const [result] = await db.query(
       `
         UPDATE menu
         SET quantite_restante = quantite_restante + ?
@@ -265,6 +270,8 @@ const Menu = {
       `,
       [quantite, id],
     );
+
+    return result.affectedRows > 0;
   },
 };
 

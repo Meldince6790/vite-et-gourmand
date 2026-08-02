@@ -37,7 +37,14 @@ function App() {
 
         <Route path="/menus/:id" element={<MenuDetail />} />
 
-        <Route path="/commander/:id" element={<Commander />} />
+        <Route
+          path="/commander/:id"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <Commander />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/espace-client"

@@ -47,8 +47,9 @@ class CommandeRepository {
     return rows;
   }
 
-  async create(commande) {
-    const [result] = await this.database.query(
+  async create(commande, connection = null) {
+    const db = connection ?? this.database;
+    const [result] = await db.query(
       `
         INSERT INTO commande (
           numero_commande,
@@ -87,8 +88,9 @@ class CommandeRepository {
     return result.insertId;
   }
 
-  async updateStatut(id, statut) {
-    const [result] = await this.database.query(
+  async updateStatut(id, statut, connection = null) {
+    const db = connection ?? this.database;
+    const [result] = await db.query(
       `
         UPDATE commande
         SET statut = ?
@@ -100,8 +102,9 @@ class CommandeRepository {
     return result.affectedRows > 0;
   }
 
-  async updateAnnulation(id, annulation) {
-    const [result] = await this.database.query(
+  async updateAnnulation(id, annulation, connection = null) {
+    const db = connection ?? this.database;
+    const [result] = await db.query(
       `
         UPDATE commande
         SET
@@ -123,8 +126,9 @@ class CommandeRepository {
     return result.affectedRows > 0;
   }
 
-  async update(id, commande) {
-    const [result] = await this.database.query(
+  async update(id, commande, connection = null) {
+    const db = connection ?? this.database;
+    const [result] = await db.query(
       `
         UPDATE commande
         SET

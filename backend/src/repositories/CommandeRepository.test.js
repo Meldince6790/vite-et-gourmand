@@ -188,6 +188,120 @@ describe("CommandeRepository", () => {
     });
   });
 
+  describe("connexion optionnelle", () => {
+    const commandeCreate = {
+      numero_commande: "CMD-1",
+      date_commande: "2026-08-02",
+      date_prestation: "2026-09-01",
+      heure_livraison: "12:00",
+      adresse_livraison: "1 rue Test",
+      prix_menu: 100,
+      nombre_personne: 10,
+      prix_livraison: 5.59,
+      statut: "En attente",
+      pret_materiel: false,
+      restitution_materiel: true,
+      utilisateur_id: 7,
+      menu_id: 3,
+    };
+
+    const commandeUpdate = {
+      date_prestation: "2026-09-02",
+      heure_livraison: "13:00",
+      adresse_livraison: "2 rue Test",
+      nombre_personne: 12,
+      prix_menu: 120,
+      pret_materiel: true,
+      restitution_materiel: false,
+    };
+
+    it("create utilise connection.query et n'appelle pas le pool", async () => {
+      const database = createFakeDatabase([{ insertId: 1 }]);
+      const connection = createFakeDatabase([{ insertId: 99 }]);
+      const repo = new CommandeRepository(database);
+
+      const result = await repo.create(commandeCreate, connection);
+
+      assert.equal(result, 99);
+      assert.equal(connection.calls.length, 1);
+      assert.equal(database.calls.length, 0);
+      assert.match(connection.calls[0].sql, /INSERT INTO commande/i);
+    });
+
+    it("updateStatut utilise connection.query et n'appelle pas le pool", async () => {
+      const database = createFakeDatabase([{ affectedRows: 0 }]);
+      const connection = createFakeDatabase([{ affectedRows: 1 }]);
+      const repo = new CommandeRepository(database);
+
+      const result = await repo.updateStatut(1, "Annulée", connection);
+
+      assert.equal(result, true);
+      assert.equal(connection.calls.length, 1);
+      assert.equal(database.calls.length, 0);
+      assert.deepEqual(connection.calls[0].params, ["Annulée", 1]);
+    });
+
+    it("updateAnnulation utilise connection.query et n'appelle pas le pool", async () => {
+      const database = createFakeDatabase([{ affectedRows: 0 }]);
+      const connection = createFakeDatabase([{ affectedRows: 1 }]);
+      const repo = new CommandeRepository(database);
+      const dateAnnulation = new Date("2026-08-02T12:00:00.000Z");
+
+      const result = await repo.updateAnnulation(
+        9,
+        {
+          mode_contact_annulation: "Mail",
+          motif_annulation: "Indisponible",
+          date_annulation: dateAnnulation,
+        },
+        connection,
+      );
+
+      assert.equal(result, true);
+      assert.equal(connection.calls.length, 1);
+      assert.equal(database.calls.length, 0);
+      assert.deepEqual(connection.calls[0].params, [
+        "Annulée",
+        "Mail",
+        "Indisponible",
+        dateAnnulation,
+        9,
+      ]);
+    });
+
+    it("update utilise connection.query et n'appelle pas le pool", async () => {
+      const database = createFakeDatabase([{ affectedRows: 0 }]);
+      const connection = createFakeDatabase([{ affectedRows: 1 }]);
+      const repo = new CommandeRepository(database);
+
+      const result = await repo.update(4, commandeUpdate, connection);
+
+      assert.equal(result, true);
+      assert.equal(connection.calls.length, 1);
+      assert.equal(database.calls.length, 0);
+      assert.deepEqual(connection.calls[0].params, [
+        "2026-09-02",
+        "13:00",
+        "2 rue Test",
+        12,
+        120,
+        true,
+        false,
+        4,
+      ]);
+    });
+
+    it("sans connexion, create continue d'utiliser le pool du constructeur", async () => {
+      const database = createFakeDatabase([{ insertId: 42 }]);
+      const repo = new CommandeRepository(database);
+
+      const result = await repo.create(commandeCreate);
+
+      assert.equal(result, 42);
+      assert.equal(database.calls.length, 1);
+    });
+  });
+
   describe("delete", () => {
     it("retourne true si une ligne est supprimée", async () => {
       const database = createFakeDatabase([{ affectedRows: 1 }]);

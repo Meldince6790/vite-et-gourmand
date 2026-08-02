@@ -13,6 +13,14 @@ function validatePassword(password) {
   );
 }
 
+function requireText(value, message) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error(message);
+  }
+
+  return value.trim();
+}
+
 const utilisateurService = {
   async getAllUtilisateurs() {
     return await Utilisateur.findAll();
@@ -29,13 +37,21 @@ const utilisateurService = {
   },
 
   async createUtilisateur(utilisateur) {
-    if (!utilisateur.email || !utilisateur.password) {
-      throw new Error("L'adresse e-mail et le mot de passe sont obligatoires.");
+    const nom = requireText(utilisateur.nom, "Le nom est obligatoire.");
+    const prenom = requireText(utilisateur.prenom, "Le prénom est obligatoire.");
+    const email = requireText(
+      utilisateur.email,
+      "L'adresse e-mail est obligatoire.",
+    );
+
+    if (
+      typeof utilisateur.password !== "string" ||
+      utilisateur.password.length === 0
+    ) {
+      throw new Error("Le mot de passe est obligatoire.");
     }
 
-    const utilisateurExistant = await Utilisateur.findByEmail(
-      utilisateur.email,
-    );
+    const utilisateurExistant = await Utilisateur.findByEmail(email);
 
     if (utilisateurExistant) {
       throw new Error("Cette adresse e-mail est déjà utilisée.");
@@ -49,11 +65,12 @@ const utilisateurService = {
 
     const passwordHash = await bcrypt.hash(utilisateur.password, 10);
 
+    // role_id du body volontairement ignoré : compte client uniquement
     const client = {
-      email: utilisateur.email,
+      email,
       password: passwordHash,
-      nom: utilisateur.nom || null,
-      prenom: utilisateur.prenom || null,
+      nom,
+      prenom,
       telephone: utilisateur.telephone || null,
       ville: utilisateur.ville || null,
       pays: utilisateur.pays || null,

@@ -637,9 +637,13 @@ La connexion à MongoDB est configurée grâce aux variables d'environnement du 
 
 Les statistiques utilisées par l'espace administrateur sont stockées dans MongoDB sous forme d'agrégats calculés à partir des commandes enregistrées dans la base de données MySQL/MariaDB.
 
-Lors de la création ou de l'annulation d'une commande, les indicateurs statistiques sont automatiquement mis à jour afin de conserver la cohérence des données affichées dans les tableaux de bord administrateur.
+La synchronisation incrémentale MySQL → MongoDB suit le cycle de vie des commandes :
 
-Afin de faciliter la maintenance de l'application, un script de resynchronisation est également disponible :
+- **création** : +1 commande et +CA (`prix_menu + prix_livraison`) ;
+- **modification** impactant les montants (effectif, adresse / livraison, etc.) : ajustement du CA uniquement (`deltaCommandes = 0`) ;
+- **annulation** : −1 commande et −CA actuel de la commande.
+
+Le chemin nominal n'exécute pas de resynchronisation complète. Afin de faciliter la maintenance, un script de réparation reste disponible en cas d'écart :
 
 ```bash
 npm run stats:resync
@@ -683,7 +687,7 @@ RESEND_API_KEY=
 FRONTEND_URL=http://localhost:5173
 ```
 
-Les variables d'environnement permettent de séparer la configuration du code source et de sécuriser les informations sensibles. `CORS_ORIGIN` définit l’origine autorisée par l’API. Les variables `EMAIL_*`, `CONTACT_TO`, `RESEND_API_KEY` et `FRONTEND_URL` paramètrent le service d’e-mails (`log` par défaut, sans appel réseau ; `resend` pour un envoi réel).
+Les variables d'environnement permettent de séparer la configuration du code source et de sécuriser les informations sensibles. `CORS_ORIGIN` définit l’origine autorisée par l’API. Les variables `EMAIL_*`, `CONTACT_TO`, `RESEND_API_KEY` et `FRONTEND_URL` paramètrent le service d’e-mails (`log` par défaut, sans appel réseau ; `resend` pour un envoi réel). Les variables `ORS_API_KEY`, `ORS_BASE_URL`, `ORS_TIMEOUT_MS`, `CATERER_LATITUDE`, `CATERER_LONGITUDE` et `CATERER_ADDRESS` paramètrent le calcul des frais de livraison via OpenRouteService (clé API exclusivement côté backend). L’endpoint `POST /livraison/estimation` fournit une estimation authentifiée ; la création et la modification de commande recalculent toujours le tarif serveur.
 
 Le serveur backend peut ensuite être démarré avec :
 

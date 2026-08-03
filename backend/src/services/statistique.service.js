@@ -10,6 +10,10 @@ function calculerChiffreAffaires(commande) {
   return Number(commande.prix_menu) + Number(commande.prix_livraison);
 }
 
+function normaliserMontant(valeur) {
+  return Number(Number(valeur).toFixed(2));
+}
+
 function createStatistiqueService({
   StatistiqueModel = Statistique,
   logger = console,
@@ -101,6 +105,21 @@ function createStatistiqueService({
       return statistiqueService.appliquerDeltaStatistique(commande, {
         deltaCommandes: -1,
         deltaCA: -chiffreAffaires,
+      });
+    },
+
+    // Façade : ajustement du CA uniquement après modification de montants
+    async ajusterStatistiqueCommande(commande, deltaCA) {
+      const deltaCANormalise = normaliserMontant(deltaCA);
+
+      if (deltaCANormalise === 0) {
+        return null;
+      }
+
+      return statistiqueService.appliquerDeltaStatistique(commande, {
+        deltaCommandes: 0,
+        deltaCA: deltaCANormalise,
+        nomMenu: commande?.nom_menu,
       });
     },
 

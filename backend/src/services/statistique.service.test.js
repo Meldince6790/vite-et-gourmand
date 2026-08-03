@@ -179,6 +179,64 @@ describe("StatistiqueService.appliquerDeltaStatistique / façades", () => {
     assert.equal(result.nombre_commandes, 0);
     assert.equal(result.chiffre_affaires, 0);
   });
+
+  it("ajusterStatistiqueCommande n'applique que le delta CA (deltaCommandes = 0)", async () => {
+    const existing = createDocument({
+      nombre_commandes: 2,
+      chiffre_affaires: 220,
+    });
+    const { StatistiqueModel, created } = createModelMock({ existing });
+    const service = createStatistiqueService({ StatistiqueModel });
+
+    const result = await service.ajusterStatistiqueCommande(COMMANDE, 12.19);
+
+    assert.equal(created.length, 0);
+    assert.equal(result.nombre_commandes, 2);
+    assert.equal(result.chiffre_affaires, 232.19);
+  });
+
+  it("ajusterStatistiqueCommande applique un delta négatif", async () => {
+    const existing = createDocument({
+      nombre_commandes: 2,
+      chiffre_affaires: 220,
+    });
+    const { StatistiqueModel } = createModelMock({ existing });
+    const service = createStatistiqueService({ StatistiqueModel });
+
+    const result = await service.ajusterStatistiqueCommande(COMMANDE, -10.72);
+
+    assert.equal(result.nombre_commandes, 2);
+    assert.equal(result.chiffre_affaires, 209.28);
+  });
+
+  it("ajusterStatistiqueCommande ne fait rien si le delta est nul", async () => {
+    const existing = createDocument();
+    const { StatistiqueModel, created, finds } = createModelMock({ existing });
+    const service = createStatistiqueService({ StatistiqueModel });
+
+    const result = await service.ajusterStatistiqueCommande(COMMANDE, 0);
+
+    assert.equal(result, null);
+    assert.equal(created.length, 0);
+    assert.equal(finds.length, 0);
+    assert.equal(existing.saveCalls || 0, 0);
+  });
+
+  it("ajusterStatistiqueCommande normalise les deltas flottants à deux décimales", async () => {
+    const existing = createDocument({
+      nombre_commandes: 1,
+      chiffre_affaires: 100,
+    });
+    const { StatistiqueModel } = createModelMock({ existing });
+    const service = createStatistiqueService({ StatistiqueModel });
+
+    const result = await service.ajusterStatistiqueCommande(
+      COMMANDE,
+      12.189999999,
+    );
+
+    assert.equal(result.chiffre_affaires, 112.19);
+  });
 });
 
 describe("StatistiqueService.recalculerStatistiques", () => {

@@ -2,17 +2,17 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        # Required — baked into the JS bundle at image build time (Vite)
+        VITE_API_URL: ${VITE_API_URL:?Set VITE_API_URL in the root .env file}
     ports:
-      - "5173:5173"
-    environment:
-      VITE_API_URL: http://localhost:3000
-    volumes:
-      - ./frontend:/app
-      - frontend_node_modules:/app/node_modules
+      # Host 5173 kept so local CORS_ORIGIN can stay http://localhost:5173
+      - "5173:80"
     depends_on:
       - backend
     networks:
       - vite-gourmand
+    restart: unless-stopped
 
   backend:
     build:
@@ -20,29 +20,28 @@ services:
     ports:
       - "3000:3000"
     environment:
-      PORT: 3000
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: ${DB_USER:-vite}
       DB_PASSWORD: ${DB_PASSWORD:-vite}
       DB_NAME: ${DB_NAME:-vite_gourmand}
-      MONGO_URI: mongodb://mongo:27017/vite_gourmand
-      CORS_ORIGIN: http://localhost:5173
-      JWT_SECRET: ${JWT_SECRET:-change-me-dev-secret}
-      JWT_EXPIRES: ${JWT_EXPIRES:-24h}
-      EMAIL_PROVIDER: log
-      EMAIL_FROM: "Vite & Gourmand <onboarding@resend.dev>"
-      CONTACT_TO: contact@example.com
-      FRONTEND_URL: http://localhost:5173
+      MONGO_URI: ${MONGO_URI:?Set MONGO_URI in the root .env file}
+      CORS_ORIGIN: ${CORS_ORIGIN:?Set CORS_ORIGIN in the root .env file}
+      FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL in the root .env file}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      JWT_EXPIRES: ${JWT_EXPIRES:?Set JWT_EXPIRES in the root .env file}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:?Set EMAIL_PROVIDER in the root .env file}
+      EMAIL_FROM: ${EMAIL_FROM:?Set EMAIL_FROM in the root .env file}
+      CONTACT_TO: ${CONTACT_TO:?Set CONTACT_TO in the root .env file}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       ORS_API_KEY: ${ORS_API_KEY:-}
       ORS_BASE_URL: ${ORS_BASE_URL:-https://api.openrouteservice.org}
       ORS_TIMEOUT_MS: ${ORS_TIMEOUT_MS:-8000}
       CATERER_ADDRESS: ${CATERER_ADDRESS:-1 rue du Traiteur, 33000 Bordeaux, France}
       CATERER_LATITUDE: ${CATERER_LATITUDE:-44.8378}
       CATERER_LONGITUDE: "${CATERER_LONGITUDE:--0.5792}"
-    volumes:
-      - ./backend:/app
-      - backend_node_modules:/app/node_modules
     depends_on:
       mysql:
         condition: service_healthy
@@ -50,43 +49,74 @@ services:
         condition: service_healthy
     networks:
       - vite-gourmand
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   mysql:
     image: mariadb:10.11
-    ports:
-      # Host 3307 avoids clash with a local XAMPP/MySQL on 3306
-      - "3307:3306"
     environment:
-      MYSQL_DATABASE: vite_gourmand
-      MYSQL_USER: ${DB_USER:-vite}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-vite}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootchangeme}
+      MYSQL_DATABASE: ${DB_NAME:?Set DB_NAME in the root .env file}
+      MYSQL_USER: ${DB_USER:?Set DB_USER in the root .env file}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the root .env file}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in the root .env file}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/vite_gourmand.sql:/docker-entrypoint-initdb.d/01-vite_gourmand.sql:ro
+      - ./database/02-validate-schema.sh:/docker-entrypoint-initdb.d/02-validate-schema.sh:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 40s
     networks:
       - vite-gourmand
+    restart: unless-stopped
 
   mongo:
     image: mongo:7
-    ports:
-      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME in the root .env file}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in the root .env file}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-vite_gourmand}
+      MONGO_APP_USERNAME: ${MONGO_APP_USERNAME:?Set MONGO_APP_USERNAME in the root .env file}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?Set MONGO_APP_PASSWORD in the root .env file}
     volumes:
       - mongo_data:/data/db
+      - ./database/mongo-init-app-user.sh:/docker-entrypoint-initdb.d/01-init-app-user.sh:ro
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--quiet",
+          "-u",
+          "${MONGO_ROOT_USERNAME}",
+          "-p",
+          "${MONGO_ROOT_PASSWORD}",
+          "--authenticationDatabase",
+          "admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 20s
+      start_period: 40s
     networks:
       - vite-gourmand
+    restart: unless-stopped
 
 networks:
   vite-gourmand:
@@ -95,5 +125,3 @@ networks:
 volumes:
   mysql_data:
   mongo_data:
-  frontend_node_modules:
-  backend_node_modules:

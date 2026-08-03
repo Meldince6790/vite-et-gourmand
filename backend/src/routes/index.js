@@ -22,6 +22,11 @@ router.get("/", (req, res) => {
   });
 });
 
+// Liveness probe — no DB / métier side effects
+router.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 router.use("/utilisateurs", utilisateurRoutes);
 router.use("/menus", menuRoutes);
 router.use("/plats", platRoutes);

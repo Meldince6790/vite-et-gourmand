@@ -1,7 +1,14 @@
 import API_URL from "../api/api.js";
 
 async function getAvis() {
-  const response = await fetch(`${API_URL}/avis`);
+  const token = localStorage.getItem("token");
+  const headers = {};
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/avis`, { headers });
 
   const data = await response.json();
 

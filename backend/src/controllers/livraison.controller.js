@@ -1,5 +1,6 @@
 const commandeService = require("../services/commande.service");
 const routingService = require("../services/routing.service");
+const { toClientErrorMessage } = require("../utils/safeErrorMessage");
 
 const estimationHits = new Map();
 const ESTIMATION_WINDOW_MS = 60_000;
@@ -8,16 +9,19 @@ const ESTIMATION_MAX_PER_WINDOW = 10;
 function handleLivraisonError(res, error, defaultMessage) {
   console.error(error);
 
+  const clientMessage = toClientErrorMessage(error, defaultMessage);
+
   if (error.statusCode === 503) {
     return res.status(503).json({
       message:
-        error.message ||
-        "Calcul des frais de livraison temporairement indisponible. Réessayez plus tard.",
+        clientMessage !== defaultMessage
+          ? clientMessage
+          : "Calcul des frais de livraison temporairement indisponible. Réessayez plus tard.",
     });
   }
 
   return res.status(error.statusCode || 400).json({
-    message: error.message || defaultMessage,
+    message: clientMessage,
   });
 }
 

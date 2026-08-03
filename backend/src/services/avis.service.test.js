@@ -10,13 +10,22 @@ function createMocks({
   const createCalls = [];
   const queries = [];
 
+  const getAllCalls = [];
+  const getByIdCalls = [];
+
   const avisModel = {
     create: async (payload) => {
       createCalls.push(payload);
       return 42;
     },
-    getAll: async () => [],
-    getById: async () => null,
+    getAll: async (options) => {
+      getAllCalls.push(options);
+      return [];
+    },
+    getById: async (id, options) => {
+      getByIdCalls.push({ id, options });
+      return null;
+    },
     update: async () => 1,
     delete: async () => 1,
   };
@@ -39,7 +48,15 @@ function createMocks({
 
   const service = createAvisService({ avisModel, database });
 
-  return { service, createCalls, queries, avisModel, database };
+  return {
+    service,
+    createCalls,
+    getAllCalls,
+    getByIdCalls,
+    queries,
+    avisModel,
+    database,
+  };
 }
 
 describe("avisService.create", () => {
@@ -164,5 +181,34 @@ describe("avisService.create", () => {
     assert.equal(id, 42);
     assert.equal(createCalls.length, 1);
     assert.equal(createCalls[0].statut, "En attente");
+  });
+});
+
+describe("avisService.getAll / getById", () => {
+  it("filtre les avis Validé en mode public", async () => {
+    const { service, getAllCalls } = createMocks();
+
+    await service.getAll({ publicOnly: true });
+
+    assert.deepEqual(getAllCalls[0], { statut: "Validé" });
+  });
+
+  it("ne filtre pas sans publicOnly", async () => {
+    const { service, getAllCalls } = createMocks();
+
+    await service.getAll();
+
+    assert.equal(getAllCalls[0], undefined);
+  });
+
+  it("filtre getById en mode public", async () => {
+    const { service, getByIdCalls } = createMocks();
+
+    await service.getById(7, { publicOnly: true });
+
+    assert.deepEqual(getByIdCalls[0], {
+      id: 7,
+      options: { statut: "Validé" },
+    });
   });
 });

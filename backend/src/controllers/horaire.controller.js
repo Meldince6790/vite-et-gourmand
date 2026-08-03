@@ -1,22 +1,31 @@
 const horaireService = require("../services/horaire.service");
+const { toClientErrorMessage } = require("../utils/safeErrorMessage");
 
 function handleError(res, error, defaultMessage) {
   console.error(error);
 
-  if (error.message.includes("introuvable")) {
+  const clientMessage = toClientErrorMessage(error, defaultMessage);
+
+  if (
+    clientMessage !== defaultMessage &&
+    error.message.includes("introuvable")
+  ) {
     return res.status(404).json({
-      message: error.message,
+      message: clientMessage,
     });
   }
 
-  if (error.message.includes("obligatoire") || error.message.includes("doit")) {
+  if (
+    clientMessage !== defaultMessage &&
+    (error.message.includes("obligatoire") || error.message.includes("doit"))
+  ) {
     return res.status(400).json({
-      message: error.message,
+      message: clientMessage,
     });
   }
 
   return res.status(400).json({
-    message: error.message || defaultMessage,
+    message: clientMessage,
   });
 }
 

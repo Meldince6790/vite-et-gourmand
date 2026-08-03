@@ -3,10 +3,10 @@ services:
     build:
       context: ./frontend
       args:
-        # Baked into the JS bundle at build time (Vite)
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+        # Required — baked into the JS bundle at image build time (Vite)
+        VITE_API_URL: ${VITE_API_URL:?Set VITE_API_URL in the root .env file}
     ports:
-      # Host 5173 kept so CORS_ORIGIN=http://localhost:5173 still matches
+      # Host 5173 kept so local CORS_ORIGIN can stay http://localhost:5173
       - "5173:80"
     depends_on:
       - backend
@@ -20,20 +20,21 @@ services:
     ports:
       - "3000:3000"
     environment:
-      PORT: 3000
+      PORT: ${PORT:-3000}
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: ${DB_USER:-vite}
       DB_PASSWORD: ${DB_PASSWORD:-vite}
       DB_NAME: ${DB_NAME:-vite_gourmand}
       MONGO_URI: mongodb://mongo:27017/vite_gourmand
-      CORS_ORIGIN: http://localhost:5173
-      JWT_SECRET: ${JWT_SECRET:-change-me-dev-secret}
-      JWT_EXPIRES: ${JWT_EXPIRES:-24h}
-      EMAIL_PROVIDER: log
-      EMAIL_FROM: "Vite & Gourmand <onboarding@resend.dev>"
-      CONTACT_TO: contact@example.com
-      FRONTEND_URL: http://localhost:5173
+      CORS_ORIGIN: ${CORS_ORIGIN:?Set CORS_ORIGIN in the root .env file}
+      FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL in the root .env file}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      JWT_EXPIRES: ${JWT_EXPIRES:?Set JWT_EXPIRES in the root .env file}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:?Set EMAIL_PROVIDER in the root .env file}
+      EMAIL_FROM: ${EMAIL_FROM:?Set EMAIL_FROM in the root .env file}
+      CONTACT_TO: ${CONTACT_TO:?Set CONTACT_TO in the root .env file}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       ORS_API_KEY: ${ORS_API_KEY:-}
       ORS_BASE_URL: ${ORS_BASE_URL:-https://api.openrouteservice.org}
       ORS_TIMEOUT_MS: ${ORS_TIMEOUT_MS:-8000}

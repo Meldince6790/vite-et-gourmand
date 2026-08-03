@@ -9,11 +9,16 @@ RUN npm ci
 
 COPY . .
 
-# Injected at image build time (Vite embeds VITE_* in the bundle)
-ARG VITE_API_URL=http://localhost:3000
+# Required at build time — Vite embeds VITE_* into the client bundle.
+# Pass via: docker compose build / docker build --build-arg VITE_API_URL=...
+ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
-RUN npm run build
+RUN if [ -z "$VITE_API_URL" ]; then \
+      echo "ERROR: VITE_API_URL build arg is required (set it in root .env or --build-arg)."; \
+      exit 1; \
+    fi \
+ && npm run build
 
 # Runtime stage — static files + SPA fallback
 FROM nginx:1.27-alpine

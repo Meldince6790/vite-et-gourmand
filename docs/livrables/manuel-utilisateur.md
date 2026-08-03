@@ -215,7 +215,10 @@ Lors de la commande, les informations nécessaires sont prises en compte afin de
 
 - menu sélectionné ;
 - nombre de personnes concernées ;
+- adresse de livraison complète (numéro, rue, code postal, ville) ;
 - informations nécessaires au traitement de la commande.
+
+Les frais de livraison sont estimés à partir de l’adresse saisie : la livraison est gratuite à Bordeaux ; hors Bordeaux, un forfait kilométrique s’applique. Le client doit calculer les frais avant de valider. Le montant définitif est toujours recalculé par le serveur.
 
 Le système applique les contrôles nécessaires avant l'enregistrement de la commande.
 

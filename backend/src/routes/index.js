@@ -14,6 +14,7 @@ const horaireRoutes = require("./horaire.routes");
 const avisRoutes = require("./avis.routes");
 const statistiqueRoutes = require("./statistique.routes");
 const contactRoutes = require("./contact.routes");
+const livraisonRoutes = require("./livraison.routes");
 
 router.get("/", (req, res) => {
   res.json({
@@ -25,6 +26,7 @@ router.use("/utilisateurs", utilisateurRoutes);
 router.use("/menus", menuRoutes);
 router.use("/plats", platRoutes);
 router.use("/commandes", commandeRoutes);
+router.use("/livraison", livraisonRoutes);
 router.use("/auth", authRoutes);
 router.use("/allergenes", allergeneRoutes);
 router.use("/themes", themeRoutes);

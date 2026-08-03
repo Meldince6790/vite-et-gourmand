@@ -69,6 +69,8 @@ CREATE TABLE `commande` (
   `date_prestation` date NOT NULL,
   `heure_livraison` varchar(50) NOT NULL,
   `adresse_livraison` varchar(255) NOT NULL,
+  `distance_km` decimal(8,2) DEFAULT NULL,
+  `informations_complementaires` varchar(500) DEFAULT NULL,
   `prix_menu` double NOT NULL,
   `nombre_personne` int(11) NOT NULL,
   `prix_livraison` double NOT NULL,
@@ -86,10 +88,10 @@ CREATE TABLE `commande` (
 -- Déchargement des données de la table `commande`
 --
 
-INSERT INTO `commande` (`commande_id`, `numero_commande`, `date_commande`, `date_prestation`, `heure_livraison`, `adresse_livraison`, `prix_menu`, `nombre_personne`, `prix_livraison`, `statut`, `pret_materiel`, `restitution_materiel`, `utilisateur_id`, `menu_id`, `mode_contact_annulation`, `motif_annulation`, `date_annulation`) VALUES
-(1, 'CMD-2026-001', '2026-07-10', '2026-07-25', '12:00', 'Bordeaux', 787, 25, 15, 'Terminée', 1, 1, 3, 1, NULL, NULL, NULL),
-(2, 'CMD-2026-002', '2026-07-15', '2026-08-05', '19:30', 'Strasbourg', 480, 15, 25, 'En préparation', 0, 0, 3, 2, NULL, NULL, NULL),
-(3, 'CMD-2026-003', '2026-07-01', '2026-08-15', '18:00', 'Colmar', 1350, 30, 40, 'Annulée', 0, 0, 3, 3, 'Email', 'Changement de date de réception', '2026-07-05');
+INSERT INTO `commande` (`commande_id`, `numero_commande`, `date_commande`, `date_prestation`, `heure_livraison`, `adresse_livraison`, `distance_km`, `prix_menu`, `nombre_personne`, `prix_livraison`, `statut`, `pret_materiel`, `restitution_materiel`, `utilisateur_id`, `menu_id`, `mode_contact_annulation`, `motif_annulation`, `date_annulation`) VALUES
+(1, 'CMD-2026-001', '2026-07-10', '2026-07-25', '12:00', '12 rue Sainte-Catherine, 33000 Bordeaux', 0.00, 787, 25, 0, 'Terminée', 1, 1, 3, 1, NULL, NULL, NULL),
+(2, 'CMD-2026-002', '2026-07-15', '2026-08-05', '19:30', '45 avenue de la Libération, 33700 Mérignac', 8.50, 480, 15, 10.02, 'En préparation', 0, 0, 3, 2, NULL, NULL, NULL),
+(3, 'CMD-2026-003', '2026-07-01', '2026-08-15', '18:00', '1 place de la Cathédrale, 68000 Colmar', 750.00, 1350, 30, 447.50, 'Annulée', 0, 0, 3, 3, 'Email', 'Changement de date de réception', '2026-07-05');
 
 -- --------------------------------------------------------
 

@@ -215,11 +215,22 @@ function EmployeeCommandes() {
 
               <p>Adresse : {commande.adresse_livraison}</p>
 
+              {commande.informations_complementaires ? (
+                <p>
+                  Informations complémentaires :{" "}
+                  {commande.informations_complementaires}
+                </p>
+              ) : null}
+
               <p>Nombre de personnes : {commande.nombre_personne}</p>
 
               <p>Prix menu : {commande.prix_menu} €</p>
 
               <p>Prix livraison : {commande.prix_livraison} €</p>
+
+              {commande.distance_km != null && commande.distance_km !== "" ? (
+                <p>Distance : {Number(commande.distance_km).toFixed(2)} km</p>
+              ) : null}
 
               <p>
                 Statut actuel : <strong>{commande.statut}</strong>

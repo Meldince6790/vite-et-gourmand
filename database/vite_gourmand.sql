@@ -168,9 +168,9 @@ INSERT INTO `menu_plat` (`menu_id`, `plat_id`) VALUES
 (2, 2),
 (2, 6),
 (2, 9),
-(3, 2),
-(3, 6),
-(3, 9);
+(3, 3),
+(3, 5),
+(3, 8);
 
 -- --------------------------------------------------------
 
@@ -191,12 +191,12 @@ CREATE TABLE `plat` (
 INSERT INTO `plat` (`plat_id`, `titre_plat`, `photo`) VALUES
 (1, 'Salade périgourdine', NULL),
 (2, 'Velouté de légumes de saison', NULL),
-(3, 'Saumon fumé citronné', NULL),
+(3, 'Tartare de légumes méditerranéens', NULL),
 (4, 'Filet de poulet sauce forestière', NULL),
-(5, 'Saumon rôti aux herbes', NULL),
+(5, 'Curry de légumes au lait de coco', NULL),
 (6, 'Risotto aux légumes', NULL),
 (7, 'Tarte aux pommes maison', NULL),
-(8, 'Fondant au chocolat', NULL),
+(8, 'Mousse au chocolat végétale', NULL),
 (9, 'Salade de fruits frais', NULL);
 
 -- --------------------------------------------------------
@@ -221,8 +221,7 @@ INSERT INTO `plat_allergene` (`plat_id`, `allergene_id`) VALUES
 (6, 2),
 (7, 1),
 (7, 2),
-(8, 1),
-(8, 2);
+(8, 1);
 
 -- --------------------------------------------------------
 

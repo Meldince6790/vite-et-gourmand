@@ -19,7 +19,7 @@ class Utilisateur {
     - telephone : string
     - ville : string
     - pays : string
-    - adresse : string
+    - adresse_postale : string
 }
 
 class Role {
@@ -70,13 +70,17 @@ class Allergene {
 ' =====================
 
 class Commande {
+    - commande_id : int
     - numero_commande : string
     - date_commande : date
     - date_prestation : date
     - heure_livraison : string
+    - adresse_livraison : string
     - prix_menu : decimal
     - nombre_personne : int
     - prix_livraison : decimal
+    - distance_km : decimal
+    - informations_complementaires : string
     - statut : string
     - pret_materiel : boolean
     - restitution_materiel : boolean

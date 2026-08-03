@@ -12,18 +12,18 @@ Les wireframes basse fidélité servent à :
 - clarifier les parcours utilisateur (navigation, filtres, commande, authentification) ;
 - distinguer ce qui est déjà implémenté de ce qui est prévu par le sujet ECF.
 
-## Le sujet demande l’export de wireframes et de mockups pour **3 écrans bureautiques** et **3 écrans mobiles**. Les six wireframes ci-dessous constituent la première étape de ce livrable.
+Le sujet demande l’export de wireframes et de mockups pour **3 écrans bureautiques** et **3 écrans mobiles**. Les six wireframes et les six maquettes haute fidélité correspondantes constituent ce livrable.
 
 ## 2. Écrans retenus
 
-| #   | Support | Écran                                      | Fichiers                                                                                                                      |
-| --- | ------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Desktop | Accueil                                    | [SVG](../wireframes/wireframe-desktop-accueil.svg) · [PlantUML](../wireframes/wireframe-desktop-accueil.puml)                 |
-| 2   | Desktop | Catalogue des menus                        | [SVG](../wireframes/wireframe-desktop-menus.svg) · [PlantUML](../wireframes/wireframe-desktop-menus.puml)                     |
-| 3   | Desktop | Commande d’un menu                         | [SVG](../wireframes/wireframe-desktop-commande.svg) · [PlantUML](../wireframes/wireframe-desktop-commande.puml)               |
-| 4   | Mobile  | Accueil                                    | [SVG](../wireframes/wireframe-mobile-accueil.svg) · [PlantUML](../wireframes/wireframe-mobile-accueil.puml)                   |
-| 5   | Mobile  | Catalogue des menus                        | [SVG](../wireframes/wireframe-mobile-menus.svg) · [PlantUML](../wireframes/wireframe-mobile-menus.puml)                       |
-| 6   | Mobile  | Authentification (Connexion / Inscription) | [SVG](../wireframes/wireframe-mobile-authentification.svg) · [PlantUML](../wireframes/wireframe-mobile-authentification.puml) |
+| #   | Support | Écran                                      | Wireframe                                                                                                                     | Maquette haute fidélité                                              |
+| --- | ------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 1   | Desktop | Accueil                                    | [SVG](../wireframes/wireframe-desktop-accueil.svg) · [PlantUML](../wireframes/wireframe-desktop-accueil.puml)                 | [Accueil - Desktop.png](../maquettes/desktop/Accueil%20-%20Desktop.png) |
+| 2   | Desktop | Catalogue des menus                        | [SVG](../wireframes/wireframe-desktop-menus.svg) · [PlantUML](../wireframes/wireframe-desktop-menus.puml)                     | [Menus - Desktop.png](../maquettes/desktop/Menus%20-%20Desktop.png) |
+| 3   | Desktop | Commande d’un menu                         | [SVG](../wireframes/wireframe-desktop-commande.svg) · [PlantUML](../wireframes/wireframe-desktop-commande.puml)               | [Commande - Desktop.png](../maquettes/desktop/Commande%20-%20Desktop.png) |
+| 4   | Mobile  | Accueil                                    | [SVG](../wireframes/wireframe-mobile-accueil.svg) · [PlantUML](../wireframes/wireframe-mobile-accueil.puml)                   | [Mobile - Accueil.png](../maquettes/mobile/Mobile%20-%20Accueil.png) |
+| 5   | Mobile  | Catalogue des menus                        | [SVG](../wireframes/wireframe-mobile-menus.svg) · [PlantUML](../wireframes/wireframe-mobile-menus.puml)                       | [Mobile - Menus.png](../maquettes/mobile/Mobile%20-%20Menus.png) |
+| 6   | Mobile  | Authentification (Connexion / Inscription) | [SVG](../wireframes/wireframe-mobile-authentification.svg) · [PlantUML](../wireframes/wireframe-mobile-authentification.puml) | [Mobile - Authentification.png](../maquettes/mobile/Mobile%20-%20Authentification.png) |
 
 ---
 
@@ -34,7 +34,7 @@ Page d’entrée du site : navigation principale, hero avec appel à l’action 
 - Rendu SVG : [wireframe-desktop-accueil.svg](../wireframes/wireframe-desktop-accueil.svg)
 - Source PlantUML : [wireframe-desktop-accueil.puml](../wireframes/wireframe-desktop-accueil.puml)
 - Statut : **Wireframe réalisé**
-- Maquette haute fidélité : **À produire dans Figma**
+- Maquette haute fidélité : **Réalisée** — [Accueil - Desktop.png](../maquettes/desktop/Accueil%20-%20Desktop.png)
 
 ---
 
@@ -45,7 +45,7 @@ Liste filtrable des menus : filtres (prix maximum, fourchette, thème, régime, 
 - Rendu SVG : [wireframe-desktop-menus.svg](../wireframes/wireframe-desktop-menus.svg)
 - Source PlantUML : [wireframe-desktop-menus.puml](../wireframes/wireframe-desktop-menus.puml)
 - Statut : **Wireframe réalisé**
-- Maquette haute fidélité : **À produire dans Figma**
+- Maquette haute fidélité : **Réalisée** — [Menus - Desktop.png](../maquettes/desktop/Menus%20-%20Desktop.png)
 
 ---
 
@@ -56,7 +56,7 @@ Formulaire de commande : récapitulatif du menu choisi, informations client, inf
 - Rendu SVG : [wireframe-desktop-commande.svg](../wireframes/wireframe-desktop-commande.svg)
 - Source PlantUML : [wireframe-desktop-commande.puml](../wireframes/wireframe-desktop-commande.puml)
 - Statut : **Wireframe réalisé**
-- Maquette haute fidélité : **À produire dans Figma**
+- Maquette haute fidélité : **Réalisée** — [Commande - Desktop.png](../maquettes/desktop/Commande%20-%20Desktop.png)
 
 ---
 
@@ -67,7 +67,7 @@ Adaptation mobile de l’accueil : header compact (logo + menu burger), hero ré
 - Rendu SVG : [wireframe-mobile-accueil.svg](../wireframes/wireframe-mobile-accueil.svg)
 - Source PlantUML : [wireframe-mobile-accueil.puml](../wireframes/wireframe-mobile-accueil.puml)
 - Statut : **Wireframe réalisé**
-- Maquette haute fidélité : **À produire dans Figma**
+- Maquette haute fidélité : **Réalisée** — [Mobile - Accueil.png](../maquettes/mobile/Mobile%20-%20Accueil.png)
 
 ---
 
@@ -78,7 +78,7 @@ Catalogue en liste verticale : bouton « Filtres » avec panneau replié, cartes
 - Rendu SVG : [wireframe-mobile-menus.svg](../wireframes/wireframe-mobile-menus.svg)
 - Source PlantUML : [wireframe-mobile-menus.puml](../wireframes/wireframe-mobile-menus.puml)
 - Statut : **Wireframe réalisé**
-- Maquette haute fidélité : **À produire dans Figma**
+- Maquette haute fidélité : **Réalisée** — [Mobile - Menus.png](../maquettes/mobile/Mobile%20-%20Menus.png)
 
 ---
 
@@ -89,40 +89,45 @@ Catalogue en liste verticale : bouton « Filtres » avec panneau replié, cartes
 - Rendu SVG : [wireframe-mobile-authentification.svg](../wireframes/wireframe-mobile-authentification.svg)
 - Source PlantUML : [wireframe-mobile-authentification.puml](../wireframes/wireframe-mobile-authentification.puml)
 - Statut : **Wireframe réalisé**
-- Maquette haute fidélité : **À produire dans Figma**
+- Maquette haute fidélité : **Réalisée** — [Mobile - Authentification.png](../maquettes/mobile/Mobile%20-%20Authentification.png)
 
 ---
 
-## 9. Fonctionnalités futures intégrées dans les maquettes
+## 9. Fonctionnalités représentées dans les maquettes
 
-Les éléments suivants figurent dans les wireframes (ou y sont anticipés) alors qu’ils ne sont pas tous implémentés aujourd’hui ; ils restent exigés ou attendus dans le périmètre ECF :
+Les wireframes et maquettes anticipent certains éléments du parcours. Leur statut dans l’application actuelle est le suivant.
+
+### Implémentées
 
 - inscription client ;
 - e-mail de bienvenue après inscription ;
-- réinitialisation du mot de passe (« Mot de passe oublié ? ») ;
 - e-mail de confirmation de commande ;
+- envoi d’e-mail via le formulaire de contact (notification et accusé de réception, selon la configuration `EMAIL_PROVIDER`).
+
+### Encore prévues ou partielles
+
+- réinitialisation du mot de passe (« Mot de passe oublié ? ») : lien présent dans l’interface, sans parcours fonctionnel complet ;
 - notifications e-mail lors des changements de statut de commande ;
-- e-mail de création de compte employé ;
-- envoi d’e-mail via le formulaire de contact.
+- e-mail de création de compte employé.
 
 ---
 
-## 10. Mockups haute fidélité à produire
+## 10. Mockups haute fidélité réalisés
 
-Les mêmes six écrans seront déclinés en maquettes haute fidélité :
+Les six écrans retenus disposent d’une maquette haute fidélité au format PNG dans `docs/maquettes/` :
 
-1. Accueil (desktop)
-2. Catalogue des menus (desktop)
-3. Commande d’un menu (desktop)
-4. Accueil (mobile)
-5. Catalogue des menus (mobile)
-6. Authentification Connexion / Inscription (mobile)
+1. Accueil (desktop) — [Accueil - Desktop.png](../maquettes/desktop/Accueil%20-%20Desktop.png)
+2. Catalogue des menus (desktop) — [Menus - Desktop.png](../maquettes/desktop/Menus%20-%20Desktop.png)
+3. Commande d’un menu (desktop) — [Commande - Desktop.png](../maquettes/desktop/Commande%20-%20Desktop.png)
+4. Accueil (mobile) — [Mobile - Accueil.png](../maquettes/mobile/Mobile%20-%20Accueil.png)
+5. Catalogue des menus (mobile) — [Mobile - Menus.png](../maquettes/mobile/Mobile%20-%20Menus.png)
+6. Authentification Connexion / Inscription (mobile) — [Mobile - Authentification.png](../maquettes/mobile/Mobile%20-%20Authentification.png)
 
 ---
 
 ## 11. Note sur les maquettes haute fidélité
 
-Les mockups appliqueront :
+Les mockups appliquent :
 
 - l’identité visuelle existante (vert / beige) ;
 - la typographie retenue dans la charte ;

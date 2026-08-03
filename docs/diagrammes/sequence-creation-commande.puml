@@ -2,6 +2,7 @@
 title Diagramme de séquence — Création d'une commande client
 
 actor "Client" as Client
+
 participant "Page Commander\n(Commander.jsx)" as Page
 participant "Service commande FE\n(commande.service.js)" as CmdFe
 participant "API Express\n(POST /commandes)" as API
@@ -9,6 +10,7 @@ participant "authMiddleware" as AuthMw
 participant "roleMiddleware" as RoleMw
 participant "Contrôleur commande\n(commande.controller.js)" as Ctrl
 participant "Service commande\n(commande.service.js)" as CmdBe
+participant "OpenRouteService" as ORS
 participant "Modèle Menu" as Menu
 participant "Modèle Commande" as CmdModel
 database "MySQL" as MySQL
@@ -42,7 +44,7 @@ else Token valide
   API -> RoleMw : role_id ∈ {1} ?
   activate RoleMw
 
-  alt Rôle non autorisé (pas client)
+  alt Rôle non autorisé
 
     RoleMw --> API : 403 Accès interdit
     API --> CmdFe : 403
@@ -58,9 +60,10 @@ else Token valide
     activate Ctrl
 
     note right of Ctrl
-      utilisateur_id du body frontend
-      est ignoré / écrasé par
-      req.user.utilisateur_id (JWT)
+      utilisateur_id transmis
+      par le frontend ignoré.
+      L'identité provient
+      exclusivement du JWT.
     end note
 
     Ctrl -> CmdBe : createCommande(commande)
@@ -68,12 +71,14 @@ else Token valide
 
     CmdBe -> Menu : findById(menu_id)
     activate Menu
+
     Menu -> MySQL : SELECT menu
     MySQL --> Menu : menu
+
     Menu --> CmdBe : menu
     deactivate Menu
 
-    alt Menu introuvable, champs invalides\nou stock insuffisant
+    alt Menu introuvable, données invalides\nou stock insuffisant
 
       CmdBe --> Ctrl : Error(message métier)
       Ctrl --> API : 400 / 404
@@ -84,45 +89,81 @@ else Token valide
     else Validations OK
 
       CmdBe -> Menu : hasStock(menu_id, personnes)
+
       Menu -> MySQL : contrôle quantite_restante
       MySQL --> Menu : disponible
+
       Menu --> CmdBe : true
+
+      alt Livraison hors Bordeaux
+
+        CmdBe -> ORS : Calcul distance\nadresse client
+        activate ORS
+
+        ORS --> CmdBe : distance_km
+        deactivate ORS
+
+        note right of CmdBe
+          Calcul automatique
+          du prix de livraison :
+          5€ + 0,59€/km
+        end note
+
+      else Livraison Bordeaux
+
+        note right of CmdBe
+          Livraison gratuite
+        end note
+
+      end
 
       note right of CmdBe
         Calcul prix_menu
-        (remise -10% si seuil atteint)
-        et prix_livraison
-        (si distance_km > 0)
+        avec éventuelle remise
+        et prix_livraison final.
       end note
 
       CmdBe -> CmdModel : create(commande)
       activate CmdModel
+
       CmdModel -> MySQL : INSERT commande
+
       MySQL --> CmdModel : commande_id
+
       CmdModel --> CmdBe : commande_id
       deactivate CmdModel
 
-      CmdBe -> Menu : decreaseStock(…)
+      CmdBe -> Menu : decreaseStock(...)
+
       Menu -> MySQL : UPDATE quantite_restante
       MySQL --> Menu : OK
+
       Menu --> CmdBe : OK
 
-      opt Mise à jour des statistiques MongoDB
+      opt Mise à jour statistiques MongoDB
 
-        CmdBe -> Stats : updateStatistiqueCommande(…)
+        CmdBe -> Stats : updateStatistiqueCommande(...)
         activate Stats
+
         Stats -> Mongo : findOne / save Statistique
 
         alt Échec MongoDB
+
           Mongo --> Stats : erreur
+
           Stats --> CmdBe : exception capturée
+
           note right of CmdBe
-            Erreur journalisée (console).
-            La commande MySQL n'est pas annulée.
+            Erreur journalisée.
+            La commande reste
+            enregistrée en MySQL.
           end note
+
         else Succès MongoDB
+
           Mongo --> Stats : OK
           Stats --> CmdBe : statistiques à jour
+
         end
 
         deactivate Stats
@@ -131,12 +172,16 @@ else Token valide
 
       CmdBe --> Ctrl : commande_id
       deactivate CmdBe
+
       Ctrl --> API : 201 { message, commande_id }
       deactivate Ctrl
+
       API --> CmdFe : 201
       deactivate API
+
       CmdFe --> Page : succès
       deactivate CmdFe
+
       Page --> Client : Affiche le message de succès
 
     end

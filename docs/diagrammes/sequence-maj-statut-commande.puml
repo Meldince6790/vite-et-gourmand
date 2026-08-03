@@ -10,7 +10,11 @@ participant "roleMiddleware" as RoleMw
 participant "Contrôleur commande\n(commande.controller.js)" as Ctrl
 participant "Service commande\n(commande.service.js)" as CmdBe
 participant "Modèle Commande" as CmdModel
+participant "Modèle Menu" as Menu
+participant "Service statistiques" as Stats
+participant "Service e-mail" as Email
 database "MySQL" as MySQL
+database "MongoDB" as Mongo
 
 Staff -> Page : Sélectionne un nouveau statut\npuis valide
 activate Page
@@ -36,7 +40,7 @@ else Token valide
   AuthMw --> API : req.user renseigné
   deactivate AuthMw
 
-  API -> RoleMw : role_id ∈ {2, 3} ?
+  API -> RoleMw : role_id ∈ {2,3} ?
   activate RoleMw
 
   alt Rôle client (role_id = 1) ou autre rôle interdit
@@ -57,11 +61,13 @@ else Token valide
     Ctrl -> CmdBe : updateStatut(id, statut)
     activate CmdBe
 
-    CmdBe -> CmdModel : exists(id)
+    CmdBe -> CmdModel : findById(id)
     activate CmdModel
-    CmdModel -> MySQL : SELECT commande_id
-    MySQL --> CmdModel : trouvé / introuvable
-    CmdModel --> CmdBe : booléen
+
+    CmdModel -> MySQL : SELECT commande
+    MySQL --> CmdModel : commande / null
+
+    CmdModel --> CmdBe : commande
     deactivate CmdModel
 
     alt Commande introuvable
@@ -75,42 +81,99 @@ else Token valide
     else Statut non autorisé
 
       CmdBe --> Ctrl : Error("Statut de commande invalide.")
-      Ctrl --> API : 400 / 409
-      API --> CmdFe : erreur
+      Ctrl --> API : 400
+      API --> CmdFe : 400
       CmdFe --> Page : Error(message)
       Page --> Staff : Affiche l'erreur
 
-    else Statut valide
+    else Nouveau statut = "Annulée"
+
+      alt Commande déjà annulée
+
+        CmdBe --> Ctrl : Error("Cette commande est déjà annulée.")
+        Ctrl --> API : 409
+        API --> CmdFe : 409
+        CmdFe --> Page : Error(message)
+        Page --> Staff : Affiche l'erreur
+
+      else Annulation autorisée
+
+        CmdBe -> CmdModel : updateStatut(id, "Annulée")
+        activate CmdModel
+
+        CmdModel -> MySQL : UPDATE commande
+        MySQL --> CmdModel : OK
+
+        CmdModel --> CmdBe : OK
+        deactivate CmdModel
+
+        CmdBe -> Menu : increaseStock(menu_id,\nnombre_personne)
+
+        Menu -> MySQL : UPDATE stock
+        MySQL --> Menu : OK
+
+        Menu --> CmdBe : OK
+
+        CmdBe -> Stats : retirerStatistiqueCommande(...)
+        activate Stats
+
+        Stats -> Mongo : Mise à jour statistiques
+        Mongo --> Stats : OK
+
+        Stats --> CmdBe : OK
+        deactivate Stats
+
+        CmdBe -> Email : sendOrderCancellationEmail(...)
+        activate Email
+
+        Email --> CmdBe : OK
+        deactivate Email
+
+        CmdBe --> Ctrl : succès
+
+      end
+
+    else Autre statut valide
 
       CmdBe -> CmdModel : updateStatut(id, statut)
       activate CmdModel
-      CmdModel -> MySQL : UPDATE commande SET statut
+
+      CmdModel -> MySQL : UPDATE commande
       MySQL --> CmdModel : OK
+
       CmdModel --> CmdBe : OK
       deactivate CmdModel
 
       CmdBe --> Ctrl : succès
-      deactivate CmdBe
-      Ctrl --> API : 200 { message de succès }
-      deactivate Ctrl
-      API --> CmdFe : 200
-      deactivate API
-
-      CmdFe --> Page : succès
-      deactivate CmdFe
-
-      Page -> CmdFe : getCommandes()\n(rafraîchissement)
-      activate CmdFe
-      CmdFe -> API : GET /commandes\nBearer …
-      activate API
-      API --> CmdFe : liste des commandes
-      deactivate API
-      CmdFe --> Page : données à jour
-      deactivate CmdFe
-
-      Page --> Staff : Affiche le message\net la liste actualisée
 
     end
+
+    deactivate CmdBe
+
+    Ctrl --> API : 200 { message de succès }
+    deactivate Ctrl
+
+    API --> CmdFe : 200
+    deactivate API
+
+    CmdFe --> Page : succès
+    deactivate CmdFe
+
+    Page -> CmdFe : getCommandes()\n(rafraîchissement)
+
+    activate CmdFe
+
+    CmdFe -> API : GET /commandes
+    activate API
+
+    API --> CmdFe : liste des commandes
+
+    deactivate API
+
+    CmdFe --> Page : données à jour
+    deactivate CmdFe
+
+    Page --> Staff : Affiche le message\net la liste actualisée
 
   end
 

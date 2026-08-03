@@ -186,9 +186,11 @@ Le suivi des évolutions du projet a été assuré à l'aide de Git.
 
 L'ensemble du développement a été centralisé dans un dépôt GitHub permettant de conserver un historique des différentes modifications réalisées tout au long du projet.
 
-La branche principale utilisée est :
+Le versionnement s'organise autour des branches suivantes :
 
-- `main` : contient la version de référence du projet.
+- `main` : branche principale contenant la version stable de référence du projet ;
+- `developpement` : branche d'intégration des évolutions ;
+- branches `feature/*` : évolutions isolées lorsque le workflow le nécessite.
 
 Les différentes évolutions de l'application ont été intégrées progressivement au travers de commits réguliers correspondant aux principales étapes du développement :
 
@@ -198,11 +200,12 @@ Les différentes évolutions de l'application ont été intégrées progressivem
 - développement du frontend ;
 - intégration des fonctionnalités ;
 - corrections ;
-- production des livrables.
+- production des livrables ;
+- préparation de la préproduction.
 
 Une attention particulière a été portée à la rédaction des messages de commit afin de faciliter le suivi de l'évolution du projet et l'identification des différentes modifications réalisées.
 
-Compte tenu des contraintes de temps liées au développement du projet, le workflow Git prévu initialement avec une branche de développement et des branches dédiées aux différentes fonctionnalités n'a pas été appliqué dans cette version. Le suivi du projet a néanmoins été assuré grâce à des commits réguliers permettant de conserver un historique clair des différentes étapes de réalisation.
+Le suivi du projet a été assuré grâce à des commits réguliers permettant de conserver un historique clair des différentes étapes de réalisation.
 
 ---
 
@@ -219,7 +222,8 @@ Le développement s'est déroulé selon les grandes étapes suivantes :
 - finalisation du backend avant le démarrage du frontend ;
 - intégration progressive des fonctionnalités côté interface utilisateur ;
 - phase de tests et de corrections ;
-- rédaction et validation des différents livrables.
+- rédaction et validation des différents livrables ;
+- préparation et validation de la préproduction locale.
 
 Cette démarche a permis de disposer d'une vision claire de l'état d'avancement du projet et d'adapter les priorités lorsque cela était nécessaire.
 
@@ -227,7 +231,26 @@ Les différentes validations intermédiaires ont également facilité l'identifi
 
 ---
 
-## 6. Gestion des priorités et arbitrages
+## 6. Phase de préproduction
+
+Une phase de préproduction a été réalisée afin de valider le déploiement local de l'application dans des conditions proches d'un environnement réel, sans exposition publique.
+
+Cette phase s'appuie notamment sur :
+
+- Docker Compose pour orchestrer l'ensemble des services ;
+- Nginx pour servir le frontend compilé ;
+- MariaDB pour la base de données relationnelle ;
+- MongoDB pour les statistiques ;
+- des variables d'environnement externalisées (fichier `.env`) pour les secrets et la configuration ;
+- des tests de déploiement local permettant de vérifier le démarrage de la stack et le fonctionnement global de l'application.
+
+Le détail de cette configuration figure dans `docs/livrables/preproduction.md`.
+
+La mise en production publique (hébergement cloud, HTTPS, CI/CD, supervision, sauvegardes) reste une évolution ultérieure.
+
+---
+
+## 7. Gestion des priorités et arbitrages
 
 Au cours du développement, plusieurs arbitrages ont été réalisés afin de respecter les délais de réalisation du projet.
 
@@ -256,7 +279,7 @@ Cette démarche de priorisation a permis de garantir la stabilité et la cohére
 
 ---
 
-## 7. Contraintes rencontrées
+## 8. Contraintes rencontrées
 
 La réalisation du projet s'est déroulée dans un contexte présentant plusieurs contraintes ayant influencé son organisation et les choix réalisés au cours du développement.
 
@@ -277,7 +300,7 @@ Malgré ces contraintes, la majorite des objectifs principaux du projet a pu êt
 
 ---
 
-## 8. Bilan du projet
+## 9. Bilan du projet
 
 La réalisation du projet **Vite & Gourmand** a permis de mettre en pratique les différentes étapes nécessaires au développement d'une application web complète.
 

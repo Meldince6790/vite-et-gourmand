@@ -65,6 +65,11 @@ services:
 
   mysql:
     image: mariadb:10.11
+
+    # Exposé uniquement pour les outils locaux (DBeaver)
+    ports:
+      - "3307:3306"
+
     environment:
       MYSQL_DATABASE: ${DB_NAME:?Set DB_NAME in the root .env file}
       MYSQL_USER: ${DB_USER:?Set DB_USER in the root .env file}

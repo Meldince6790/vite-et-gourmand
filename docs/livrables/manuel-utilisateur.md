@@ -218,7 +218,9 @@ Lors de la commande, les informations nécessaires sont prises en compte afin de
 - adresse de livraison complète (numéro, rue, code postal, ville) ;
 - informations nécessaires au traitement de la commande.
 
-Les frais de livraison sont estimés à partir de l’adresse saisie : la livraison est gratuite à Bordeaux ; hors Bordeaux, un forfait kilométrique s’applique. Le client doit calculer les frais avant de valider. Le montant définitif est toujours recalculé par le serveur.
+Avant de valider la commande, le client doit obtenir une **estimation des frais de livraison** à partir de l’adresse saisie. La livraison est gratuite à Bordeaux ; hors Bordeaux, un forfait kilométrique s’applique. Sans estimation valide, la commande ne peut pas être confirmée.
+
+Lors de l’enregistrement, le serveur **recalcule systématiquement** la distance et les frais de livraison. Les montants éventuellement affichés côté interface ne sont pas repris tels quels : seuls les calculs effectués par l’API sont enregistrés.
 
 Le système applique les contrôles nécessaires avant l'enregistrement de la commande.
 
@@ -248,7 +250,9 @@ Les principales fonctionnalités disponibles sont :
 
 - gestion des menus ;
 - gestion des plats ;
-- consultation et gestion des commandes.
+- consultation et gestion des commandes ;
+- gestion des horaires ;
+- gestion et modération des avis clients.
 
 ---
 
@@ -297,8 +301,6 @@ Les modifications réalisées depuis l'interface sont enregistrées dans la base
 
 ## 5.4 Gestion des commandes
 
-## 5.4 Gestion des commandes
-
 L'employé peut consulter et gérer les commandes clients depuis son espace de gestion.
 
 Cette fonctionnalité permet notamment de :
@@ -322,7 +324,35 @@ Cette règle permet de garantir un suivi client et d'éviter les annulations eff
 
 ---
 
-## 5.5 Restrictions d'accès
+## 5.5 Gestion des horaires
+
+L'employé peut gérer les horaires d'ouverture de l'entreprise depuis son espace dédié.
+
+Cette fonctionnalité permet notamment de :
+
+- consulter les plages horaires enregistrées pour chaque jour ;
+- modifier les heures d'ouverture et de fermeture ;
+- maintenir à jour les informations affichées dans le pied de page du site.
+
+Les horaires publiés permettent aux visiteurs et aux clients de connaître les périodes d'activité de l'entreprise.
+
+---
+
+## 5.6 Gestion des avis clients
+
+L'employé peut accéder à la modération des avis déposés par les clients.
+
+Cette fonctionnalité permet notamment de :
+
+- consulter la liste des avis (y compris ceux en attente de validation) ;
+- valider un avis afin qu'il puisse être affiché sur la page d'accueil ;
+- refuser un avis qui ne doit pas être publié.
+
+Seuls les avis au statut **Validé** sont visibles par les visiteurs sur le site public.
+
+---
+
+## 5.7 Restrictions d'accès
 
 Les fonctionnalités employées sont protégées par le système d'authentification et de gestion des rôles.
 
@@ -411,7 +441,7 @@ Afin de permettre la découverte des différentes fonctionnalités de l'applicat
 
 Chaque compte permet de tester un parcours utilisateur différent selon le rôle associé.
 
-Les identifiants seront renseignés après restauration et vérification de la base de données.
+Ces comptes sont présents après import du fichier `database/vite_gourmand.sql` (premier démarrage du volume MariaDB). Les mots de passe correspondent aux hashes définis dans ce jeu de données de démonstration.
 
 ---
 
@@ -425,8 +455,8 @@ Ce compte permet de tester le parcours client :
 - suivi des commandes.
 
 ```
-Email :
-Mot de passe :
+Email : client2@test.com
+Mot de passe : Client2@test
 ```
 
 ---
@@ -438,11 +468,12 @@ Ce compte permet de tester les fonctionnalités de gestion :
 - gestion des menus ;
 - gestion des plats ;
 - gestion des commandes ;
+- gestion des horaires ;
 - gestion des avis clients.
 
 ```
-Email :
-Mot de passe :
+Email : employe@vite-gourmand.fr
+Mot de passe : Employe123!
 ```
 
 ---
@@ -457,8 +488,8 @@ Ce compte permet de tester l'ensemble des fonctionnalités d'administration :
 - supervision de l'activité.
 
 ```
-Email :
-Mot de passe :
+Email : admin@vite-gourmand.fr
+Mot de passe : Admin123!
 ```
 
 ---

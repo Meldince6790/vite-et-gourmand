@@ -33,11 +33,11 @@ rectangle "Vite & Gourmand" {
   usecase "Gérer commandes" as UC9
   usecase "Gérer menus" as UC10
   usecase "Gérer avis" as UC11
+  usecase "Gérer horaires" as UC12
 
   '--- ADMINISTRATEUR ---
-  usecase "Gérer employés" as UC12
-  usecase "Analyser ventes" as UC13
-  usecase "Chiffre d'affaires" as UC14
+  usecase "Gérer employés" as UC13
+  usecase "Consulter statistiques" as UC14
 }
 
 '========================
@@ -57,8 +57,8 @@ Client --> UC8
 Employe --> UC9
 Employe --> UC10
 Employe --> UC11
+Employe --> UC12
 
-Administrateur --> UC12
 Administrateur --> UC13
 Administrateur --> UC14
 

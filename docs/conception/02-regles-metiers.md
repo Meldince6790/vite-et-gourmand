@@ -224,4 +224,4 @@ Les fonctionnalités principales développées et validées concernent :
 - les statistiques administrateur et le chiffre d'affaires (création / ajustement à la modification / annulation, resynchronisation possible) ;
 - les graphiques et les filtres par menu et période.
 
-Les évolutions restantes concernent principalement la mise en production (hébergement cloud, HTTPS), le polish de l'expérience utilisateur et l'industrialisation (CI/CD, supervision, sauvegardes).
+La préproduction locale est déjà en place (Docker Compose, Nginx, MariaDB, MongoDB, variables d'environnement et tests de déploiement local). Les évolutions restantes concernent principalement la production publique (hébergement cloud, HTTPS), le polish de l'expérience utilisateur et l'industrialisation (CI/CD, supervision, sauvegardes).

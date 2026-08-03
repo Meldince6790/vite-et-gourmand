@@ -1,151 +1,132 @@
-# Liens du projet
-
-Dépôt GitHub : https://github.com/Meldince6790/vite-et-gourmand
-
-Application déployée :
-À compléter
-
 # Vite & Gourmand
 
-Application web de gestion pour une entreprise de traiteur.
+Dépôt GitHub : [https://github.com/Meldince6790/vite-et-gourmand](https://github.com/Meldince6790/vite-et-gourmand)
 
-Le projet **Vite & Gourmand** permet aux visiteurs de consulter les menus proposés, aux clients de passer des commandes, aux employés de gérer l'activité quotidienne et aux administrateurs de suivre les performances grâce aux statistiques.
-
----
-
-# Présentation du projet
-
-L'objectif de cette application est de proposer une solution complète permettant :
-
-- la présentation des menus disponibles ;
-- la gestion des plats ;
-- la gestion des commandes clients ;
-- la gestion des utilisateurs selon leurs rôles ;
-- le suivi statistique de l'activité ;
-- la consultation du chiffre d'affaires généré.
-
-L'application respecte une architecture séparant :
-
-- l'interface utilisateur ;
-- l'API métier ;
-- les bases de données.
+Application déployée en ligne : *non publiée à ce stade* (environnement de pré-production local via Docker Compose).
 
 ---
 
-# Technologies utilisées
+## Présentation
 
-## Frontend
+**Vite & Gourmand** est une application web de gestion pour une entreprise de traiteur (projet ECF Développeur Web et Web Mobile).
 
-- React
-- Vite
-- React Router
-- Chart.js
+Elle permet :
 
-Le frontend permet une interface dynamique basée sur des composants réutilisables.
+- aux **visiteurs** de consulter les menus, les avis validés, les horaires, les mentions légales / CGV et d’utiliser le formulaire de contact ;
+- aux **clients** de s’inscrire, commander, suivre / modifier / annuler leurs commandes (selon les règles métier) et de déposer un avis ;
+- aux **employés** de gérer le catalogue, les commandes, les horaires et de modérer les avis ;
+- aux **administrateurs** de gérer les comptes employés et de consulter les statistiques (MongoDB).
 
----
-
-## Backend
-
-- Node.js
-- Express.js
-
-Le backend expose une API REST permettant la communication entre l'application cliente et les bases de données.
+L’architecture sépare l’interface React, l’API Express et deux bases de données (MariaDB métier, MongoDB statistiques).
 
 ---
 
-## Bases de données
+## Technologies
 
-### MySQL / MariaDB
-
-Utilisé pour stocker les données métier :
-
-- utilisateurs ;
-- rôles ;
-- menus ;
-- plats ;
-- commandes ;
-- allergènes ;
-- thèmes ;
-- régimes alimentaires ;
-- horaires.
-
-### MongoDB
-
-Utilisé pour la partie statistique :
-
-- nombre de commandes par menu ;
-- analyse des performances des menus ;
-- calcul du chiffre d'affaires.
-
-La connexion MongoDB est configurée via la variable d'environnement `MONGO_URI`.
+| Couche | Technologies |
+|--------|----------------|
+| Frontend | React, Vite, React Router, Chart.js, nginx (image Docker de production) |
+| Backend | Node.js, Express, JWT, bcrypt, mysql2, mongoose, Resend, express-rate-limit |
+| Données métier | MariaDB 10.11 |
+| Statistiques | MongoDB 7 |
+| Conteneurisation | Docker Compose (pré-production) |
+| Services externes | OpenRouteService (frais de livraison), Resend (e-mails optionnels) |
 
 ---
 
-# Architecture de l'application
+## Fonctionnalités principales
 
-```
-                Frontend React
-                     |
-                     |
-                 API REST
-                     |
-              Backend Express
-              /             \
-             /               \
-        MySQL/MariaDB       MongoDB
-       Données métier     Statistiques
+- Authentification JWT et contrôle d’accès par rôles (Client, Employé, Administrateur)
+- Catalogue de menus (filtres thème / régime / prix / personnes) et détail enrichi (plats, allergènes)
+- Gestion des plats, thèmes, régimes, allergènes (espace employé)
+- Cycle de vie des commandes (création, modification, annulation, statuts employés)
+- Calcul serveur des montants (remise éventuelle, frais de livraison)
+- Estimation et facturation de livraison via OpenRouteService (gratuit à Bordeaux ; hors Bordeaux : `5 + 0,59 × km`)
+- Avis clients (dépôt après commande terminée, modération ; affichage public des avis **Validé** uniquement)
+- Horaires dynamiques en pied de page
+- E-mails transactionnels (bienvenue, contact, confirmation / annulation de commande) — mode `log` ou Resend
+- Statistiques administrateur (agrégats MongoDB synchronisés avec les commandes)
+- Conteneurisation complète prête pour une pré-production locale
+
+---
+
+## Architecture
+
+```text
+                    Navigateur
+                         |
+            http://localhost:5173
+                         |
+              +----------v----------+
+              |  Frontend (nginx)   |
+              |  build Vite / dist  |
+              +----------+----------+
+                         |
+            http://localhost:3000
+                         |
+              +----------v----------+
+              | Backend Express     |
+              | NODE_ENV=production |
+              | GET /health         |
+              +-----+---------+-----+
+                    |         |
+           réseau Docker      |
+          vite-gourmand       |
+               / \            |
+              /   \           |
+     +-------v-+  +----v-----+
+     | MariaDB |  | MongoDB  |
+     | métier  |  | stats    |
+     | (auth)  |  | (auth)   |
+     +---------+  +----------+
 ```
 
----
+| Service Compose | Rôle | Accès depuis l’hôte |
+|-----------------|------|---------------------|
+| `frontend` | SPA React servie par nginx (fallback `index.html`) | **5173** → 80 |
+| `backend` | API REST Node.js | **3000** → 3000 |
+| `mysql` | MariaDB + init SQL + validation de schéma | **3307** → 3306 *(outils locaux, ex. DBeaver)* |
+| `mongo` | MongoDB avec authentification | **non publié** (réseau Docker uniquement) |
 
-# Installation locale
+Les services backend et frontend tournent en configuration **production** (pas de bind mount de code, pas de serveur Vite de développement dans l’image frontend).
+
+---
 
 ## Prérequis
 
-Installer :
-
-- Node.js (version recommandée : 24.x ou supérieure compatible)
-- npm
-- XAMPP (MariaDB)
-- MongoDB
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (ou Docker Engine + Compose v2)
+- Un fichier `.env` à la racine (obligatoire — voir ci-dessous)
+- Optionnel hors Docker : Node.js 24.x, client MariaDB / MongoDB
 
 ---
 
-# Installation avec Docker (développement)
+## Démarrage rapide (pré-production Docker) — recommandé
 
-Cette configuration lance l'environnement de développement complet avec Docker Compose :
-
-- frontend (Vite, port hôte **5173**) ;
-- backend (Express, port hôte **3000**) ;
-- MariaDB (port hôte **3307**, débogage local) ;
-- MongoDB (port hôte **27017**, débogage local).
-
-## Prérequis Docker
-
-- Docker Desktop (ou Docker Engine + Compose v2)
-
-## Configuration
-
-Les valeurs par défaut du `docker-compose.yml` suffisent pour un démarrage local.
-
-Pour personnaliser les secrets ou identifiants :
-
-1. Copier le fichier d'exemple :
+### 1. Variables d’environnement
 
 ```bash
 cp .env.example .env
 ```
 
-2. Adapter si besoin les valeurs de `.env` (mots de passe, `JWT_SECRET`).  
-   Ne pas committer le fichier `.env` (ignoré par Git à la racine).
+Renseigner **obligatoirement** les secrets et identifiants (Compose refuse de démarrer s’ils manquent) :
 
-Sous Docker Compose, les noms d'hôte internes `mysql` et `mongo` sont injectés automatiquement pour le backend.  
-`VITE_API_URL` et `CORS_ORIGIN` restent basés sur `localhost` car le navigateur accède aux ports publiés sur la machine hôte.
+- `JWT_SECRET`, `JWT_EXPIRES`
+- `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `MYSQL_ROOT_PASSWORD`
+- `MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD`, `MONGO_APP_USERNAME`, `MONGO_APP_PASSWORD`
+- `MONGO_URI` (utilisateur applicatif + `authSource`, hôte Docker `mongo`)
+- `CORS_ORIGIN`, `FRONTEND_URL`, `VITE_API_URL`
+- `EMAIL_PROVIDER`, `EMAIL_FROM`, `CONTACT_TO`
+- `ORS_API_KEY` (recommandé pour tester la livraison)
 
-## Lancement
+Les mots de passe et l’authentification Mongo/MariaDB ne s’appliquent qu’au **premier** démarrage d’un volume vide. Après modification des credentials :
 
-À la racine du projet :
+```bash
+docker compose down
+docker volume rm vite-et-gourmand_mysql_data vite-et-gourmand_mongo_data
+docker compose up -d --build
+```
+
+### 2. Lancement
 
 ```bash
 docker compose up --build
@@ -157,313 +138,207 @@ Ou en arrière-plan :
 docker compose up --build -d
 ```
 
-Applications :
+### 3. Accès
 
-- Frontend : http://localhost:5173
-- Backend / API : http://localhost:3000
+| URL | Description |
+|-----|-------------|
+| http://localhost:5173 | Interface (nginx) |
+| http://localhost:3000 | API |
+| http://localhost:3000/health | Sonde de disponibilité (`{"status":"ok"}`) |
+| `localhost:3307` | MariaDB (débogage / client SQL) |
+| MongoDB | Uniquement via `docker compose exec mongo …` |
 
-Ports bases de données (débogage uniquement) :
-
-- MariaDB : `localhost:3307` → conteneur `3306` (évite le conflit avec XAMPP sur 3306)
-- MongoDB : `localhost:27017`
-
-Le fichier `database/vite_gourmand.sql` est importé automatiquement au **premier** démarrage du volume MySQL.
-
-## Arrêt
+### 4. Arrêt
 
 ```bash
 docker compose down
 ```
 
-Pour supprimer aussi les volumes (réinitialise les bases) :
+Suppression des volumes (réinitialise les bases) :
 
 ```bash
 docker compose down -v
 ```
 
----
+### Comportement Docker (état actuel)
 
-# Installation de la base de données
-
-## MySQL / MariaDB
-
-1. Démarrer MySQL depuis XAMPP.
-
-2. Créer la base :
-
-```sql
-CREATE DATABASE vite_gourmand;
-```
-
-3. Importer le fichier SQL disponible dans :
-
-```
-database/vite_gourmand.sql
-```
-
-Ce fichier contient :
-
-- la création des tables ;
-- les contraintes nécessaires ;
-- les données nécessaires au fonctionnement de l'application.
+- **Frontend** : multi-stage `npm run build` puis nginx ; `VITE_API_URL` injectée au **build** de l’image
+- **Backend** : image slim, `NODE_ENV=production`, utilisateur non-root, arrêt propre SIGTERM/SIGINT, healthcheck HTTP
+- **MariaDB** : utilisateur applicatif, mot de passe root obligatoire, import de `database/vite_gourmand.sql`, script `02-validate-schema.sh`
+- **MongoDB** : utilisateur root + utilisateur applicatif `readWrite`, URI authentifiée pour le backend
+- **Réseau** : bridge `vite-gourmand`
+- **Restart** : `unless-stopped` sur les services
 
 ---
 
-## MongoDB
+## Variables d’environnement
 
-Créer une base MongoDB destinée au stockage des statistiques générées par l'application.
+Fichier de référence : [`.env.example`](.env.example) (à copier en `.env`, **jamais committer** le `.env` réel).
 
-La connexion est configurée dans le fichier d'environnement du backend grâce à la variable :
+| Variable | Rôle |
+|----------|------|
+| `VITE_API_URL` | URL de l’API vue par le navigateur (embarquée dans le bundle frontend) |
+| `CORS_ORIGIN` / `FRONTEND_URL` | Origine SPA autorisée / URL front |
+| `PORT` | Port HTTP du backend (défaut 3000) |
+| `DB_*` / `MYSQL_ROOT_PASSWORD` | Connexion MariaDB |
+| `MONGO_*` / `MONGO_URI` | Auth Mongo et URI applicative |
+| `JWT_SECRET` / `JWT_EXPIRES` | Signature et durée des jetons |
+| `EMAIL_PROVIDER` | `log` (console) ou `resend` |
+| `EMAIL_FROM` / `CONTACT_TO` / `RESEND_API_KEY` | Paramétrage e-mails |
+| `ORS_API_KEY` / `ORS_*` / `CATERER_*` | Calcul des frais de livraison |
 
-```env
-MONGO_URI=votre_configuration_mongodb
-```
+Sous Docker Compose, le backend utilise les hôtes internes `mysql` et `mongo` (injectés / URI), indépendamment de `DB_HOST=localhost` éventuellement présent pour un usage hors conteneur.
 
 ---
 
-# Installation du backend
+## Installation hors Docker (optionnelle)
 
-Se placer dans le dossier backend :
+Utile pour le développement ciblé d’un seul service. Les bases doivent alors tourner séparément (ou via Compose).
+
+### Backend
 
 ```bash
 cd backend
-```
-
-Installer les dépendances :
-
-```bash
 npm install
 ```
 
-Créer un fichier `.env` :
-
-```env
-PORT=3000
-
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=vite_gourmand
-DB_PORT=3306
-
-JWT_SECRET=votre_secret
-JWT_EXPIRES=24h
-
-MONGO_URI=votre_configuration_mongodb
-```
-
-Lancer le serveur :
+Créer un `.env` (racine du dépôt ou dossier backend selon votre usage de `dotenv`) avec au minimum `DB_*`, `MONGO_URI`, `JWT_*`, `CORS_ORIGIN`, puis :
 
 ```bash
 npm start
 ```
 
-L'API sera disponible sur :
+Tests automatisés :
 
+```bash
+npm test
 ```
-http://localhost:3000
-```
 
----
-
-# Installation du frontend
-
-Se placer dans le dossier frontend :
+### Frontend (mode développement Vite)
 
 ```bash
 cd frontend
-```
-
-Installer les dépendances :
-
-```bash
 npm install
-```
-
-Lancer l'application :
-
-```bash
 npm run dev
 ```
 
-L'application sera accessible depuis :
-
-```
-http://localhost:5173
-```
-
----
-
-# Comptes de démonstration
-
-Des comptes de démonstration permettant de tester les différents parcours utilisateurs sont disponibles après import de la base de données de présentation.
-
-Les profils disponibles sont :
-
-## Client
-
-Permet de tester :
-
-- connexion ;
-- consultation des menus ;
-- passage de commande.
-
-```
-Email :
-Mot de passe :
-```
-
----
-
-## Employé
-
-Permet de tester :
-
-- gestion des menus ;
-- gestion des plats ;
-- gestion des commandes.
-
-```
-Email :
-Mot de passe :
-```
-
----
-
-## Administrateur
-
-Permet de tester :
-
-- gestion des employés ;
-- consultation des statistiques ;
-- consultation du chiffre d'affaires.
-
-```
-Email :
-Mot de passe :
-```
-
----
-
-# Sécurité
-
-Plusieurs mécanismes de sécurité ont été mis en place.
-
-## Authentification
-
-- Authentification par JWT.
-- Vérification du token lors des actions protégées.
-- Durée de validité limitée.
-
-## Gestion des rôles
-
-Les accès sont contrôlés selon le rôle :
-
-- Client ;
-- Employé ;
-- Administrateur.
-
-Les fonctionnalités sensibles sont protégées côté serveur.
-
-## Protection des données
-
-- Les mots de passe ne sont pas stockés en clair.
-- Les requêtes SQL utilisent des paramètres afin de limiter les risques d'injection.
-- Les données reçues par l'API sont contrôlées avant traitement.
-- Les erreurs retournées par l'API ne doivent pas exposer d'informations sensibles.
-
----
-
-# Organisation Git
-
-Le projet utilise Git afin de conserver un historique des modifications, faciliter le suivi du développement et sécuriser l'évolution de l'application.
-
-L'organisation du dépôt repose désormais sur un workflow basé sur plusieurs branches.
-
-## Branches principales
-
-- `main` : contient la version stable de l'application. Cette branche correspond aux versions validées et prêtes à être présentées ou déployées.
-
-- `developpement` : branche d'intégration regroupant les nouvelles fonctionnalités avant leur validation finale et leur fusion dans `main`.
-
-## Branches de fonctionnalités
-
-Chaque évolution importante du projet est développée sur une branche dédiée créée depuis `developpement` :
+Build de production local :
 
 ```bash
-feature/nom-de-la-fonctionnalite
+npm run build
+npm run preview
 ```
 
-Exemples :
+---
 
-```bash
-feature/gestion-commandes
-feature/statistiques
-feature/authentification
-feature/amelioration-interface
-```
+## Comptes de démonstration
 
-Ces branches permettent d'isoler le développement de chaque fonctionnalité, de limiter les risques de régression et de faciliter les tests avant intégration.
+Présents après import de `database/vite_gourmand.sql` (premier démarrage du volume MariaDB).
 
-## Processus d'intégration
+| Rôle | E-mail | Usage |
+|------|--------|--------|
+| Administrateur | `admin@vite-gourmand.fr` | Employés, statistiques |
+| Employé | `employe@vite-gourmand.fr` | Catalogue, commandes, avis, horaires |
+| Client | `client@vite-gourmand.fr` | Commandes, avis |
 
-Le cycle de développement suivi est le suivant :
+Les mots de passe correspondent aux hashes bcrypt du fichier SQL de démonstration. Ils respectent les règles de complexité de l’application (majuscule, minuscule, chiffre, caractère spécial).  
+*Si vous ne disposez pas du mot de passe en clair fourni avec le jeu de données, recréez un compte via l’inscription client ou réinitialisez le hash en base pour les besoins de test.*
 
-1. Création d'une branche `feature/*` depuis `developpement`.
-2. Développement et tests de la fonctionnalité.
-3. Fusion de la branche de fonctionnalité dans `developpement` après validation.
-4. Tests globaux de l'application.
-5. Fusion de `developpement` dans `main` lorsque la version est considérée comme stable.
+---
 
-## Cette organisation permet de conserver une version stable de l'application tout en facilitant l'ajout de nouvelles fonctionnalités, les corrections techniques et la maintenance du projet.
+## Sécurité (pré-production)
 
-# Structure du projet
+Mesures en place dans le dépôt actuel :
 
-```
-Vite-Gourmand/
+- Authentification **JWT** et middleware de rôles côté API
+- Mots de passe hashés avec **bcrypt** ; règles de complexité à l’inscription
+- Requêtes SQL **paramétrées** (mysql2)
+- Filtrage des avis publics (**Validé** uniquement) ; accès complet réservé au staff authentifié
+- Messages d’erreur API : limitation de la fuite de détails techniques / SQL
+- Rate limiting sur `POST /auth/login` et `POST /contact`
+- Secrets et origines lus depuis `.env` (pas de secret de production codé en dur dans Compose)
+- MongoDB authentifié ; MariaDB avec utilisateur applicatif et root protégés
+- MongoDB **non exposé** sur l’hôte ; MariaDB publié sur 3307 uniquement pour l’administration locale
+- Backend non-root, `NODE_ENV=production`, endpoint `/health`, fermeture propre des connexions
+- Frontend servi en fichiers statiques (plus de serveur Vite de développement dans l’image)
 
+Limites restantes avant une mise en ligne publique : HTTPS / domaine, durcissement éventuel (fermeture du port 3307), CI/CD, sauvegardes automatisées, clé ORS et Resend de production.
+
+---
+
+## Structure du projet
+
+```text
+vite-et-gourmand/
 ├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   └── middlewares/
-│   └── package.json
-│
+│   ├── Dockerfile                 # Image Node production (non-root)
+│   ├── package.json
+│   ├── scripts/                   # ex. resync statistiques MongoDB
+│   └── src/
+│       ├── app.js
+│       ├── config/                # MariaDB, MongoDB
+│       ├── controllers/
+│       ├── domain/
+│       ├── middlewares/           # auth, rôles, rate-limit, auth optionnelle
+│       ├── models/
+│       ├── repositories/
+│       ├── routes/
+│       ├── services/              # métier, e-mails, ORS, statistiques
+│       └── utils/
 ├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── styles/
-│   └── package.json
-│
+│   ├── Dockerfile                 # Build Vite + nginx
+│   ├── nginx.conf                 # SPA fallback
+│   ├── package.json
+│   ├── public/
+│   └── src/
+│       ├── api/
+│       ├── components/
+│       ├── context/
+│       ├── data/
+│       ├── hooks/
+│       ├── layouts/
+│       ├── pages/
+│       ├── services/
+│       ├── styles/
+│       └── utils/
 ├── database/
-│   └── vite_gourmand.sql
-│
-└── docs/
+│   ├── vite_gourmand.sql          # Schéma + données de démo (init Compose)
+│   ├── 02-validate-schema.sh      # Contrôle des tables après init
+│   ├── mongo-init-app-user.sh     # Création utilisateur Mongo applicatif
+│   └── alter_*.sql / update_*.sql # Scripts d’évolution (hors init auto)
+├── docs/                          # Conception, livrables, maquettes, diagrammes
+├── docker-compose.yml
+├── .env.example
+└── README.md
 ```
 
 ---
 
-# Documentation complémentaire
+## Documentation complémentaire
 
-Les documents de conception et de documentation du projet sont regroupés dans le dossier `docs`.
+Dossier [`docs/`](docs/) :
 
-Ils comprennent notamment :
-
-- Analyse fonctionnelle ;
-- Règles métiers ;
-- Cas d'utilisation ;
-- Diagramme de classes ;
-- Documentation technique ;
-- Manuel utilisateur ;
-- Charte graphique ;
-- Gestion de projet.
+| Contenu | Emplacement |
+|---------|-------------|
+| Analyse fonctionnelle, règles métiers, cas d’utilisation | `docs/conception/` |
+| Diagrammes UML (classes, séquences, cas d’utilisation) | `docs/diagrammes/` |
+| Maquettes et wireframes | `docs/maquettes/`, `docs/wireframes/` |
+| Documentation technique, manuel utilisateur, charte graphique | `docs/livrables/` |
+| Pré-production (Docker Compose) | `docs/livrables/preproduction.md` |
+| Gestion de projet | `docs/gestion-projet/` |
 
 ---
 
-# Auteur
+## Organisation Git
 
-Projet réalisé dans le cadre d'un ECF de développement d'application web.
+- `main` : version stable
+- `developpement` : branche d’intégration
+- Branches `feature/*` : évolutions isolées lorsque le workflow le permet
+
+Le détail de l’organisation des sprints figure dans `docs/gestion-projet/gestion-projet.md`.
+
+---
+
+## Auteur
+
+Projet réalisé dans le cadre d’un ECF de développement d’application web (titre professionnel Développeur Web et Web Mobile).

@@ -37,12 +37,11 @@ Ce diagramme illustre le traitement d'une commande par un employé ou un adminis
 
 ---
 
-## Incohérences relevées lors de l’analyse
+## Points d'attention relevés lors de l’analyse
 
-Les points suivants ont été constatés dans le code ou la documentation au moment de l'élaboration des diagrammes. Ils sont documentés ici **sans correction** dans le cadre de ce livrable :
+Les points suivants précisent des comportements du code utile à la lecture des diagrammes. Ils ne constituent pas des anomalies bloquantes :
 
 - la page `Commander.jsx` estime les frais via `POST /livraison/estimation` puis le backend recalcule définitivement distance et tarif à la création (les valeurs client `distance_km` / `prix_livraison` sont ignorées) ;
-- les statistiques MongoDB ne sont pas mises à jour lorsqu'une commande est ultérieurement annulée (ou lorsque son montant évolue), alors qu'elles sont incrémentées à la création ;
+- les statistiques MongoDB sont synchronisées avec le cycle de vie des commandes : incrément à la création, ajustement du chiffre d'affaires lorsque les montants évoluent, décrément à l'annulation ;
 - il n'existe pas de workflow strict de transitions entre statuts : tout statut de la liste autorisée peut être appliqué sans enchaînement imposé ;
-- l'`utilisateur_id` éventuellement fourni par le frontend est écrasé côté serveur par `req.user.utilisateur_id` issu du JWT (comportement de sécurité correct, mais à ne pas confondre avec une confiance accordée au body) ;
-- le document des règles métier (`02-regles-metiers.md`) indique encore certaines règles de commande comme « À développer », alors que les parcours correspondants sont déjà implémentés dans le code.
+- l'`utilisateur_id` éventuellement fourni par le frontend est écrasé côté serveur par `req.user.utilisateur_id` issu du JWT (comportement de sécurité correct, mais à ne pas confondre avec une confiance accordée au body).

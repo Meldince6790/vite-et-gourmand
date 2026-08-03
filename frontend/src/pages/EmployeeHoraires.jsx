@@ -151,9 +151,15 @@ function EmployeeHoraires() {
           />
         </label>
 
-        <button className="button" type="button" onClick={handleCreate}>
-          Ajouter
-        </button>
+        <div className="card-actions">
+          <button
+            className="button button-compact"
+            type="button"
+            onClick={handleCreate}
+          >
+            Ajouter
+          </button>
+        </div>
       </div>
 
       <div className="cards">
@@ -196,16 +202,18 @@ function EmployeeHoraires() {
                   />
                 </label>
 
-                <button className="button" onClick={handleUpdate}>
-                  Enregistrer
-                </button>
+                <div className="card-actions">
+                  <button className="button button-compact" onClick={handleUpdate}>
+                    Enregistrer
+                  </button>
 
-                <button
-                  className="button"
-                  onClick={() => setHoraireEdition(null)}
-                >
-                  Annuler
-                </button>
+                  <button
+                    className="button button-compact"
+                    onClick={() => setHoraireEdition(null)}
+                  >
+                    Annuler
+                  </button>
+                </div>
               </>
             ) : (
               <>
@@ -215,19 +223,21 @@ function EmployeeHoraires() {
 
                 <p>Fermeture : {horaire.heure_fermeture}</p>
 
-                <button
-                  className="button"
-                  onClick={() => handleModifier(horaire)}
-                >
-                  Modifier
-                </button>
+                <div className="card-actions">
+                  <button
+                    className="button button-compact"
+                    onClick={() => handleModifier(horaire)}
+                  >
+                    Modifier
+                  </button>
 
-                <button
-                  className="button"
-                  onClick={() => handleDelete(horaire.horaire_id)}
-                >
-                  Supprimer
-                </button>
+                  <button
+                    className="button button-compact"
+                    onClick={() => handleDelete(horaire.horaire_id)}
+                  >
+                    Supprimer
+                  </button>
+                </div>
               </>
             )}
           </div>

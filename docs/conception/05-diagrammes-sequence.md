@@ -41,7 +41,7 @@ Ce diagramme illustre le traitement d'une commande par un employé ou un adminis
 
 Les points suivants ont été constatés dans le code ou la documentation au moment de l'élaboration des diagrammes. Ils sont documentés ici **sans correction** dans le cadre de ce livrable :
 
-- la page `Commander.jsx` n'envoie pas de distance de livraison (`distance_km`), alors que le backend peut calculer des frais de livraison à partir de cette valeur ;
+- la page `Commander.jsx` estime les frais via `POST /livraison/estimation` puis le backend recalcule définitivement distance et tarif à la création (les valeurs client `distance_km` / `prix_livraison` sont ignorées) ;
 - les statistiques MongoDB ne sont pas mises à jour lorsqu'une commande est ultérieurement annulée (ou lorsque son montant évolue), alors qu'elles sont incrémentées à la création ;
 - il n'existe pas de workflow strict de transitions entre statuts : tout statut de la liste autorisée peut être appliqué sans enchaînement imposé ;
 - l'`utilisateur_id` éventuellement fourni par le frontend est écrasé côté serveur par `req.user.utilisateur_id` issu du JWT (comportement de sécurité correct, mais à ne pas confondre avec une confiance accordée au body) ;

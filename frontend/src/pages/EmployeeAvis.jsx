@@ -102,24 +102,26 @@ function EmployeeAvis() {
                 Statut actuel : <strong>{item.statut}</strong>
               </p>
 
-              <select
-                value={statuts[item.avis_id] || ""}
-                onChange={(event) =>
-                  handleStatutChange(item.avis_id, event.target.value)
-                }
-              >
-                <option value="En attente">En attente</option>
-                <option value="Validé">Validé</option>
-                <option value="Refusé">Refusé</option>
-              </select>
+              <div className="card-actions">
+                <select
+                  value={statuts[item.avis_id] || ""}
+                  onChange={(event) =>
+                    handleStatutChange(item.avis_id, event.target.value)
+                  }
+                >
+                  <option value="En attente">En attente</option>
+                  <option value="Validé">Validé</option>
+                  <option value="Refusé">Refusé</option>
+                </select>
 
-              <button
-                className="button"
-                type="button"
-                onClick={() => handleUpdateAvis(item.avis_id)}
-              >
-                Modifier le statut
-              </button>
+                <button
+                  className="button button-compact"
+                  type="button"
+                  onClick={() => handleUpdateAvis(item.avis_id)}
+                >
+                  Modifier le statut
+                </button>
+              </div>
             </div>
           ))}
         </div>

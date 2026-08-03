@@ -57,6 +57,8 @@ class CommandeRepository {
           date_prestation,
           heure_livraison,
           adresse_livraison,
+          distance_km,
+          informations_complementaires,
           prix_menu,
           nombre_personne,
           prix_livraison,
@@ -66,7 +68,7 @@ class CommandeRepository {
           utilisateur_id,
           menu_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         commande.numero_commande,
@@ -74,6 +76,8 @@ class CommandeRepository {
         commande.date_prestation,
         commande.heure_livraison,
         commande.adresse_livraison,
+        commande.distance_km ?? null,
+        commande.informations_complementaires ?? null,
         commande.prix_menu,
         commande.nombre_personne,
         commande.prix_livraison,
@@ -135,8 +139,11 @@ class CommandeRepository {
           date_prestation = ?,
           heure_livraison = ?,
           adresse_livraison = ?,
+          distance_km = ?,
+          informations_complementaires = ?,
           nombre_personne = ?,
           prix_menu = ?,
+          prix_livraison = ?,
           pret_materiel = ?,
           restitution_materiel = ?
         WHERE commande_id = ?
@@ -145,8 +152,11 @@ class CommandeRepository {
         commande.date_prestation,
         commande.heure_livraison,
         commande.adresse_livraison,
+        commande.distance_km ?? null,
+        commande.informations_complementaires ?? null,
         commande.nombre_personne,
         commande.prix_menu,
+        commande.prix_livraison,
         commande.pret_materiel,
         commande.restitution_materiel,
         id,

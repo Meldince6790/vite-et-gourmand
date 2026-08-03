@@ -2,12 +2,28 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .header {
   background-color: var(--primary-color);
   color: white;
-  padding: 1rem 2rem;
+  padding: 1rem var(--space-lg);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 1rem;
+  row-gap: 0.75rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1.35rem;
+  font-weight: 700;
+  min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .main {
@@ -15,72 +31,157 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: var(--space-lg);
+  min-width: 0;
 }
 
 .footer {
-  background-color: var(--secondary-color);
-  padding: 2rem;
+  background-color: var(--surface-color);
+  padding: 2.5rem var(--space-lg);
   color: var(--text-color);
+  border-top: 1px solid var(--border-color);
+  box-shadow: none;
+  font-family: var(--font-body);
 }
 
 .footer-columns {
   max-width: 1200px;
   margin: 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
-  justify-content: space-between;
-  text-align: left;
-}
-
-.footer-column {
-  flex: 1;
-  min-width: 180px;
-}
-
-.footer-column:first-child {
-  flex: 1.4;
-  min-width: 260px;
-}
-
-.footer-column h3 {
-  color: var(--primary-color);
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  font-size: 1.1rem;
-}
-
-.footer-horaires {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 2.75rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-areas:
+    "title mentions cgv"
+    "hours . .";
+  column-gap: 2rem;
+  row-gap: 0.85rem;
+  align-items: start;
+}
+
+.footer-title {
+  grid-area: title;
+  justify-self: start;
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.footer-column-mentions {
+  grid-area: mentions;
+  justify-self: center;
+  text-align: center;
+}
+
+.footer-column-cgv {
+  grid-area: cgv;
+  justify-self: end;
+  text-align: right;
 }
 
 .footer-horaires-list,
-.footer-links {
+.footer-horaires-empty {
+  grid-area: hours;
+  justify-self: start;
+  max-width: 28rem;
+}
+
+.footer-horaires-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.footer-horaires-list li,
-.footer-links li {
-  margin-bottom: 0.35rem;
+.footer-horaires-list li {
+  margin: 0 0 0.45rem;
+  color: var(--text-color);
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.55;
 }
 
-@media (max-width: 640px) {
-  .footer-horaires {
-    grid-template-columns: 1fr;
-  }
+.footer-horaires-list li:last-child {
+  margin-bottom: 0;
 }
 
-.footer-links a {
-  color: var(--primary-color);
+.footer-horaires-empty {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.footer-column-mentions a,
+.footer-column-cgv a {
+  color: var(--text-color);
   text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
-.footer-links a:hover {
-  color: var(--accent-color);
+.footer-column-mentions a:hover,
+.footer-column-mentions a:focus-visible,
+.footer-column-cgv a:hover,
+.footer-column-cgv a:focus-visible {
+  color: var(--primary-color-dark);
   text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0.85rem 1rem;
+  }
+
+  .header h1 {
+    font-size: 1.15rem;
+  }
+
+  .main {
+    padding: 1.25rem 1rem;
+  }
+
+  .footer {
+    padding: 1.5rem 1.25rem 1.75rem;
+  }
+
+  /* Maquette mobile : titre à gauche ; liens à droite au niveau des lignes */
+  .footer-columns {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-areas:
+      "title ."
+      "hours mentions"
+      "hours cgv";
+    column-gap: 1rem;
+    row-gap: 0.4rem;
+  }
+
+  .footer-title {
+    font-size: 0.95rem;
+  }
+
+  .footer-column-mentions,
+  .footer-column-cgv {
+    justify-self: stretch;
+    text-align: right;
+  }
+
+  .footer-horaires-list,
+  .footer-horaires-empty {
+    max-width: none;
+  }
+
+  .footer-horaires-list li,
+  .footer-horaires-empty {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    margin-bottom: 0.4rem;
+  }
+
+  .footer-column-mentions a,
+  .footer-column-cgv a {
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
 }

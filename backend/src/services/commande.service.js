@@ -4,6 +4,7 @@ const Menu = require("../models/menu.model");
 const Utilisateur = require("../models/utilisateur.model");
 const statistiqueServiceModule = require("./statistique.service");
 const emailServiceModule = require("./email.service");
+const routingServiceModule = require("./routing.service");
 const Commande = require("../domain/Commande");
 
 const STATUTS_AUTORISES = new Set([
@@ -28,6 +29,7 @@ class CommandeService {
     database,
     emailService,
     utilisateurModel,
+    routingService,
     logger = console,
   }) {
     this.commandeRepository = commandeRepository;
@@ -37,7 +39,32 @@ class CommandeService {
     this.database = database;
     this.emailService = emailService;
     this.utilisateurModel = utilisateurModel;
+    this.routingService = routingService;
     this.logger = logger;
+  }
+
+  normaliserAdresseLivraison(adresse) {
+    if (adresse === undefined || adresse === null) {
+      throw new Error("L'adresse de livraison est obligatoire.");
+    }
+
+    if (typeof adresse !== "string") {
+      throw new Error("L'adresse de livraison est invalide.");
+    }
+
+    const trimmed = adresse.trim();
+
+    if (!trimmed) {
+      throw new Error("L'adresse de livraison est obligatoire.");
+    }
+
+    if (trimmed.length > 255) {
+      throw new Error(
+        "L'adresse de livraison ne doit pas dépasser 255 caractères.",
+      );
+    }
+
+    return trimmed;
   }
 
   async getClientPourEmail(utilisateurId) {
@@ -152,9 +179,9 @@ class CommandeService {
       throw new Error("L'heure de livraison est obligatoire.");
     }
 
-    if (!commande.adresse_livraison) {
-      throw new Error("L'adresse de livraison est obligatoire.");
-    }
+    const adresseLivraison = this.normaliserAdresseLivraison(
+      commande.adresse_livraison,
+    );
 
     if (!commande.nombre_personne || commande.nombre_personne <= 0) {
       throw new Error("Le nombre de personnes doit être supérieur à zéro.");
@@ -165,6 +192,13 @@ class CommandeService {
         "Le nombre de personnes est inférieur au minimum requis pour ce menu.",
       );
     }
+
+    const informationsComplementaires =
+      this.Commande.normaliserInformationsComplementaires(
+        commande.informations_complementaires,
+      );
+
+    const livraison = await this.routingService.quoteDelivery(adresseLivraison);
 
     const stockDisponible = await this.menuModel.hasStock(
       commande.menu_id,
@@ -177,7 +211,19 @@ class CommandeService {
       );
     }
 
-    const nouvelleCommande = this.Commande.initialiserCreation(commande, menu);
+    const nouvelleCommande = this.Commande.initialiserCreation(
+      {
+        ...commande,
+        adresse_livraison: adresseLivraison,
+        informations_complementaires: informationsComplementaires,
+        distance_km: livraison.distance_km,
+        prix_livraison: livraison.prix_livraison,
+      },
+      menu,
+    );
+
+    nouvelleCommande.distance_km = livraison.distance_km;
+    nouvelleCommande.prix_livraison = livraison.prix_livraison;
 
     const commandeId = await this.withTransaction(async (connection) => {
       const id = await this.commandeRepository.create(
@@ -419,6 +465,30 @@ class CommandeService {
     const nouveauNombre = Number(nombrePersonne);
     const delta = nouveauNombre - ancienNombre;
 
+    const informationsComplementaires =
+      data.informations_complementaires !== undefined
+        ? this.Commande.normaliserInformationsComplementaires(
+            data.informations_complementaires,
+          )
+        : commandeExistante.informations_complementaires;
+
+    const adresseLivraison =
+      data.adresse_livraison !== undefined
+        ? this.normaliserAdresseLivraison(data.adresse_livraison)
+        : commandeExistante.adresse_livraison;
+
+    const adresseAChange =
+      adresseLivraison !== String(commandeExistante.adresse_livraison || "").trim();
+
+    let distanceKm = commandeExistante.distance_km;
+    let prixLivraison = commandeExistante.prix_livraison;
+
+    if (adresseAChange) {
+      const livraison = await this.routingService.quoteDelivery(adresseLivraison);
+      distanceKm = livraison.distance_km;
+      prixLivraison = livraison.prix_livraison;
+    }
+
     const updateData = {
       date_prestation:
         data.date_prestation ?? commandeExistante.date_prestation,
@@ -426,8 +496,11 @@ class CommandeService {
       heure_livraison:
         data.heure_livraison ?? commandeExistante.heure_livraison,
 
-      adresse_livraison:
-        data.adresse_livraison ?? commandeExistante.adresse_livraison,
+      adresse_livraison: adresseLivraison,
+
+      distance_km: distanceKm,
+
+      informations_complementaires: informationsComplementaires,
 
       nombre_personne: nombrePersonne,
 
@@ -437,10 +510,27 @@ class CommandeService {
         data.restitution_materiel ?? commandeExistante.restitution_materiel,
 
       prix_menu: this.Commande.calculerPrixMenu(menu, nombrePersonne),
+
+      prix_livraison: prixLivraison,
     };
 
+    const caAvant = Number(
+      (
+        Number(commandeExistante.prix_menu) +
+        Number(commandeExistante.prix_livraison)
+      ).toFixed(2),
+    );
+    const caApres = Number(
+      (Number(updateData.prix_menu) + Number(updateData.prix_livraison)).toFixed(
+        2,
+      ),
+    );
+    const deltaCA = Number((caApres - caAvant).toFixed(2));
+
+    let result;
+
     if (delta > 0) {
-      return await this.withTransaction(async (connection) => {
+      result = await this.withTransaction(async (connection) => {
         const stockDisponible = await this.menuModel.hasStock(
           commandeExistante.menu_id,
           delta,
@@ -469,11 +559,9 @@ class CommandeService {
           connection,
         );
       });
-    }
-
-    if (delta < 0) {
-      return await this.withTransaction(async (connection) => {
-        const result = await this.commandeRepository.update(
+    } else if (delta < 0) {
+      result = await this.withTransaction(async (connection) => {
+        const updateResult = await this.commandeRepository.update(
           id,
           updateData,
           connection,
@@ -489,12 +577,34 @@ class CommandeService {
           throw new Error("La mise à jour du stock a échoué.");
         }
 
-        return result;
+        return updateResult;
       });
+    } else {
+      // delta === 0 : aucun mouvement de stock, update simple hors transaction
+      result = await this.commandeRepository.update(id, updateData);
     }
 
-    // delta === 0 : aucun mouvement de stock, update simple hors transaction
-    return await this.commandeRepository.update(id, updateData);
+    if (deltaCA !== 0) {
+      try {
+        await this.statistiqueService.ajusterStatistiqueCommande(
+          {
+            menu_id: commandeExistante.menu_id,
+            date_commande: commandeExistante.date_commande,
+            nom_menu: menu.titre,
+            prix_menu: updateData.prix_menu,
+            prix_livraison: updateData.prix_livraison,
+          },
+          deltaCA,
+        );
+      } catch (error) {
+        this.logger.error(
+          "Erreur lors de la mise à jour des statistiques MongoDB (modification) :",
+          error,
+        );
+      }
+    }
+
+    return result;
   }
 
   async deleteCommande(id) {
@@ -518,6 +628,7 @@ const commandeService = new CommandeService({
   database,
   emailService: emailServiceModule,
   utilisateurModel: Utilisateur,
+  routingService: routingServiceModule,
   logger: console,
 });
 

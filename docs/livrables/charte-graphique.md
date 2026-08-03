@@ -62,7 +62,7 @@ La palette est organisée autour de plusieurs catégories :
 
 ### Couleur principale
 
-La couleur principale utilisée est un vert profond (`#2f5d50`).
+La couleur principale utilisée est un vert profond (`#2E7D32`), avec une variante plus sombre (`#1B5E20`) pour les états de survol et les liens secondaires.
 
 Elle est principalement utilisée pour les éléments structurants de l'interface :
 
@@ -74,7 +74,7 @@ Cette couleur apporte une identité visuelle sobre et professionnelle tout en ra
 
 ### Couleur secondaire
 
-La couleur secondaire est un beige clair (`#f5efe6`).
+La couleur secondaire est un beige clair (`#F5F0E6`).
 
 Elle permet d'apporter une touche chaleureuse à l'interface et est utilisée pour :
 
@@ -84,15 +84,9 @@ Elle permet d'apporter une touche chaleureuse à l'interface et est utilisée po
 
 ### Couleur d'accentuation
 
-Une couleur dorée (`#c9a227`) est utilisée comme couleur d'accent.
+Une couleur dorée (`#c9a227`) est utilisée comme couleur d'accent sur les fonds clairs.
 
-Elle permet de mettre en valeur certains éléments visuels importants :
-
-- informations particulières ;
-- éléments décoratifs ;
-- zones nécessitant une attention spécifique.
-
-Cette couleur apporte une touche plus élégante en cohérence avec l'image d'une prestation traiteur.
+Sur le fond primaire (en-tête / navigation), l'accent lisible est un crème clair (`#FFF8E1`) afin de conserver un contraste suffisant.
 
 ### Couleurs neutres
 
@@ -101,7 +95,8 @@ Les couleurs neutres garantissent une bonne lisibilité des informations.
 Elles comprennent :
 
 - un gris foncé (`#333333`) utilisé pour les textes ;
-- un blanc cassé (`#faf8f3`) utilisé comme couleur de fond générale.
+- un beige de page (`#F5F0E6`) utilisé comme couleur de fond générale ;
+- un blanc (`#FFFFFF`) pour les surfaces (cartes, pied de page).
 
 Le choix final privilégie une approche minimaliste afin de conserver une interface claire et de laisser les informations principales, notamment les menus proposés, rester au centre de l'expérience utilisateur.
 
@@ -139,7 +134,7 @@ Les choix graphiques appliqués sont :
 
 - liens affichés en blanc afin d'assurer un contraste avec la couleur principale de l'interface ;
 - utilisation d'une graisse de texte renforcée (`font-weight: bold`) pour améliorer la visibilité ;
-- mise en avant de l'élément actif grâce à la couleur d'accentuation dorée (`#c9a227`) ;
+- mise en avant de l'élément actif grâce à l'accent crème (`#FFF8E1`) sur fond primaire ;
 - ajout d'un effet de survol permettant d'améliorer le retour visuel lors de l'interaction.
 
 ### 5.2 Menu utilisateur
@@ -167,10 +162,10 @@ Les boutons de l'application suivent une présentation uniforme afin de conserve
 
 Les règles appliquées sont :
 
-- utilisation de la couleur principale (`#2f5d50`) comme couleur d'action principale ;
+- utilisation de la couleur principale (`#2E7D32`) comme couleur d'action principale ;
 - texte blanc afin de garantir un contraste suffisant ;
 - angles légèrement arrondis afin d'apporter une apparence plus moderne ;
-- changement de couleur vers la couleur d'accentuation (`#c9a227`) lors du survol.
+- changement de couleur vers l'accent crème (`#FFF8E1`) lors du survol sur fond primaire.
 
 Ces éléments permettent d'identifier rapidement les actions disponibles pour l'utilisateur.
 
@@ -239,7 +234,7 @@ L'organisation générale de l'application repose sur une structure composée de
 
 ### En-tête
 
-L'en-tête utilise la couleur principale de l'identité graphique (`#2f5d50`) afin de créer une zone de navigation facilement identifiable.
+L'en-tête utilise la couleur principale de l'identité graphique (`#2E7D32`) afin de créer une zone de navigation facilement identifiable.
 
 Les choix appliqués sont :
 
@@ -259,7 +254,7 @@ Elle repose sur :
 
 ### Pied de page
 
-Le pied de page utilise la couleur secondaire (`#f5efe6`) afin de créer une séparation visuelle avec le contenu principal.
+Le pied de page utilise une surface blanche (`#FFFFFF`) afin de créer une séparation visuelle avec le fond beige de page.
 
 Il permet d'accueillir les informations complémentaires de l'entreprise, notamment :
 

@@ -79,6 +79,8 @@ describe("CommandeRepository", () => {
         date_prestation: "2026-09-01",
         heure_livraison: "12:00",
         adresse_livraison: "1 rue Test",
+        distance_km: 12.34,
+        informations_complementaires: "Accès code A123",
         prix_menu: 100,
         nombre_personne: 10,
         prix_livraison: 5.59,
@@ -94,12 +96,19 @@ describe("CommandeRepository", () => {
       assert.equal(result, 42);
       assert.equal(database.calls.length, 1);
       assert.match(database.calls[0].sql, /INSERT INTO commande/i);
+      assert.match(database.calls[0].sql, /distance_km/i);
+      assert.match(
+        database.calls[0].sql,
+        /informations_complementaires/i,
+      );
       assert.deepEqual(database.calls[0].params, [
         "CMD-1",
         "2026-08-02",
         "2026-09-01",
         "12:00",
         "1 rue Test",
+        12.34,
+        "Accès code A123",
         100,
         10,
         5.59,
@@ -109,6 +118,30 @@ describe("CommandeRepository", () => {
         7,
         3,
       ]);
+    });
+
+    it("insère NULL si distance_km et informations_complementaires absentes", async () => {
+      const database = createFakeDatabase([{ insertId: 1 }]);
+      const repo = new CommandeRepository(database);
+
+      await repo.create({
+        numero_commande: "CMD-1",
+        date_commande: "2026-08-02",
+        date_prestation: "2026-09-01",
+        heure_livraison: "12:00",
+        adresse_livraison: "1 rue Test",
+        prix_menu: 100,
+        nombre_personne: 10,
+        prix_livraison: 5.59,
+        statut: "En attente",
+        pret_materiel: false,
+        restitution_materiel: true,
+        utilisateur_id: 7,
+        menu_id: 3,
+      });
+
+      assert.equal(database.calls[0].params[5], null);
+      assert.equal(database.calls[0].params[6], null);
     });
   });
 
@@ -165,8 +198,11 @@ describe("CommandeRepository", () => {
         date_prestation: "2026-09-02",
         heure_livraison: "13:00",
         adresse_livraison: "2 rue Test",
+        distance_km: 8.5,
+        informations_complementaires: "Sonner à l'interphone",
         nombre_personne: 12,
         prix_menu: 120,
+        prix_livraison: 10.02,
         pret_materiel: true,
         restitution_materiel: false,
       };
@@ -175,12 +211,21 @@ describe("CommandeRepository", () => {
 
       assert.equal(result, true);
       assert.equal(database.calls.length, 1);
+      assert.match(database.calls[0].sql, /distance_km\s*=\s*\?/i);
+      assert.match(
+        database.calls[0].sql,
+        /informations_complementaires\s*=\s*\?/i,
+      );
+      assert.match(database.calls[0].sql, /prix_livraison\s*=\s*\?/i);
       assert.deepEqual(database.calls[0].params, [
         "2026-09-02",
         "13:00",
         "2 rue Test",
+        8.5,
+        "Sonner à l'interphone",
         12,
         120,
+        10.02,
         true,
         false,
         4,
@@ -195,6 +240,8 @@ describe("CommandeRepository", () => {
       date_prestation: "2026-09-01",
       heure_livraison: "12:00",
       adresse_livraison: "1 rue Test",
+      distance_km: null,
+      informations_complementaires: null,
       prix_menu: 100,
       nombre_personne: 10,
       prix_livraison: 5.59,
@@ -209,8 +256,11 @@ describe("CommandeRepository", () => {
       date_prestation: "2026-09-02",
       heure_livraison: "13:00",
       adresse_livraison: "2 rue Test",
+      distance_km: null,
+      informations_complementaires: null,
       nombre_personne: 12,
       prix_menu: 120,
+      prix_livraison: 0,
       pret_materiel: true,
       restitution_materiel: false,
     };
@@ -283,8 +333,11 @@ describe("CommandeRepository", () => {
         "2026-09-02",
         "13:00",
         "2 rue Test",
+        null,
+        null,
         12,
         120,
+        0,
         true,
         false,
         4,

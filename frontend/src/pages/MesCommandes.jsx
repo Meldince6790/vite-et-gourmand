@@ -3,20 +3,13 @@ import { useEffect, useState } from "react";
 import useAuth from "../hooks/useAuth";
 import commandeService from "../services/commande.service";
 import avisService from "../services/avis.service";
+import { formatDateFr, toDateInputValue } from "../utils/date.js";
 import "../styles/pages.css";
 
 const AVIS_FORM_INITIAL = {
   note: "5",
   description: "",
 };
-
-function toDateInputValue(value) {
-  if (!value) {
-    return "";
-  }
-
-  return String(value).slice(0, 10);
-}
 
 function aUnAvisActif(avisListe, utilisateurId) {
   return avisListe.some(
@@ -122,11 +115,25 @@ function MesCommandes() {
   }
 
   async function handleSave() {
-    try {
-      await commandeService.updateCommande(
-        commandeEdition.commande_id,
-        commandeEdition,
+    const adresse = String(commandeEdition.adresse_livraison ?? "").trim();
+
+    if (!adresse) {
+      setError("L'adresse de livraison est obligatoire.");
+      return;
+    }
+
+    if (adresse.length > 255) {
+      setError(
+        "L'adresse de livraison ne doit pas dépasser 255 caractères.",
       );
+      return;
+    }
+
+    try {
+      await commandeService.updateCommande(commandeEdition.commande_id, {
+        ...commandeEdition,
+        adresse_livraison: adresse,
+      });
 
       setMessage("Commande modifiée avec succès.");
       setCommandeEdition(null);
@@ -248,6 +255,30 @@ function MesCommandes() {
                       name="adresse_livraison"
                       value={commandeEdition.adresse_livraison}
                       onChange={handleChange}
+                      placeholder="Ex. 12 rue Sainte-Catherine, 33000 Bordeaux"
+                      maxLength={255}
+                      required
+                    />
+                    <span className="field-help">
+                      Indiquez le numéro, la rue, le code postal et la ville.
+                      {commandeEdition.adresse_livraison !==
+                      commande.adresse_livraison
+                        ? " Les frais de livraison seront recalculés à l'enregistrement."
+                        : ""}
+                    </span>
+                  </label>
+
+                  <label>
+                    <span>Informations complémentaires :</span>
+
+                    <textarea
+                      name="informations_complementaires"
+                      value={
+                        commandeEdition.informations_complementaires ?? ""
+                      }
+                      onChange={handleChange}
+                      maxLength={500}
+                      rows={3}
                     />
                   </label>
 
@@ -300,13 +331,20 @@ function MesCommandes() {
                 <>
                   <p>
                     <strong>Date de prestation :</strong>{" "}
-                    {commande.date_prestation}
+                    {formatDateFr(commande.date_prestation)}
                   </p>
 
                   <p>
                     <strong>Heure de livraison :</strong>{" "}
                     {commande.heure_livraison}
                   </p>
+
+                  {commande.informations_complementaires ? (
+                    <p>
+                      <strong>Informations complémentaires :</strong>{" "}
+                      {commande.informations_complementaires}
+                    </p>
+                  ) : null}
 
                   <p>
                     <strong>Nombre de personnes :</strong>{" "}
@@ -319,6 +357,10 @@ function MesCommandes() {
 
                   <p>
                     <strong>Livraison :</strong> {commande.prix_livraison} €
+                    {commande.distance_km != null &&
+                    commande.distance_km !== ""
+                      ? ` (${Number(commande.distance_km).toFixed(2)} km)`
+                      : ""}
                   </p>
 
                   {Boolean(commande.pret_materiel) ? (

@@ -110,4 +110,60 @@ describe("Commande.initialiserCreation", () => {
     assert.equal(commande.pret_materiel, true);
     assert.equal(commande.restitution_materiel, true);
   });
+
+  it("normalise informations_complementaires absentes en null", () => {
+    const commande = Commande.initialiserCreation(input, MENU, date);
+    assert.equal(commande.informations_complementaires, null);
+  });
+
+  it("conserve les informations complémentaires trimées", () => {
+    const commande = Commande.initialiserCreation(
+      { ...input, informations_complementaires: "  Accès cour  " },
+      MENU,
+      date,
+    );
+    assert.equal(commande.informations_complementaires, "Accès cour");
+  });
+
+  it("transforme une chaîne vide en null", () => {
+    const commande = Commande.initialiserCreation(
+      { ...input, informations_complementaires: "   " },
+      MENU,
+      date,
+    );
+    assert.equal(commande.informations_complementaires, null);
+  });
+});
+
+describe("Commande.normaliserInformationsComplementaires", () => {
+  it("retourne null si valeur absente", () => {
+    assert.equal(Commande.normaliserInformationsComplementaires(undefined), null);
+    assert.equal(Commande.normaliserInformationsComplementaires(null), null);
+  });
+
+  it("trim et conserve une valeur valide", () => {
+    assert.equal(
+      Commande.normaliserInformationsComplementaires("  Hello  "),
+      "Hello",
+    );
+  });
+
+  it("retourne null pour une chaîne vide après trim", () => {
+    assert.equal(Commande.normaliserInformationsComplementaires("   "), null);
+  });
+
+  it("rejette au-delà de 500 caractères", () => {
+    assert.throws(
+      () => Commande.normaliserInformationsComplementaires("a".repeat(501)),
+      {
+        message:
+          "Les informations complémentaires ne doivent pas dépasser 500 caractères.",
+      },
+    );
+  });
+
+  it("accepte exactement 500 caractères", () => {
+    const value = "a".repeat(500);
+    assert.equal(Commande.normaliserInformationsComplementaires(value), value);
+  });
 });

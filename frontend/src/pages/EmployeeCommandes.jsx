@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import commandeService from "../services/commande.service.js";
+import { formatDateFr } from "../utils/date.js";
 
 import "../styles/pages.css";
 
@@ -206,11 +207,20 @@ function EmployeeCommandes() {
                 Client : {commande.prenom} {commande.nom}
               </p>
 
-              <p>Date prestation : {commande.date_prestation}</p>
+              <p>
+                Date prestation : {formatDateFr(commande.date_prestation)}
+              </p>
 
               <p>Heure : {commande.heure_livraison}</p>
 
               <p>Adresse : {commande.adresse_livraison}</p>
+
+              {commande.informations_complementaires ? (
+                <p>
+                  Informations complémentaires :{" "}
+                  {commande.informations_complementaires}
+                </p>
+              ) : null}
 
               <p>Nombre de personnes : {commande.nombre_personne}</p>
 
@@ -218,40 +228,48 @@ function EmployeeCommandes() {
 
               <p>Prix livraison : {commande.prix_livraison} €</p>
 
+              {commande.distance_km != null && commande.distance_km !== "" ? (
+                <p>Distance : {Number(commande.distance_km).toFixed(2)} km</p>
+              ) : null}
+
               <p>
                 Statut actuel : <strong>{commande.statut}</strong>
               </p>
 
-              <select
-                value={
-                  statutsCommandes[commande.commande_id] || commande.statut
-                }
-                onChange={(event) =>
-                  handleStatutCommandeChange(
-                    commande.commande_id,
-                    event.target.value,
-                  )
-                }
-              >
-                {STATUTS_COMMANDES.map((statut) => (
-                  <option key={statut} value={statut}>
-                    {statut}
-                  </option>
-                ))}
-              </select>
+              <div className="card-actions">
+                <select
+                  value={
+                    statutsCommandes[commande.commande_id] || commande.statut
+                  }
+                  onChange={(event) =>
+                    handleStatutCommandeChange(
+                      commande.commande_id,
+                      event.target.value,
+                    )
+                  }
+                >
+                  {STATUTS_COMMANDES.map((statut) => (
+                    <option key={statut} value={statut}>
+                      {statut}
+                    </option>
+                  ))}
+                </select>
 
-              <button
-                className="button"
-                type="button"
-                onClick={() => handleUpdateStatutCommande(commande.commande_id)}
-              >
-                Modifier le statut
-              </button>
+                <button
+                  className="button button-compact"
+                  type="button"
+                  onClick={() =>
+                    handleUpdateStatutCommande(commande.commande_id)
+                  }
+                >
+                  Modifier le statut
+                </button>
+              </div>
 
               {commande.statut !== "Annulée" &&
                 commande.statut !== "Terminée" && (
-                  <>
-                    <label>
+                  <div className="commande-annulation">
+                    <label className="field-stack">
                       <span>Mode de contact :</span>
 
                       <select
@@ -273,7 +291,7 @@ function EmployeeCommandes() {
                       </select>
                     </label>
 
-                    <label>
+                    <label className="field-stack">
                       <span>Motif d'annulation :</span>
 
                       <input
@@ -292,16 +310,18 @@ function EmployeeCommandes() {
                       />
                     </label>
 
-                    <button
-                      className="button"
-                      type="button"
-                      onClick={() =>
-                        handleAnnulerCommande(commande.commande_id)
-                      }
-                    >
-                      Annuler la commande
-                    </button>
-                  </>
+                    <div className="card-actions">
+                      <button
+                        className="button button-compact"
+                        type="button"
+                        onClick={() =>
+                          handleAnnulerCommande(commande.commande_id)
+                        }
+                      >
+                        Annuler la commande
+                      </button>
+                    </div>
+                  </div>
                 )}
             </div>
           ))}

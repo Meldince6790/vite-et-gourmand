@@ -20,6 +20,8 @@ const ORDER = {
   date_commande: "2026-08-02T12:00:00.000Z",
   heure_livraison: "12:00",
   adresse_livraison: "1 rue Test",
+  distance_km: 0,
+  informations_complementaires: "Infos initiales",
   prix_menu: 100,
   prix_livraison: 0,
   pret_materiel: false,
@@ -82,10 +84,12 @@ function createMocks(overrides = {}) {
     hasStock: [],
     updateStatistiqueCommande: [],
     retirerStatistiqueCommande: [],
+    ajusterStatistiqueCommande: [],
     sendOrderConfirmationEmail: [],
     sendOrderCancellationEmail: [],
     findUtilisateurById: [],
     loggerErrors: [],
+    quoteDelivery: [],
   };
 
   const commandeRepository = {
@@ -139,6 +143,10 @@ function createMocks(overrides = {}) {
     overrides.statistiqueService?.retirerStatistiqueCommande ??
     (async () => undefined);
 
+  const ajusterStatistiqueCommandeImpl =
+    overrides.statistiqueService?.ajusterStatistiqueCommande ??
+    (async () => undefined);
+
   const statistiqueService = {
     ...overrides.statistiqueService,
     updateStatistiqueCommande: async (commande, menu) => {
@@ -148,6 +156,10 @@ function createMocks(overrides = {}) {
     retirerStatistiqueCommande: async (commande) => {
       calls.retirerStatistiqueCommande.push(commande);
       return retirerStatistiqueCommandeImpl(commande);
+    },
+    ajusterStatistiqueCommande: async (commande, deltaCA) => {
+      calls.ajusterStatistiqueCommande.push({ commande, deltaCA });
+      return ajusterStatistiqueCommandeImpl(commande, deltaCA);
     },
   };
 
@@ -189,6 +201,22 @@ function createMocks(overrides = {}) {
     ...overrides.logger,
   };
 
+  const quoteDeliveryImpl =
+    overrides.routingService?.quoteDelivery ??
+    (async () => ({
+      distance_km: 0,
+      prix_livraison: 0,
+      livraison_gratuite: true,
+    }));
+
+  const routingService = {
+    ...overrides.routingService,
+    quoteDelivery: async (address) => {
+      calls.quoteDelivery.push(address);
+      return quoteDeliveryImpl(address);
+    },
+  };
+
   const transactional =
     overrides.database === undefined
       ? createTransactionalDatabase()
@@ -206,6 +234,7 @@ function createMocks(overrides = {}) {
     database: transactional.database,
     emailService,
     utilisateurModel,
+    routingService,
     logger,
   });
 
@@ -306,6 +335,7 @@ describe("CommandeService.createCommande", () => {
     assert.match(calls.create[0].numero_commande, /^CMD-/);
     assert.equal(calls.create[0].pret_materiel, false);
     assert.equal(calls.create[0].restitution_materiel, false);
+    assert.equal(calls.create[0].informations_complementaires, null);
     assert.equal(calls.createConnections[0], connection);
     assert.deepEqual(calls.decreaseStock, [
       { menuId: 1, quantite: 10, connection },
@@ -322,6 +352,119 @@ describe("CommandeService.createCommande", () => {
     const statsIndex = calls.updateStatistiqueCommande.length - 1;
     assert.ok(statsIndex >= 0);
     assert.ok(events.indexOf("commit") < events.indexOf("release"));
+  });
+
+  it("persiste les informations complémentaires trimées à la création", async () => {
+    const { service, calls } = createMocks();
+
+    await service.createCommande({
+      ...baseInput(),
+      informations_complementaires: "  Livrer par l'entrée arrière  ",
+    });
+
+    assert.equal(
+      calls.create[0].informations_complementaires,
+      "Livrer par l'entrée arrière",
+    );
+    assert.equal(calls.create[0].prix_menu, 100);
+    assert.equal(calls.decreaseStock[0].quantite, 10);
+  });
+
+  it("applique une livraison gratuite pour Bordeaux via le service de routage", async () => {
+    const { service, calls } = createMocks({
+      routingService: {
+        quoteDelivery: async () => ({
+          distance_km: 0,
+          prix_livraison: 0,
+          livraison_gratuite: true,
+        }),
+      },
+    });
+
+    await service.createCommande({
+      ...baseInput(),
+      adresse_livraison: "12 rue Sainte-Catherine, 33000 Bordeaux",
+      distance_km: 99,
+      prix_livraison: 999,
+    });
+
+    assert.equal(calls.create[0].distance_km, 0);
+    assert.equal(calls.create[0].prix_livraison, 0);
+    assert.equal(calls.quoteDelivery.length, 1);
+  });
+
+  it("applique le tarif hors Bordeaux et ignore les montants client", async () => {
+    const { service, calls } = createMocks({
+      routingService: {
+        quoteDelivery: async () => ({
+          distance_km: 10,
+          prix_livraison: 10.9,
+          livraison_gratuite: false,
+        }),
+      },
+    });
+
+    await service.createCommande({
+      ...baseInput(),
+      adresse_livraison: "45 avenue de la Libération, 33700 Mérignac",
+      distance_km: 1,
+      prix_livraison: 0,
+    });
+
+    assert.equal(calls.create[0].distance_km, 10);
+    assert.equal(calls.create[0].prix_livraison, 10.9);
+  });
+
+  it("n'crée pas la commande si le calcul de livraison échoue", async () => {
+    const { service, calls } = createMocks({
+      routingService: {
+        quoteDelivery: async () => {
+          const error = new Error(
+            "Calcul des frais de livraison temporairement indisponible. Réessayez plus tard.",
+          );
+          error.statusCode = 503;
+          throw error;
+        },
+      },
+    });
+
+    await assert.rejects(() => service.createCommande(baseInput()), {
+      message:
+        "Calcul des frais de livraison temporairement indisponible. Réessayez plus tard.",
+    });
+    assert.equal(calls.create.length, 0);
+    assert.equal(calls.decreaseStock.length, 0);
+    assert.equal(calls.updateStatistiqueCommande.length, 0);
+  });
+
+  it("normalise une chaîne vide en null à la création", async () => {
+    const { service, calls } = createMocks();
+
+    await service.createCommande({
+      ...baseInput(),
+      informations_complementaires: "   ",
+    });
+
+    assert.equal(calls.create[0].informations_complementaires, null);
+  });
+
+  it("rejette les informations complémentaires trop longues à la création", async () => {
+    const { service, calls } = createMocks();
+
+    await assert.rejects(
+      () =>
+        service.createCommande({
+          ...baseInput(),
+          informations_complementaires: "a".repeat(501),
+        }),
+      {
+        message:
+          "Les informations complémentaires ne doivent pas dépasser 500 caractères.",
+      },
+    );
+    assert.equal(calls.create.length, 0);
+    assert.equal(calls.decreaseStock.length, 0);
+    assert.equal(calls.updateStatistiqueCommande.length, 0);
   });
 
   it("exécute create et decreaseStock dans la même transaction puis Mongo après commit", async () => {
@@ -423,6 +566,48 @@ describe("CommandeService.createCommande", () => {
       message: "L'adresse de livraison est obligatoire.",
     });
     assert.equal(calls.create.length, 0);
+  });
+
+  it("rejette une adresse de livraison vide après trim", async () => {
+    const { service, calls } = createMocks();
+
+    await assert.rejects(
+      () =>
+        service.createCommande({
+          ...baseInput(),
+          adresse_livraison: "   ",
+        }),
+      { message: "L'adresse de livraison est obligatoire." },
+    );
+    assert.equal(calls.create.length, 0);
+  });
+
+  it("rejette une adresse de livraison trop longue", async () => {
+    const { service, calls } = createMocks();
+
+    await assert.rejects(
+      () =>
+        service.createCommande({
+          ...baseInput(),
+          adresse_livraison: "a".repeat(256),
+        }),
+      {
+        message:
+          "L'adresse de livraison ne doit pas dépasser 255 caractères.",
+      },
+    );
+    assert.equal(calls.create.length, 0);
+  });
+
+  it("trim l'adresse de livraison à la création", async () => {
+    const { service, calls } = createMocks();
+
+    await service.createCommande({
+      ...baseInput(),
+      adresse_livraison: "  1 rue Test  ",
+    });
+
+    assert.equal(calls.create[0].adresse_livraison, "1 rue Test");
   });
 
   it("rejette si le nombre de personnes est inférieur ou égal à 0", async () => {
@@ -970,6 +1155,87 @@ describe("CommandeService.updateCommande", () => {
     assert.equal(calls.update[0].data.prix_menu, 135);
   });
 
+  it("conserve les informations complémentaires si non fournies à la modification", async () => {
+    const { service, calls } = createMocks();
+
+    await service.updateCommande(1, 10, { nombre_personne: 12 });
+
+    assert.equal(
+      calls.update[0].data.informations_complementaires,
+      "Infos initiales",
+    );
+  });
+
+  it("remplace les informations complémentaires lors de la modification", async () => {
+    const { service, calls } = createMocks();
+
+    await service.updateCommande(1, 10, {
+      informations_complementaires: "  Nouveau message  ",
+    });
+
+    assert.equal(
+      calls.update[0].data.informations_complementaires,
+      "Nouveau message",
+    );
+    assert.equal(calls.update[0].data.prix_menu, 100);
+    assert.equal(calls.decreaseStock.length, 0);
+    assert.equal(calls.increaseStock.length, 0);
+  });
+
+  it("rejette les informations complémentaires trop longues à la modification", async () => {
+    const { service, calls } = createMocks();
+
+    await assert.rejects(
+      () =>
+        service.updateCommande(1, 10, {
+          informations_complementaires: "a".repeat(501),
+        }),
+      {
+        message:
+          "Les informations complémentaires ne doivent pas dépasser 500 caractères.",
+      },
+    );
+    assert.equal(calls.update.length, 0);
+  });
+
+  it("recalcule la livraison si l'adresse change", async () => {
+    const { service, calls } = createMocks({
+      routingService: {
+        quoteDelivery: async () => ({
+          distance_km: 8.5,
+          prix_livraison: 10.02,
+          livraison_gratuite: false,
+        }),
+      },
+    });
+
+    await service.updateCommande(1, 10, {
+      adresse_livraison: "10 rue Nouvelle, 33700 Mérignac",
+    });
+
+    assert.equal(calls.quoteDelivery.length, 1);
+    assert.equal(calls.update[0].data.distance_km, 8.5);
+    assert.equal(calls.update[0].data.prix_livraison, 10.02);
+  });
+
+  it("conserve la livraison si l'adresse ne change pas", async () => {
+    const { service, calls } = createMocks({
+      commandeRepository: {
+        findById: async () => ({
+          ...ORDER,
+          distance_km: 4.2,
+          prix_livraison: 7.48,
+        }),
+      },
+    });
+
+    await service.updateCommande(1, 10, { nombre_personne: 12 });
+
+    assert.equal(calls.quoteDelivery.length, 0);
+    assert.equal(calls.update[0].data.distance_km, 4.2);
+    assert.equal(calls.update[0].data.prix_livraison, 7.48);
+  });
+
   it("décrémente le delta de stock si le nombre de personnes augmente", async () => {
     const { database, events, connection } = createTransactionalDatabase();
     const order = [];
@@ -1126,12 +1392,223 @@ describe("CommandeService.updateCommande", () => {
       { message: "La mise à jour du stock a échoué." },
     );
     assert.equal(calls.update.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande.length, 0);
     assert.deepEqual(events, [
       "getConnection",
       "begin",
       "rollback",
       "release",
     ]);
+  });
+
+  it("ajuste le CA Mongo si le nombre de personnes change", async () => {
+    const { service, calls } = createMocks({
+      menuModel: {
+        findById: async () => ({ ...MENU, titre: "Menu Test" }),
+      },
+    });
+
+    await service.updateCommande(1, 10, { nombre_personne: 15 });
+
+    assert.equal(calls.ajusterStatistiqueCommande.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, 35);
+    assert.equal(calls.ajusterStatistiqueCommande[0].commande.prix_menu, 135);
+    assert.equal(calls.ajusterStatistiqueCommande[0].commande.prix_livraison, 0);
+    assert.equal(calls.ajusterStatistiqueCommande[0].commande.nom_menu, "Menu Test");
+    assert.equal(calls.updateStatistiqueCommande.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
+  });
+
+  it("ajuste le CA Mongo si l'adresse change le prix de livraison", async () => {
+    const { service, calls } = createMocks({
+      routingService: {
+        quoteDelivery: async () => ({
+          distance_km: 8.5,
+          prix_livraison: 10.02,
+          livraison_gratuite: false,
+        }),
+      },
+    });
+
+    await service.updateCommande(1, 10, {
+      adresse_livraison: "10 rue Nouvelle, 33700 Mérignac",
+    });
+
+    assert.equal(calls.ajusterStatistiqueCommande.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, 10.02);
+    assert.equal(calls.ajusterStatistiqueCommande[0].commande.prix_livraison, 10.02);
+  });
+
+  it("ajuste le CA Mongo sur le total si effectif et adresse changent", async () => {
+    const { service, calls } = createMocks({
+      routingService: {
+        quoteDelivery: async () => ({
+          distance_km: 8.5,
+          prix_livraison: 10.02,
+          livraison_gratuite: false,
+        }),
+      },
+    });
+
+    await service.updateCommande(1, 10, {
+      nombre_personne: 15,
+      adresse_livraison: "10 rue Nouvelle, 33700 Mérignac",
+    });
+
+    // CA avant 100+0=100 ; après 135+10.02=145.02 → delta 45.02
+    assert.equal(calls.ajusterStatistiqueCommande.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, 45.02);
+  });
+
+  it("n'appelle pas Mongo si la modification n'impacte pas les montants", async () => {
+    const { service, calls } = createMocks();
+
+    await service.updateCommande(1, 10, {
+      heure_livraison: "19:30",
+      pret_materiel: true,
+      informations_complementaires: "Sans impact tarifaire",
+    });
+
+    assert.equal(calls.update.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande.length, 0);
+    assert.equal(calls.updateStatistiqueCommande.length, 0);
+  });
+
+  it("applique un delta CA négatif si le montant baisse", async () => {
+    const { service, calls } = createMocks({
+      commandeRepository: {
+        findById: async () => ({
+          ...ORDER,
+          nombre_personne: 15,
+          prix_menu: 135,
+          prix_livraison: 10,
+        }),
+      },
+    });
+
+    await service.updateCommande(1, 10, { nombre_personne: 10 });
+
+    // CA avant 135+10=145 ; après 100+10=110 → delta -35
+    assert.equal(calls.ajusterStatistiqueCommande.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, -35);
+  });
+
+  it("préserve la cohérence create → modify → cancel côté appels statistiques", async () => {
+    const caTracker = { value: 0, commandes: 0 };
+    const orderState = {
+      ...ORDER,
+      prix_menu: 100,
+      prix_livraison: 0,
+      nombre_personne: 10,
+    };
+
+    const { service, calls } = createMocks({
+      commandeRepository: {
+        findById: async () => ({ ...orderState }),
+        update: async (id, data) => {
+          Object.assign(orderState, data);
+          calls.update.push({ id, data });
+          return true;
+        },
+      },
+      statistiqueService: {
+        updateStatistiqueCommande: async (commande) => {
+          caTracker.commandes += 1;
+          caTracker.value +=
+            Number(commande.prix_menu) + Number(commande.prix_livraison);
+        },
+        ajusterStatistiqueCommande: async (_commande, deltaCA) => {
+          caTracker.value += Number(deltaCA);
+        },
+        retirerStatistiqueCommande: async (commande) => {
+          caTracker.commandes -= 1;
+          caTracker.value -=
+            Number(commande.prix_menu) + Number(commande.prix_livraison);
+        },
+      },
+      routingService: {
+        quoteDelivery: async () => ({
+          distance_km: 9.69,
+          prix_livraison: 10.72,
+          livraison_gratuite: false,
+        }),
+      },
+    });
+
+    // Simule l'effet création déjà comptabilisé
+    await service.statistiqueService.updateStatistiqueCommande({
+      ...orderState,
+      prix_menu: 100,
+      prix_livraison: 0,
+    });
+    assert.equal(caTracker.value, 100);
+    assert.equal(caTracker.commandes, 1);
+
+    await service.updateCommande(1, 10, {
+      adresse_livraison: "45 avenue Liberation, 33700 Merignac",
+    });
+    assert.equal(caTracker.value, 110.72);
+
+    await service.updateCommande(1, 10, { nombre_personne: 15 });
+    assert.equal(caTracker.value, 145.72);
+
+    await service.annulerCommandeClient(1, 10);
+    assert.equal(caTracker.value, 0);
+    assert.equal(caTracker.commandes, 0);
+    assert.equal(calls.ajusterStatistiqueCommande.length, 2);
+    assert.equal(calls.retirerStatistiqueCommande.length, 1);
+  });
+
+  it("conserve la modification MySQL si l'ajustement Mongo échoue", async () => {
+    const { service, calls } = createMocks({
+      statistiqueService: {
+        ajusterStatistiqueCommande: async () => {
+          throw new Error("Mongo indisponible");
+        },
+      },
+    });
+
+    const result = await service.updateCommande(1, 10, { nombre_personne: 15 });
+
+    assert.equal(result, true);
+    assert.equal(calls.update.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande.length, 1);
+    assert.equal(calls.loggerErrors.length, 1);
+    assert.match(
+      String(calls.loggerErrors[0][0]),
+      /statistiques MongoDB \(modification\)/,
+    );
+  });
+
+  it("arrondit le delta CA à deux décimales avant l'appel Mongo", async () => {
+    const { service, calls } = createMocks({
+      commandeRepository: {
+        findById: async () => ({
+          ...ORDER,
+          prix_menu: 100,
+          prix_livraison: 0.1,
+        }),
+      },
+      routingService: {
+        quoteDelivery: async () => ({
+          distance_km: 1,
+          // 5 + 0.59*1 = 5.59 — delta = 5.49
+          prix_livraison: 5.59,
+          livraison_gratuite: false,
+        }),
+      },
+    });
+
+    await service.updateCommande(1, 10, {
+      adresse_livraison: "2 rue Autre, 33700 Merignac",
+    });
+
+    assert.equal(calls.ajusterStatistiqueCommande.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, 5.49);
+    assert.equal(
+      Number(calls.ajusterStatistiqueCommande[0].deltaCA.toFixed(2)),
+      calls.ajusterStatistiqueCommande[0].deltaCA,
+    );
   });
 });
 
@@ -1388,6 +1865,10 @@ describe("CommandeService délégation au domaine", () => {
     const date = new Date("2026-08-02T12:00:00.000Z");
 
     class FakeCommande {
+      static normaliserInformationsComplementaires(value) {
+        return Commande.normaliserInformationsComplementaires(value);
+      }
+
       static initialiserCreation(input, menu) {
         calls.push({ method: "initialiserCreation", input, menu });
         return Commande.initialiserCreation(input, menu, date);

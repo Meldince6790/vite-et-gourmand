@@ -207,9 +207,15 @@ function EmployeePlats() {
           />
         </label>
 
-        <button className="button" type="button" onClick={handleCreate}>
-          Ajouter
-        </button>
+        <div className="card-actions">
+          <button
+            className="button button-compact"
+            type="button"
+            onClick={handleCreate}
+          >
+            Ajouter
+          </button>
+        </div>
       </div>
 
       <div className="cards">
@@ -241,17 +247,23 @@ function EmployeePlats() {
                   />
                 </label>
 
-                <button className="button" type="button" onClick={handleUpdate}>
-                  Enregistrer
-                </button>
+                <div className="card-actions">
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={handleUpdate}
+                  >
+                    Enregistrer
+                  </button>
 
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => setPlatEdition(null)}
-                >
-                  Annuler
-                </button>
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={() => setPlatEdition(null)}
+                  >
+                    Annuler
+                  </button>
+                </div>
               </>
             ) : (
               <>
@@ -259,31 +271,33 @@ function EmployeePlats() {
 
                 {plat.photo && <img src={plat.photo} alt={plat.titre_plat} />}
 
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => handleModifier(plat)}
-                >
-                  Modifier
-                </button>
+                <div className="card-actions">
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={() => handleModifier(plat)}
+                  >
+                    Modifier
+                  </button>
 
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => handleDelete(plat.plat_id)}
-                >
-                  Supprimer
-                </button>
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={() => handleDelete(plat.plat_id)}
+                  >
+                    Supprimer
+                  </button>
+                </div>
 
                 <h4>Allergènes</h4>
 
                 {plat.allergenes?.length > 0 ? (
                   plat.allergenes.map((allergene) => (
-                    <p key={allergene.allergene_id}>
-                      {allergene.libelle}
+                    <p className="inline-action-row" key={allergene.allergene_id}>
+                      <span>{allergene.libelle}</span>
 
                       <button
-                        className="button"
+                        className="button button-compact"
                         type="button"
                         onClick={() =>
                           handleRemoveAllergene(
@@ -318,13 +332,15 @@ function EmployeePlats() {
                   ))}
                 </select>
 
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => handleAddAllergene(plat.plat_id)}
-                >
-                  Ajouter allergène
-                </button>
+                <div className="card-actions">
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={() => handleAddAllergene(plat.plat_id)}
+                  >
+                    Ajouter allergène
+                  </button>
+                </div>
               </>
             )}
           </div>

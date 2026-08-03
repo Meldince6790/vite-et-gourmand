@@ -154,6 +154,11 @@ function Commander() {
     Boolean(livraisonEstimate) &&
     estimatedAddress === adresseCourante &&
     !livraisonError;
+  const adresseGuidance = !adresseCourante
+    ? "Veuillez renseigner une adresse de livraison."
+    : !estimationValide && !livraisonError && !estimating
+      ? "Veuillez calculer les frais de livraison avant de valider la commande."
+      : "";
   const prixLivraison = estimationValide
     ? Number(livraisonEstimate.prix_livraison)
     : null;
@@ -304,6 +309,11 @@ function Commander() {
                   <span className="commander-field-help">
                     Indiquez le numéro, la rue, le code postal et la ville.
                   </span>
+                  {adresseGuidance ? (
+                    <p className="commander-livraison-error" role="status">
+                      {adresseGuidance}
+                    </p>
+                  ) : null}
                 </label>
 
                 <div className="commander-field-full commander-livraison-actions">

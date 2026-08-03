@@ -984,7 +984,7 @@
 }
 
 .commander-livraison-error {
-  margin: 0;
+  margin: 0.35rem 0 0;
   color: #8a2b2b;
   font-size: 0.9rem;
   font-weight: 500;

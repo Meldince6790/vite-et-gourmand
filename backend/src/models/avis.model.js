@@ -1,8 +1,17 @@
 const db = require("../config/database");
 
 const Avis = {
-  async getAll() {
-    const [rows] = await db.query(`
+  async getAll({ statut } = {}) {
+    const params = [];
+    let whereClause = "";
+
+    if (statut) {
+      whereClause = "WHERE avis.statut = ?";
+      params.push(statut);
+    }
+
+    const [rows] = await db.query(
+      `
       SELECT
         avis.*,
         utilisateur.nom,
@@ -10,12 +19,23 @@ const Avis = {
       FROM avis
       LEFT JOIN utilisateur
         ON avis.utilisateur_id = utilisateur.utilisateur_id
-    `);
+      ${whereClause}
+      `,
+      params,
+    );
 
     return rows;
   },
 
-  async getById(id) {
+  async getById(id, { statut } = {}) {
+    const params = [id];
+    let statutClause = "";
+
+    if (statut) {
+      statutClause = "AND avis.statut = ?";
+      params.push(statut);
+    }
+
     const [rows] = await db.query(
       `
       SELECT
@@ -26,8 +46,9 @@ const Avis = {
       LEFT JOIN utilisateur
         ON avis.utilisateur_id = utilisateur.utilisateur_id
       WHERE avis.avis_id = ?
+      ${statutClause}
       `,
-      [id],
+      params,
     );
 
     return rows[0];

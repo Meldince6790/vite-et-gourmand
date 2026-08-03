@@ -1,42 +1,47 @@
 const commandeService = require("../services/commande.service");
+const { toClientErrorMessage } = require("../utils/safeErrorMessage");
 
 function handleError(res, error, defaultMessage) {
   console.error(error);
 
+  const clientMessage = toClientErrorMessage(error, defaultMessage);
+
   if (error.statusCode === 503) {
     return res.status(503).json({
-      message: error.message || defaultMessage,
+      message: clientMessage,
     });
   }
 
   if (error.statusCode === 429) {
     return res.status(429).json({
-      message: error.message || defaultMessage,
+      message: clientMessage,
     });
   }
 
   if (
+    clientMessage !== defaultMessage &&
     error.message.includes("introuvable") &&
     !error.message.includes("Adresse de livraison")
   ) {
     return res.status(404).json({
-      message: error.message,
+      message: clientMessage,
     });
   }
 
   if (
-    error.message.includes("déjà") ||
-    error.message.includes("existe") ||
-    (error.message.includes("invalide") &&
-      !error.message.includes("Adresse de livraison"))
+    clientMessage !== defaultMessage &&
+    (error.message.includes("déjà") ||
+      error.message.includes("existe") ||
+      (error.message.includes("invalide") &&
+        !error.message.includes("Adresse de livraison")))
   ) {
     return res.status(409).json({
-      message: error.message,
+      message: clientMessage,
     });
   }
 
   return res.status(error.statusCode || 400).json({
-    message: error.message || defaultMessage,
+    message: clientMessage,
   });
 }
 

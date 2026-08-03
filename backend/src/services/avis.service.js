@@ -3,11 +3,19 @@ const db = require("../config/database");
 
 function createAvisService({ avisModel = Avis, database = db } = {}) {
   const avisService = {
-    async getAll() {
+    async getAll({ publicOnly = false } = {}) {
+      if (publicOnly) {
+        return await avisModel.getAll({ statut: "Validé" });
+      }
+
       return await avisModel.getAll();
     },
 
-    async getById(id) {
+    async getById(id, { publicOnly = false } = {}) {
+      if (publicOnly) {
+        return await avisModel.getById(id, { statut: "Validé" });
+      }
+
       return await avisModel.getById(id);
     },
 

@@ -7,7 +7,7 @@
     "start": "node src/app.js",
     "dev": "node src/app.js",
     "stats:resync": "node scripts/resync-statistiques.js",
-    "test": "node --test src/domain/Commande.test.js src/repositories/CommandeRepository.test.js src/services/routing.service.test.js src/services/commande.service.test.js src/services/statistique.service.test.js src/services/avis.service.test.js src/services/auth.service.test.js src/services/email.service.test.js src/services/email.templates.test.js src/controllers/contact.controller.test.js src/models/menu.model.test.js src/services/menu.service.test.js"
+    "test": "node --test src/domain/Commande.test.js src/repositories/CommandeRepository.test.js src/services/routing.service.test.js src/services/commande.service.test.js src/services/statistique.service.test.js src/services/avis.service.test.js src/services/auth.service.test.js src/services/email.service.test.js src/services/email.templates.test.js src/controllers/contact.controller.test.js src/models/menu.model.test.js src/services/menu.service.test.js src/utils/safeErrorMessage.test.js"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +18,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.6.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.8.0",
     "mysql2": "^3.22.6",

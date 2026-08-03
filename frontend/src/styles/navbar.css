@@ -50,18 +50,18 @@
 
 .navbar-link:hover,
 .navbar-link:focus-visible {
-  color: var(--accent-color);
+  color: var(--accent-on-primary);
 }
 
 .navbar-link.active {
-  color: var(--accent-color);
+  color: var(--accent-on-primary);
 }
 
 .navbar-link:focus-visible,
 .navbar-toggle:focus-visible,
 .user-menu-button:focus-visible,
 .user-menu-link:focus-visible {
-  outline: 2px solid var(--accent-color);
+  outline: 2px solid var(--accent-on-primary);
   outline-offset: 3px;
 }
 
@@ -84,7 +84,7 @@
 }
 
 .user-menu-button:hover {
-  color: var(--accent-color);
+  color: var(--accent-on-primary);
 }
 
 .user-menu-dropdown {

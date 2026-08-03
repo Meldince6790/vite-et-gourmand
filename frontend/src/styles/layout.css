@@ -37,73 +37,94 @@
 
 .footer {
   background-color: var(--surface-color);
-  padding: 1.75rem var(--space-lg);
+  padding: 2.5rem var(--space-lg);
   color: var(--text-color);
   border-top: 1px solid var(--border-color);
-  box-shadow: 0 -1px 4px rgba(47, 93, 80, 0.06);
+  box-shadow: none;
   font-family: var(--font-body);
 }
 
 .footer-columns {
   max-width: 1200px;
   margin: 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-lg);
-  justify-content: space-between;
-  text-align: left;
-}
-
-.footer-column {
-  flex: 1;
-  min-width: 160px;
-}
-
-.footer-column:first-child {
-  flex: 1.4;
-  min-width: 200px;
-}
-
-.footer-column h3 {
-  font-family: var(--font-heading);
-  color: var(--primary-color);
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  font-size: 1.15rem;
-}
-
-.footer-horaires {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 2.75rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-areas:
+    "title mentions cgv"
+    "hours . .";
+  column-gap: 2rem;
+  row-gap: 0.85rem;
+  align-items: start;
+}
+
+.footer-title {
+  grid-area: title;
+  justify-self: start;
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.footer-column-mentions {
+  grid-area: mentions;
+  justify-self: center;
+  text-align: center;
+}
+
+.footer-column-cgv {
+  grid-area: cgv;
+  justify-self: end;
+  text-align: right;
 }
 
 .footer-horaires-list,
-.footer-links {
+.footer-horaires-empty {
+  grid-area: hours;
+  justify-self: start;
+  max-width: 28rem;
+}
+
+.footer-horaires-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.footer-horaires-list li,
-.footer-links li {
-  margin-bottom: 0.35rem;
-}
-
-.footer-column p,
 .footer-horaires-list li {
+  margin: 0 0 0.45rem;
   color: var(--text-color);
-  line-height: 1.5;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.55;
 }
 
-.footer-links a {
-  color: var(--primary-color);
+.footer-horaires-list li:last-child {
+  margin-bottom: 0;
+}
+
+.footer-horaires-empty {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.footer-column-mentions a,
+.footer-column-cgv a {
+  color: var(--text-color);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
-.footer-links a:hover,
-.footer-links a:focus-visible {
+.footer-column-mentions a:hover,
+.footer-column-mentions a:focus-visible,
+.footer-column-cgv a:hover,
+.footer-column-cgv a:focus-visible {
   color: var(--primary-color-dark);
   text-decoration: underline;
 }
@@ -121,54 +142,46 @@
     padding: 1.25rem 1rem;
   }
 
-  /* Footer compact — aligné maquette mobile (~100–120 px) */
   .footer {
-    padding: 0.5rem 1rem 0.55rem;
-    box-shadow: none;
+    padding: 1.5rem 1.25rem 1.75rem;
   }
 
+  /* Maquette mobile : titre à gauche ; liens à droite au niveau des lignes */
   .footer-columns {
-    display: grid;
-    grid-template-columns: 1.35fr 1fr;
-    gap: 0.15rem 0.75rem;
-    align-items: start;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-areas:
+      "title ."
+      "hours mentions"
+      "hours cgv";
+    column-gap: 1rem;
+    row-gap: 0.4rem;
   }
 
-  .footer-column,
-  .footer-column:first-child {
-    flex: initial;
-    min-width: 0;
+  .footer-title {
+    font-size: 0.95rem;
   }
 
-  .footer-column h3 {
-    margin: 0 0 0.2rem;
-    font-size: 0.85rem;
+  .footer-column-mentions,
+  .footer-column-cgv {
+    justify-self: stretch;
+    text-align: right;
   }
 
-  /* Titres décoratifs inutiles sur mobile */
-  .footer-column:nth-child(2) h3,
-  .footer-column:nth-child(3) {
-    display: none;
-  }
-
-  .footer-horaires {
-    grid-template-columns: 1fr 1fr;
-    gap: 0 0.5rem;
+  .footer-horaires-list,
+  .footer-horaires-empty {
+    max-width: none;
   }
 
   .footer-horaires-list li,
-  .footer-links li {
-    margin-bottom: 0;
-    font-size: 0.7rem;
-    line-height: 1.2;
+  .footer-horaires-empty {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    margin-bottom: 0.4rem;
   }
 
-  .footer-links {
-    margin-top: 0;
-  }
-
-  .footer-links a {
-    font-size: 0.7rem;
-    font-weight: 600;
+  .footer-column-mentions a,
+  .footer-column-cgv a {
+    font-size: 0.85rem;
+    line-height: 1.45;
   }
 }

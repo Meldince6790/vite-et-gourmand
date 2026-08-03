@@ -3,15 +3,70 @@ import { Link } from "react-router-dom";
 
 import horaireService from "../services/horaire.service.js";
 
-function formaterHoraire(horaire) {
-  const ouverture = String(horaire.heure_ouverture || "").trim();
-  const fermeture = String(horaire.heure_fermeture || "").trim();
+const JOURS_COURTS = {
+  Lundi: "Lundi",
+  Mardi: "Mar",
+  Mercredi: "Mer",
+  Jeudi: "Jeu",
+  Vendredi: "Ven",
+  Samedi: "Samedi",
+  Dimanche: "Dimanche",
+};
 
-  if (ouverture === "Fermé" && fermeture === "Fermé") {
-    return `${horaire.jour} : Fermé`;
+function formaterHeure(valeur) {
+  return String(valeur || "")
+    .trim()
+    .replace(":", "h");
+}
+
+function formaterPlageJours(jours) {
+  if (jours.length === 1) {
+    return JOURS_COURTS[jours[0]] || jours[0];
   }
 
-  return `${horaire.jour} : ${ouverture} - ${fermeture}`;
+  const debut = JOURS_COURTS[jours[0]] || jours[0];
+  const fin = JOURS_COURTS[jours[jours.length - 1]] || jours[jours.length - 1];
+
+  return `${debut} - ${fin}`;
+}
+
+function formaterGroupeHoraire(groupe) {
+  const plage = formaterPlageJours(groupe.jours);
+  const ouverture = String(groupe.ouverture || "").trim();
+  const fermeture = String(groupe.fermeture || "").trim();
+
+  if (ouverture === "Fermé" && fermeture === "Fermé") {
+    return `${plage} : Fermé`;
+  }
+
+  return `${plage} : ${formaterHeure(ouverture)} - ${formaterHeure(fermeture)}`;
+}
+
+/** Regroupe les jours consécutifs aux mêmes horaires (géométrie maquette). */
+function regrouperHoraires(horaires) {
+  const groupes = [];
+
+  for (const horaire of horaires) {
+    const dernier = groupes[groupes.length - 1];
+
+    if (
+      dernier &&
+      dernier.ouverture === horaire.heure_ouverture &&
+      dernier.fermeture === horaire.heure_fermeture
+    ) {
+      dernier.jours.push(horaire.jour);
+      continue;
+    }
+
+    groupes.push({
+      key: horaire.horaire_id,
+      jours: [horaire.jour],
+      ouverture: horaire.heure_ouverture,
+      fermeture: horaire.heure_fermeture,
+    });
+  }
+
+  return groupes;
 }
 
 function Footer() {
@@ -39,52 +94,32 @@ function Footer() {
     };
   }, []);
 
-  const milieu = Math.ceil(horaires.length / 2);
-  const horairesGauche = horaires.slice(0, milieu);
-  const horairesDroite = horaires.slice(milieu);
+  const groupesHoraires = regrouperHoraires(horaires);
 
   return (
     <footer className="footer">
       <div className="footer-columns">
-        <div className="footer-column">
-          <h3>Horaires</h3>
+        <h3 className="footer-title">Horaires</h3>
 
-          {horaires.length === 0 ? (
-            <p>Horaires indisponibles pour le moment.</p>
-          ) : (
-            <div className="footer-horaires">
-              <ul className="footer-horaires-list">
-                {horairesGauche.map((horaire) => (
-                  <li key={horaire.horaire_id}>{formaterHoraire(horaire)}</li>
-                ))}
-              </ul>
-
-              <ul className="footer-horaires-list">
-                {horairesDroite.map((horaire) => (
-                  <li key={horaire.horaire_id}>{formaterHoraire(horaire)}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+        <div className="footer-column footer-column-mentions">
+          <Link to="/mentions-legales">Mentions légales</Link>
         </div>
 
-        <div className="footer-column">
-          <h3>Informations</h3>
+        <div className="footer-column footer-column-cgv">
+          <Link to="/cgv">Conditions Générales de Vente</Link>
+        </div>
 
-          <ul className="footer-links">
-            <li>
-              <Link to="/mentions-legales">Mentions légales</Link>
-            </li>
-            <li>
-              <Link to="/cgv">Conditions Générales de Vente</Link>
-            </li>
+        {horaires.length === 0 ? (
+          <p className="footer-horaires-empty">
+            Horaires indisponibles pour le moment.
+          </p>
+        ) : (
+          <ul className="footer-horaires-list">
+            {groupesHoraires.map((groupe) => (
+              <li key={groupe.key}>{formaterGroupeHoraire(groupe)}</li>
+            ))}
           </ul>
-        </div>
-
-        <div className="footer-column">
-          <h3>Vite &amp; Gourmand</h3>
-          <p>© 2026 Vite &amp; Gourmand</p>
-        </div>
+        )}
       </div>
     </footer>
   );

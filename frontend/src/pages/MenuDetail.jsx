@@ -5,7 +5,23 @@ import useAuth from "../hooks/useAuth";
 import menuService from "../services/menu.service";
 import "../styles/pages.css";
 
-function getPhotoSrc(photo) {
+/**
+ * Mapping local des photos de plats (démonstration).
+ * Les clés correspondent aux plat_id de database/vite_gourmand.sql.
+ */
+const PLAT_IMAGES = {
+  1: "/images/plats/plat-01-salade-perigourdine.webp",
+  2: "/images/plats/plat-02-veloute-legumes.webp",
+  3: "/images/plats/plat-03-tartare-legumes.webp",
+  4: "/images/plats/plat-04-poulet-sauce-forestiere.webp",
+  5: "/images/plats/plat-05-curry-legumes-coco.webp",
+  6: "/images/plats/plat-06-risotto-legumes.webp",
+  7: "/images/plats/plat-07-tarte-pommes.webp",
+  8: "/images/plats/plat-08-mousse-chocolat-vegetale.webp",
+  9: "/images/plats/plat-09-salade-fruits.webp",
+};
+
+function getDatabasePhotoSrc(photo) {
   if (typeof photo === "string" && photo.trim() !== "") {
     if (photo.startsWith("data:") || photo.startsWith("http")) {
       return photo;
@@ -15,6 +31,18 @@ function getPhotoSrc(photo) {
   }
 
   return null;
+}
+
+function getLocalPlatImageSrc(platId) {
+  if (platId == null) {
+    return null;
+  }
+
+  return PLAT_IMAGES[platId] || PLAT_IMAGES[String(platId)] || null;
+}
+
+function resolvePlatPhotoSrc(plat) {
+  return getDatabasePhotoSrc(plat?.photo) || getLocalPlatImageSrc(plat?.plat_id);
 }
 
 function MenuDetail() {
@@ -32,8 +60,8 @@ function MenuDetail() {
         const data = await menuService.getMenuById(id);
 
         setMenu(data);
-      } catch (error) {
-        console.error("Erreur lors de la récupération du menu :", error);
+      } catch (loadError) {
+        console.error("Erreur lors de la récupération du menu :", loadError);
 
         setError("Impossible de charger ce menu.");
       }
@@ -125,7 +153,7 @@ function MenuDetail() {
         ) : (
           <ul className="menu-detail-plat-list">
             {plats.map((plat) => {
-              const photoSrc = getPhotoSrc(plat.photo);
+              const photoSrc = resolvePlatPhotoSrc(plat);
               const allergenes = Array.isArray(plat.allergenes)
                 ? plat.allergenes
                 : [];
@@ -137,7 +165,11 @@ function MenuDetail() {
                     aria-hidden={photoSrc ? undefined : true}
                   >
                     {photoSrc ? (
-                      <img src={photoSrc} alt="" />
+                      <img
+                        src={photoSrc}
+                        alt={plat.titre_plat}
+                        loading="lazy"
+                      />
                     ) : (
                       <div className="menu-detail-plat-placeholder">
                         Photo non disponible

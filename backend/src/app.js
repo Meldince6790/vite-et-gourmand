@@ -11,21 +11,56 @@ const app = express();
 
 app.disable("x-powered-by");
 
-// Middlewares
+/**
+ * Trust proxy uniquement si explicitement configuré.
+ * Valeurs acceptées : "0"/absent = désactivé ; "1" ou entier = nombre de hops ;
+ * "true" = un hop. Ne jamais accepter aveuglément tous les proxies.
+ */
+function configureTrustProxy(application) {
+  const raw = process.env.TRUST_PROXY;
+
+  if (raw === undefined || raw === "" || raw === "0" || raw === "false") {
+    return;
+  }
+
+  if (raw === "true" || raw === "1") {
+    application.set("trust proxy", 1);
+    return;
+  }
+
+  const hops = Number(raw);
+
+  if (Number.isInteger(hops) && hops > 0) {
+    application.set("trust proxy", hops);
+  }
+}
+
+configureTrustProxy(app);
+
+const isProduction = process.env.NODE_ENV === "production";
+
+if (isProduction && !process.env.JWT_SECRET) {
+  console.error("JWT_SECRET est obligatoire en production.");
+  process.exit(1);
+}
+
+if (isProduction && !process.env.CORS_ORIGIN) {
+  console.error("CORS_ORIGIN est obligatoire en production.");
+  process.exit(1);
+}
+
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:5173",
   }),
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
-// Routes
 const routes = require("./routes");
 
 app.use("/", routes);
 
-// Lancement du serveur
 const PORT = process.env.PORT || 3000;
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;

@@ -79,6 +79,7 @@ function createMocks(overrides = {}) {
     updateStatut: [],
     updateAnnulation: [],
     update: [],
+    delete: [],
     decreaseStock: [],
     increaseStock: [],
     hasStock: [],
@@ -91,6 +92,8 @@ function createMocks(overrides = {}) {
     loggerErrors: [],
     quoteDelivery: [],
   };
+
+  const repoOverrides = overrides.commandeRepository || {};
 
   const commandeRepository = {
     findAll: async () => [],
@@ -113,9 +116,15 @@ function createMocks(overrides = {}) {
       calls.update.push({ id, data, connection });
       return true;
     },
-    delete: async () => true,
     exists: async () => true,
-    ...overrides.commandeRepository,
+    ...repoOverrides,
+    delete: async (id) => {
+      calls.delete.push(id);
+      if (repoOverrides.delete) {
+        return repoOverrides.delete(id);
+      }
+      return true;
+    },
   };
 
   const menuModel = {
@@ -2074,6 +2083,64 @@ describe("CommandeService.withTransaction", () => {
       "work",
       "release",
     ]);
+  });
+});
+
+describe("CommandeService.deleteCommande", () => {
+  it("refuse la suppression d'une commande non annulée", async () => {
+    const { service, calls } = createMocks({
+      commandeRepository: {
+        findById: async () => ({
+          commande_id: 1,
+          statut: "En attente",
+          menu_id: 2,
+          nombre_personne: 10,
+        }),
+        delete: async () => true,
+      },
+    });
+
+    await assert.rejects(() => service.deleteCommande(1), {
+      message:
+        "Seules les commandes annulées peuvent être définitivement supprimées. Annulez la commande au préalable.",
+    });
+
+    assert.equal(calls.delete.length, 0);
+    assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
+  });
+
+  it("supprime une commande déjà annulée sans retoucher stock ni stats", async () => {
+    const { service, calls } = createMocks({
+      commandeRepository: {
+        findById: async () => ({
+          commande_id: 1,
+          statut: "Annulée",
+          menu_id: 2,
+          nombre_personne: 10,
+        }),
+        delete: async () => true,
+      },
+    });
+
+    const result = await service.deleteCommande(1);
+
+    assert.equal(result, true);
+    assert.equal(calls.delete.length, 1);
+    assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.retirerStatistiqueCommande.length, 0);
+  });
+
+  it("rejette si la commande est introuvable", async () => {
+    const { service } = createMocks({
+      commandeRepository: {
+        findById: async () => null,
+      },
+    });
+
+    await assert.rejects(() => service.deleteCommande(99), {
+      message: "Commande introuvable.",
+    });
   });
 });
 

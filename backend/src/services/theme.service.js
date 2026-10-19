@@ -34,7 +34,7 @@ const themeService = {
 
     const doublon = await Theme.findByLibelle(theme.libelle);
 
-    if (doublon) {
+    if (doublon && doublon.theme_id !== Number(id)) {
       throw new Error("Ce thème existe déjà.");
     }
 

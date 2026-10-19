@@ -17,6 +17,13 @@ describe("safeErrorMessage", () => {
       true,
     );
     assert.equal(isTechnicalErrorMessage("Unknown column 'foo' in 'field list'"), true);
+    assert.equal(
+      isTechnicalErrorMessage(
+        "Cannot read properties of undefined (reading 'x')",
+      ),
+      true,
+    );
+    assert.equal(isTechnicalErrorMessage("TypeError: x is not a function"), true);
   });
 
   it("conserve les messages métier français", () => {

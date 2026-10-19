@@ -5,6 +5,9 @@ const router = express.Router();
 const commandeController = require("../controllers/commande.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
 const roleMiddleware = require("../middlewares/role.middleware");
+const {
+  commandeCreateRateLimiter,
+} = require("../middlewares/rateLimit.middleware");
 
 // Consultation des commandes (Employé + Administrateur)
 router.get(
@@ -38,6 +41,7 @@ router.post(
   "/",
   authMiddleware,
   roleMiddleware(1),
+  commandeCreateRateLimiter,
   commandeController.createCommande,
 );
 

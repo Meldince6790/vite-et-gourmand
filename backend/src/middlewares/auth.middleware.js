@@ -1,6 +1,9 @@
 const jwt = require("jsonwebtoken");
+const { loadActiveUserFromToken } = require("./activeUser");
 
-const authMiddleware = (req, res, next) => {
+const JWT_VERIFY_OPTIONS = { algorithms: ["HS256"] };
+
+const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -20,9 +23,21 @@ const authMiddleware = (req, res, next) => {
 
     const token = parts[1];
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET,
+      JWT_VERIFY_OPTIONS,
+    );
 
-    req.user = decoded;
+    const utilisateur = await loadActiveUserFromToken(decoded);
+
+    if (!utilisateur) {
+      return res.status(401).json({
+        message: "Token invalide ou expiré.",
+      });
+    }
+
+    req.user = utilisateur;
 
     next();
   } catch (error) {

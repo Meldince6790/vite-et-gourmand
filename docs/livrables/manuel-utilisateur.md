@@ -441,7 +441,15 @@ Afin de permettre la découverte des différentes fonctionnalités de l'applicat
 
 Chaque compte permet de tester un parcours utilisateur différent selon le rôle associé.
 
-Ces comptes sont présents après import du fichier `database/vite_gourmand.sql` (premier démarrage du volume MariaDB). Les mots de passe correspondent aux hashes définis dans ce jeu de données de démonstration.
+Ces comptes sont présents après import du fichier `database/vite_gourmand.sql` (premier démarrage du volume MariaDB). Les mots de passe sont stockés **uniquement sous forme de hash bcrypt** dans ce fichier SQL.
+
+**Sécurité :**
+
+- ne jamais publier ni versionner de mots de passe de démonstration en clair ;
+- ces comptes sont réservés à un environnement **local / de préproduction contrôlée** ;
+- avant tout déploiement public, changer ou désactiver ces comptes et utiliser des secrets forts distincts.
+
+Les e-mails de démonstration issus du seed sont :
 
 ---
 
@@ -455,8 +463,8 @@ Ce compte permet de tester le parcours client :
 - suivi des commandes.
 
 ```
-Email : client2@test.com
-Mot de passe : Client2@test
+Email : client@vite-gourmand.fr
+Mot de passe : non publié (hash dans database/vite_gourmand.sql — usage local uniquement)
 ```
 
 ---
@@ -473,7 +481,7 @@ Ce compte permet de tester les fonctionnalités de gestion :
 
 ```
 Email : employe@vite-gourmand.fr
-Mot de passe : Employe123!
+Mot de passe : non publié (hash dans database/vite_gourmand.sql — usage local uniquement)
 ```
 
 ---
@@ -489,7 +497,7 @@ Ce compte permet de tester l'ensemble des fonctionnalités d'administration :
 
 ```
 Email : admin@vite-gourmand.fr
-Mot de passe : Admin123!
+Mot de passe : non publié (hash dans database/vite_gourmand.sql — usage local uniquement)
 ```
 
 ---

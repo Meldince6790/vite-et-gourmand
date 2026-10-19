@@ -1,10 +1,14 @@
 const jwt = require("jsonwebtoken");
+const { loadActiveUserFromToken } = require("./activeUser");
+
+const JWT_VERIFY_OPTIONS = { algorithms: ["HS256"] };
 
 /**
- * Attache req.user si un Bearer JWT valide est présent.
+ * Attache req.user si un Bearer JWT valide appartient à un compte actif.
  * Ne bloque jamais la requête (endpoints publics).
+ * Un compte désactivé est traité comme visiteur anonyme.
  */
-const optionalAuthMiddleware = (req, res, next) => {
+const optionalAuthMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -18,7 +22,16 @@ const optionalAuthMiddleware = (req, res, next) => {
   }
 
   try {
-    req.user = jwt.verify(parts[1], process.env.JWT_SECRET);
+    const decoded = jwt.verify(
+      parts[1],
+      process.env.JWT_SECRET,
+      JWT_VERIFY_OPTIONS,
+    );
+    const utilisateur = await loadActiveUserFromToken(decoded);
+
+    if (utilisateur) {
+      req.user = utilisateur;
+    }
   } catch {
     // Token invalide / expiré : traiter comme visiteur anonyme
   }

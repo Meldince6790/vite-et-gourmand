@@ -607,11 +607,22 @@ class CommandeService {
     return result;
   }
 
+  /**
+   * Suppression définitive réservée aux commandes déjà annulées.
+   * Choix conservateur : l'annulation a déjà restauré le stock et
+   * ajusté MongoDB ; on ne détruit pas l'historique d'une commande active.
+   */
   async deleteCommande(id) {
-    const commandeExiste = await this.commandeRepository.exists(id);
+    const commande = await this.commandeRepository.findById(id);
 
-    if (!commandeExiste) {
+    if (!commande) {
       throw new Error("Commande introuvable.");
+    }
+
+    if (commande.statut !== "Annulée") {
+      throw new Error(
+        "Seules les commandes annulées peuvent être définitivement supprimées. Annulez la commande au préalable.",
+      );
     }
 
     return await this.commandeRepository.delete(id);

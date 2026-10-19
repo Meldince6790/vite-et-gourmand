@@ -24,9 +24,10 @@ services:
       PORT: ${PORT:-3000}
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USER: ${DB_USER:-vite}
-      DB_PASSWORD: ${DB_PASSWORD:-vite}
-      DB_NAME: ${DB_NAME:-vite_gourmand}
+      DB_USER: ${DB_USER:?Set DB_USER in the root .env file}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the root .env file}
+      DB_NAME: ${DB_NAME:?Set DB_NAME in the root .env file}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
       MONGO_URI: ${MONGO_URI:?Set MONGO_URI in the root .env file}
       CORS_ORIGIN: ${CORS_ORIGIN:?Set CORS_ORIGIN in the root .env file}
       FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL in the root .env file}
@@ -65,11 +66,8 @@ services:
 
   mysql:
     image: mariadb:10.11
-
-    # Exposé uniquement pour les outils locaux (DBeaver)
-    ports:
-      - "3307:3306"
-
+    # Ports host non publiés : accès via le réseau Docker uniquement
+    # (ex. docker compose exec mysql mariadb -u"$DB_USER" -p …)
     environment:
       MYSQL_DATABASE: ${DB_NAME:?Set DB_NAME in the root .env file}
       MYSQL_USER: ${DB_USER:?Set DB_USER in the root .env file}
@@ -91,8 +89,7 @@ services:
 
   mongo:
     image: mongo:7
-    ports:
-      - "27017:27017"
+    # Ports host non publiés : accès via le réseau Docker uniquement
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME in the root .env file}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in the root .env file}

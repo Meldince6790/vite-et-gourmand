@@ -223,7 +223,10 @@ function Menus() {
                 regime={menu.regime}
                 minPersonnes={menu.nombre_personne_minimum}
                 quantiteRestante={menu.quantite_restante}
-                imageSrc={getMenuImageSrc(menu.menu_id)}
+                imageSrc={getMenuImageSrc(menu.menu_id, {
+                  theme: menu.theme,
+                  regime: menu.regime,
+                })}
               />
             ))
           ) : (

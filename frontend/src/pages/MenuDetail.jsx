@@ -21,6 +21,9 @@ const PLAT_IMAGES = {
   9: "/images/plats/plat-09-salade-fruits.webp",
 };
 
+/** Réutilisation cyclique des assets libres existants pour les nouveaux plats. */
+const PLAT_IMAGE_FALLBACKS = Object.values(PLAT_IMAGES);
+
 function getDatabasePhotoSrc(photo) {
   if (typeof photo === "string" && photo.trim() !== "") {
     if (photo.startsWith("data:") || photo.startsWith("http")) {
@@ -38,7 +41,21 @@ function getLocalPlatImageSrc(platId) {
     return null;
   }
 
-  return PLAT_IMAGES[platId] || PLAT_IMAGES[String(platId)] || null;
+  if (PLAT_IMAGES[platId] || PLAT_IMAGES[String(platId)]) {
+    return PLAT_IMAGES[platId] || PLAT_IMAGES[String(platId)];
+  }
+
+  const numericId = Number(platId);
+  if (!Number.isFinite(numericId) || PLAT_IMAGE_FALLBACKS.length === 0) {
+    return null;
+  }
+
+  const index =
+    ((Math.trunc(numericId) % PLAT_IMAGE_FALLBACKS.length) +
+      PLAT_IMAGE_FALLBACKS.length) %
+    PLAT_IMAGE_FALLBACKS.length;
+
+  return PLAT_IMAGE_FALLBACKS[index];
 }
 
 function resolvePlatPhotoSrc(plat) {

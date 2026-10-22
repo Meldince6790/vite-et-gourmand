@@ -9,11 +9,11 @@ participant "authMiddleware" as AuthMw
 participant "roleMiddleware" as RoleMw
 participant "Contrôleur commande\n(commande.controller.js)" as Ctrl
 participant "Service commande\n(commande.service.js)" as CmdBe
-participant "Modèle Commande" as CmdModel
+participant "CommandeRepository" as CmdModel
 participant "Modèle Menu" as Menu
 participant "Service statistiques" as Stats
 participant "Service e-mail" as Email
-database "MySQL" as MySQL
+database "MariaDB" as MySQL
 database "MongoDB" as Mongo
 
 Staff -> Page : Sélectionne un nouveau statut\npuis valide
@@ -25,17 +25,17 @@ activate CmdFe
 CmdFe -> API : PATCH /commandes/{id}/statut\n{ statut }\nAuthorization: Bearer …
 activate API
 
-API -> AuthMw : Vérifie le JWT
+API -> AuthMw : Vérifie le JWT (HS256)\n+ recharge compte actif
 activate AuthMw
 
-alt Token manquant ou invalide
+alt Token manquant, invalide\nou compte désactivé
 
   AuthMw --> API : 401 Accès refusé
   API --> CmdFe : 401
   CmdFe --> Page : Error(message)
   Page --> Staff : Affiche l'erreur
 
-else Token valide
+else Token valide et compte actif
 
   AuthMw --> API : req.user renseigné
   deactivate AuthMw

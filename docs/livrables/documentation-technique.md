@@ -70,7 +70,7 @@ Organisation des dossiers sous `backend/src/` :
 | **repositories** | Accès aux données pour les commandes (`CommandeRepository`) — requêtes SQL isolées. |
 | **models** | Accès MariaDB (menus, plats, utilisateurs, avis, etc.) et modèle Mongoose `Statistique`. |
 | **domain** | Objet métier `Commande` (calculs de prix, droits client, normalisation). |
-| **middlewares** | JWT (`auth`), rôles (`role`), auth optionnelle (avis publics), rate limiting. |
+| **middlewares** | JWT (`auth`), auth optionnelle (`optionalAuth`), rechargement compte actif (`activeUser`), rôles (`role`), rate limiting. |
 | **config** | Pool MariaDB (`mysql2`) et connexion MongoDB (`mongoose`). |
 | **utils** | Utilitaires transverses (`safeErrorMessage`). |
 
@@ -83,10 +83,10 @@ Montées depuis `backend/src/routes/index.js` :
 | `GET /` | Message de disponibilité de l’API |
 | `GET /health` | Sonde de liveness (sans effet métier) |
 | `/auth` | Connexion (`POST /login`, rate-limité) |
-| `/utilisateurs` | Profil, inscription, gestion employés (admin) |
+| `/utilisateurs` | Profil, inscription (rate-limité), gestion employés (admin) |
 | `/menus`, `/plats`, `/allergenes`, `/themes`, `/regimes` | Catalogue |
-| `/commandes` | Cycle de vie des commandes |
-| `/livraison` | Estimation des frais (`POST /estimation`) |
+| `/commandes` | Cycle de vie des commandes (création rate-limitée) |
+| `/livraison` | Estimation des frais (`POST /estimation`, limité côté contrôleur) |
 | `/avis` | Consultation / dépôt / modération |
 | `/horaires` | Horaires d’ouverture |
 | `/statistiques` | Indicateurs admin (rôle administrateur) |
@@ -151,6 +151,15 @@ Organisation sous `frontend/src/` :
 
 À l’init Docker, le dump est chargé puis le script `database/02-validate-schema.sh` vérifie la présence des tables critiques.
 
+**Catalogue de démonstration :**
+
+| Niveau | Contenu | Script |
+|--------|---------|--------|
+| Seed initial (init Compose) | 3 menus, 9 plats | `database/vite_gourmand.sql` |
+| Enrichissement optionnel | 15 menus, 37 plats | `database/enrich_catalogue_menus.sql` (+ `apply-enrich-catalogue.sh`) |
+
+Les scripts `alter_commande_*.sql` et `update_plats_menu_vegan.sql` sont **historiques** : leurs évolutions sont déjà présentes dans le seed actuel. Ne pas les réappliquer sur une base initialisée via `vite_gourmand.sql`.
+
 ### 5.2 MongoDB — statistiques
 
 **Rôle :** conserver des agrégats analytiques sans alourdir les requêtes métier MariaDB.
@@ -191,9 +200,11 @@ La connexion utilise `MONGO_URI` (utilisateur applicatif authentifié en environ
 
 | Middleware | Rôle |
 |------------|------|
-| `auth.middleware.js` | Exige un Bearer JWT valide ; renseigne `req.user`. |
+| `auth.middleware.js` | Exige un Bearer JWT valide (algorithme `HS256`) ; recharge le compte en base via `activeUser` ; refuse un compte inactif ; renseigne `req.user` avec les données actuelles (`utilisateur_id`, `role_id`, `email`). |
+| `optionalAuth.middleware.js` | Attache `req.user` si un JWT valide appartient à un compte **actif** ; sinon traite la requête comme anonyme (avis publics vs staff). |
+| `activeUser.js` | Charge l’utilisateur par `utilisateur_id` et vérifie `actif`. |
 | `role.middleware.js` | Autorise uniquement les `role_id` passés en argument. |
-| `optionalAuth.middleware.js` | Attache `req.user` si un JWT valide est présent, sans bloquer les anonymes (avis publics vs staff). |
+| `rateLimit.middleware.js` | Limiteurs login, contact, inscription et création de commande. |
 
 ### Permissions
 
@@ -216,8 +227,8 @@ Le contrôle UI (`ProtectedRoute`) complète l’expérience, mais **ne remplace
 1. Client authentifié (`role_id` 1).
 2. Validation métier (menu, dates, adresse, effectif, stock…).
 3. Calcul serveur exclusif des montants (le client ne fixe pas les prix).
-4. Transaction MySQL : insertion commande + mise à jour du stock menu.
-5. Après commit : e-mail de confirmation (best effort) + mise à jour statistique MongoDB.
+4. Transaction MariaDB : insertion commande + mise à jour du stock menu (`CommandeRepository` + modèle menu).
+5. Après commit : e-mail de confirmation (best effort ; en local souvent en mode `log`) + mise à jour statistique MongoDB.
 
 Le domaine `Commande` centralise notamment :
 
@@ -233,6 +244,11 @@ Statuts gérés : En attente, Acceptée, En préparation, En cours de livraison,
 - **Employé / Admin** : changement de statut, annulation avec motif et mode de contact.
 
 Les annulations restaurent le stock dans une transaction et déclenchent la décrémentation statistique MongoDB ainsi qu’un e-mail d’annulation.
+
+### Suppression définitive
+
+`DELETE /commandes/:id` (employé / administrateur) n’est autorisé que si la commande est déjà au statut **Annulée**.
+Choix conservateur : l’annulation a déjà restauré le stock et ajusté MongoDB ; on ne détruit pas l’historique d’une commande active. Tenter de supprimer une commande non annulée renvoie une erreur métier.
 
 ### Statistiques
 
@@ -271,8 +287,10 @@ Service central : `email.service.js` + templates HTML échappés (`email.templat
 
 | `EMAIL_PROVIDER` | Comportement |
 |------------------|--------------|
-| `log` (défaut local) | Aucun appel réseau ; contenu journalisé (adapté à la pré-production locale). |
-| `resend` | Envoi réel via l’API Resend (`RESEND_API_KEY`, `EMAIL_FROM`). |
+| `log` (défaut local) | Aucun appel réseau ; contenu journalisé (simulation locale / CI). |
+| `resend` | Envoi réel via l’API Resend (`RESEND_API_KEY`, `EMAIL_FROM`) lorsque la clé est fournie hors dépôt. |
+
+Les parcours e-mail (contact, bienvenue, confirmation / annulation de commande) sont **implémentés** dans le code. En développement et préproduction locale, le mode `log` est utilisé par défaut. L’envoi réel dépend de la configuration Resend et n’est pas revendiqué comme déjà validé en production publique.
 
 ### Types d’e-mails
 
@@ -319,13 +337,15 @@ La resynchronisation globale (`stats:resync`) permet de réaligner MongoDB sur M
 | **bcrypt** | Hash des mots de passe ; règles de complexité à l’inscription |
 | **Rôles** | `roleMiddleware` sur les opérations sensibles |
 | **SQL paramétré** | Placeholders `mysql2` (pas de concaténation utilisateur dans le SQL) |
-| **Rate limiting** | Login : 5 / 15 min ; Contact : 10 / heure (`express-rate-limit`) |
-| **Erreurs client** | `safeErrorMessage` : messages techniques / SQL remplacés par un message générique |
+| **Rate limiting** | Login : 5 / 15 min ; Contact : 10 / h ; Inscription : 10 / h ; Création commande : 30 / 15 min (`express-rate-limit`) ; estimation livraison limitée côté contrôleur |
+| **Comptes désactivés** | Recontrôle `actif` à chaque requête JWT (auth / optionalAuth) |
+| **TRUST_PROXY** | Opt-in (`0` par défaut) ; `1` derrière un reverse proxy unique |
+| **Erreurs client** | `safeErrorMessage` : messages techniques / SQL / TypeError remplacés par un message générique |
 | **Secrets** | `.env` + interpolation Compose `${VAR:?…}` ; pas de secret de production en dur |
-| **CORS** | Origine unique `CORS_ORIGIN` |
+| **CORS** | Origine unique `CORS_ORIGIN` (obligatoire si `NODE_ENV=production`) |
 | **Avis publics** | Sans JWT staff : uniquement statut **Validé** ; employés / admins voient l’ensemble |
-| **MongoDB** | Authentification (root + utilisateur applicatif) |
-| **MariaDB** | Utilisateur applicatif + mot de passe root obligatoires |
+| **MongoDB** | Authentification (root + utilisateur applicatif) ; port hôte non publié |
+| **MariaDB** | Utilisateur applicatif + mot de passe root obligatoires ; port hôte non publié |
 | **Processus backend** | Utilisateur Linux `node` (non-root) dans l’image Docker |
 
 Le token JWT est stocké côté navigateur (`localStorage`) : pratique courante pour une SPA, avec les précautions XSS habituelles.
@@ -351,7 +371,7 @@ Quatre services : `frontend`, `backend`, `mysql` (`mariadb:10.11`), `mongo` (`mo
 | **Volumes** | `mysql_data`, `mongo_data` |
 | **Init MariaDB** | `vite_gourmand.sql` + `02-validate-schema.sh` |
 | **Init Mongo** | `mongo-init-app-user.sh` (utilisateur `readWrite`) |
-| **Ports hôte** | Frontend **5173**, backend **3000**, MariaDB **3307** (outils locaux) ; Mongo **non publié** |
+| **Ports hôte** | Frontend **5173**, backend **3000** ; MariaDB et Mongo **non publiés** (accès via `docker compose exec`) |
 | **Dépendances** | Backend attend MariaDB et Mongo **healthy** |
 | **Restart** | `unless-stopped` |
 
@@ -380,7 +400,7 @@ L’environnement Docker actuel n’est plus un simple setup de développement (
 | BDD | Auth Mongo ; utilisateurs MariaDB non triviaux ; validation de schéma à l’init |
 | Réseau | Services isolés sur `vite-gourmand` |
 
-**Limites avant production publique :** HTTPS / domaine, éventuelle fermeture du port MariaDB 3307, CI/CD, sauvegardes automatiques, clés ORS / Resend de production.
+**Limites avant production publique :** HTTPS / domaine, CI/CD, sauvegardes automatiques, clés ORS / Resend de production. Le déploiement cloud (ex. AWS) n’a pas encore été réalisé.
 
 ---
 

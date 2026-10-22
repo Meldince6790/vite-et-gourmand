@@ -109,7 +109,7 @@ Les principales réalisations de ce sprint sont :
 - création des modèles de données ;
 - développement des services métier ;
 - création des contrôleurs et des routes de l'API REST ;
-- connexion à la base de données MySQL ;
+- connexion à la base de données MariaDB ;
 - mise en place de l'authentification par JWT ;
 - gestion des rôles utilisateurs (Client, Employé et Administrateur) ;
 - sécurisation des routes selon les droits d'accès.
@@ -265,15 +265,19 @@ Les priorités retenues ont été les suivantes :
 - validation du fonctionnement général de l'application ;
 - production des différents livrables demandés.
 
-À l'inverse, certaines fonctionnalités ou améliorations ont volontairement été reportées afin de concentrer les efforts sur les éléments indispensables au fonctionnement de l'application.
+Certaines évolutions ont été traitées progressivement après les livraisons initiales. **Sont aujourd’hui réalisées** notamment :
 
-Parmi ces éléments figurent notamment :
+- l’inscription client depuis l’interface ;
+- l’envoi d’e-mails transactionnels (implémenté ; mode `log` en local, Resend activable hors dépôt) ;
+- l’identité visuelle et l’adaptation responsive de l’interface ;
+- la préproduction Docker locale (images de production, bases authentifiées, secrets externalisés) ;
+- le durcissement sécurité (rate limiting étendu, recontrôle des comptes actifs, ports DB non publiés).
 
-- la création complète d'un compte client depuis l'interface ;
-- l'automatisation des échanges par e-mail ;
-- l'amélioration de l'identité visuelle ;
-- l'adaptation responsive de l'interface ;
-- le déploiement complet de l'application.
+**Restent à réaliser pour une mise en production publique :**
+
+- le déploiement sur un hébergement distant (ex. AWS) — **non effectué** à ce stade ;
+- HTTPS / nom de domaine ;
+- CI/CD, sauvegardes automatisées et supervision externalisée.
 
 Cette démarche de priorisation a permis de garantir la stabilité et la cohérence du projet tout en respectant les contraintes de temps imposées par l'ECF.
 

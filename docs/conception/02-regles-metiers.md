@@ -30,7 +30,7 @@ Chaque règle précise son origine, son emplacement d'implémentation et son ét
 | ------------ | ------------------------------------------- |
 | Front        | Interface React                             |
 | Back         | API Node.js / Express                       |
-| BDD          | Base MySQL                                  |
+| BDD          | Base MariaDB (accès via pilote mysql2)      |
 | MongoDB      | Base MongoDB utilisée pour les statistiques |
 | Front + Back | Validation côté client et serveur           |
 
@@ -76,7 +76,7 @@ Chaque règle précise son origine, son emplacement d'implémentation et son ét
 | ------ | --------------------- | -------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | RM-012 | 📋 Cahier des charges | Front + Back   | 🧪 Testée | Les visiteurs peuvent consulter les menus disponibles.                                                                                |
 | RM-013 | 📋 Cahier des charges | Front + Back   | 🧪 Testée | Le détail d'un menu affiche l'ensemble des informations nécessaires à sa consultation.                                                |
-| RM-014 | ⚙️ Conception         | Back + BDD     | 🧪 Testée | Les menus sont récupérés depuis la base MySQL.                                                                                        |
+| RM-014 | ⚙️ Conception         | Back + BDD     | 🧪 Testée | Les menus sont récupérés depuis la base MariaDB.                                                                                      |
 | RM-061 | ⚙️ Conception         | Front          | 🧪 Testée | Le catalogue public peut être filtré côté interface selon le thème, le régime alimentaire, le prix maximum et le nombre de personnes. |
 | RM-062 | ⚙️ Conception         | Front          | 🧪 Testée | Plusieurs filtres actifs se combinent avec une logique ET.                                                                            |
 | RM-063 | ⚙️ Conception         | Front          | 🧪 Testée | L'action « Réinitialiser » restaure l'ensemble du catalogue et affiche un message lorsqu'aucun résultat ne correspond aux critères.   |
@@ -128,7 +128,7 @@ Le détail d'un menu affiche :
 | RM-025 | 📋 Cahier des charges | Back           | 🧪 Testée | Livraison gratuite dans la commune de Bordeaux ; hors Bordeaux, frais = `5 + 0,59 × distance_km` (distance routière depuis le siège, calculée côté serveur). Adresse introuvable ou service indisponible : erreur explicite, jamais 0 € par défaut. |
 | RM-026 | 📋 Cahier des charges | Front + Back   | 🧪 Testée | Un employé peut consulter et traiter les commandes clients (suivi des statuts et annulation).                                                                                                               |
 | RM-041 | ⚙️ Conception         | Back + BDD     | 🧪 Testée | Une commande créée démarre au statut « En attente ». Les statuts autorisés sont : En attente, Acceptée, En préparation, En cours de livraison, Livrée, En attente du retour de matériel, Terminée, Annulée. |
-| RM-042 | ⚙️ Conception         | Back + BDD     | 🧪 Testée | La création et la modification de quantité d'une commande vérifient le stock du menu et le mettent à jour dans une transaction MySQL.                                                                       |
+| RM-042 | ⚙️ Conception         | Back + BDD     | 🧪 Testée | La création et la modification de quantité d'une commande vérifient le stock du menu et le mettent à jour dans une transaction MariaDB.                                                                     |
 | RM-043 | ⚙️ Conception         | Back + BDD     | 🧪 Testée | L'annulation d'une commande restaure le stock du menu concerné.                                                                                                                                             |
 | RM-044 | ⚙️ Conception         | Front + Back   | 🧪 Testée | Un client peut modifier ou annuler sa commande uniquement lorsqu'elle est au statut « En attente ».                                                                                                         |
 | RM-045 | ⚙️ Conception         | Front + Back   | 🧪 Testée | Un employé peut annuler une commande non déjà annulée en renseignant un motif et un mode de contact (Téléphone ou Mail).                                                                                    |
@@ -211,7 +211,7 @@ Le détail d'un menu affiche :
 Les fonctionnalités principales développées et validées concernent :
 
 - l'architecture API Node.js / Express ;
-- la connexion MySQL et l'environnement Docker Compose local ;
+- la connexion MariaDB et l'environnement Docker Compose local ;
 - la gestion des menus, plats et associations ;
 - le catalogue public filtrable et le détail enrichi des menus (stock, conditions, allergènes, information de remise) ;
 - l'inscription client et l'authentification JWT ;

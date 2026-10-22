@@ -12,7 +12,7 @@ Les sources PlantUML peuvent être rendues en SVG pour intégration dans les liv
 
 ## 1. Connexion utilisateur
 
-Ce diagramme représente le parcours de connexion : soumission du formulaire, authentification côté API, vérification du mot de passe et du statut `actif`, émission d'un JWT, stockage local de la session, puis redirection selon le rôle.
+Ce diagramme représente le parcours de connexion : soumission du formulaire (endpoint rate-limité), authentification côté API contre MariaDB, vérification bcrypt et du statut `actif`, émission d'un JWT, stockage local de la session, puis redirection selon le rôle. Les requêtes ultérieures recontrôlent `actif` via les middlewares.
 
 - Source PlantUML : [sequence-login.puml](../diagrammes/sequence-login.puml)
 - Rendu SVG attendu : [sequence-login.svg](../diagrammes/sequence-login.svg)
@@ -21,7 +21,7 @@ Ce diagramme représente le parcours de connexion : soumission du formulaire, au
 
 ## 2. Création d'une commande
 
-Ce diagramme décrit la création d'une commande par un client authentifié : appel `POST /commandes`, contrôle JWT et rôle client, remplacement de `utilisateur_id` par la valeur issue du jeton, validations métier, écriture MySQL (commande + stock), puis mise à jour optionnelle des statistiques MongoDB.
+Ce diagramme décrit la création d'une commande par un client authentifié : appel `POST /commandes` (rate-limité), contrôle JWT avec rechargement du compte actif, rôle client, validations métier, écriture MariaDB via `CommandeRepository` (commande + stock en transaction), puis e-mail de confirmation et statistiques MongoDB en best-effort.
 
 - Source PlantUML : [sequence-creation-commande.puml](../diagrammes/sequence-creation-commande.puml)
 - Rendu SVG attendu : [sequence-creation-commande.svg](../diagrammes/sequence-creation-commande.svg)
@@ -30,7 +30,7 @@ Ce diagramme décrit la création d'une commande par un client authentifié : ap
 
 ## 3. Mise à jour du statut d'une commande
 
-Ce diagramme illustre le traitement d'une commande par un employé ou un administrateur : sélection d'un statut, `PATCH /commandes/{id}/statut`, contrôles d'authentification et de rôle, validation du statut autorisé, mise à jour MySQL, puis rafraîchissement de la liste des commandes.
+Ce diagramme illustre le traitement d'une commande par un employé ou un administrateur : sélection d'un statut, `PATCH /commandes/{id}/statut`, contrôles d'authentification (compte actif) et de rôle, validation du statut autorisé, mise à jour MariaDB via `CommandeRepository` (et restock si passage à Annulée), puis rafraîchissement de la liste des commandes.
 
 - Source PlantUML : [sequence-maj-statut-commande.puml](../diagrammes/sequence-maj-statut-commande.puml)
 - Rendu SVG attendu : [sequence-maj-statut-commande.svg](../diagrammes/sequence-maj-statut-commande.svg)

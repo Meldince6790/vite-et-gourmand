@@ -12,8 +12,8 @@ participant "Contrôleur commande\n(commande.controller.js)" as Ctrl
 participant "Service commande\n(commande.service.js)" as CmdBe
 participant "OpenRouteService" as ORS
 participant "Modèle Menu" as Menu
-participant "Modèle Commande" as CmdModel
-database "MySQL" as MySQL
+participant "CommandeRepository" as CmdModel
+database "MariaDB" as MySQL
 participant "Service statistiques" as Stats
 database "MongoDB" as Mongo
 
@@ -26,17 +26,17 @@ activate CmdFe
 CmdFe -> API : POST /commandes\nAuthorization: Bearer …
 activate API
 
-API -> AuthMw : Vérifie le JWT
+API -> AuthMw : Vérifie le JWT (HS256)\n+ recharge compte actif
 activate AuthMw
 
-alt Token manquant ou invalide
+alt Token manquant, invalide\nou compte désactivé
 
   AuthMw --> API : 401 Accès refusé
   API --> CmdFe : 401
   CmdFe --> Page : Error(message)
   Page --> Client : Affiche l'erreur
 
-else Token valide
+else Token valide et compte actif
 
   AuthMw --> API : req.user renseigné
   deactivate AuthMw
@@ -156,7 +156,7 @@ else Token valide
           note right of CmdBe
             Erreur journalisée.
             La commande reste
-            enregistrée en MySQL.
+            enregistrée en MariaDB.
           end note
 
         else Succès MongoDB

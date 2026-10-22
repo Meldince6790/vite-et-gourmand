@@ -39,7 +39,7 @@ Les principales classes identifiées sont les suivantes :
 - **Allergène**
 - **Horaire** est conservée conformément au modèle de données fourni en annexe. Elle représente les plages horaires de l'entreprise et n'est pas associée directement aux autres entités métier dans ce modèle.
 
-Le diagramme intègre, lorsque cela est pertinent, des classes d'association et des énumérations afin de représenter fidèlement les règles métier tout en conservant une modélisation claire et cohérente.
+Le diagramme présente les attributs métier essentiels (dont `Utilisateur.actif`, les champs d’annulation de `Commande`, et la collection MongoDB `Statistique`) tout en restant lisible pour le dossier ECF.
 
 ## Principales relations identifiées
 

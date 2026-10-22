@@ -2,6 +2,9 @@
 
 Images libres utilisées pour illustrer les menus de démonstration.
 
+Le seed initial associe ces trois fichiers aux `menu_id` 1 à 3.
+Après enrichissement du catalogue (15 menus), le frontend **réutilise** ces mêmes assets selon le régime / thème (`frontend/src/data/menuImages.js`) — aucune image externe supplémentaire n’a été ajoutée.
+
 ## menu-entreprise.webp
 
 - **Usage :** Menu Entreprise Classique (`menu_id` 1)

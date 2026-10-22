@@ -122,7 +122,7 @@ Pas de volume de code source monté.
 - Variables : `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` (issues de `.env`, obligatoires côté service mysql).
 - Init : `database/vite_gourmand.sql` puis `database/02-validate-schema.sh`.
 - Volume nommé **`mysql_data`** → `/var/lib/mysql`.
-- Port hôte **3307** → 3306 (accès outils locaux, ex. DBeaver).
+- **Aucun port publié** sur l’hôte (accès réseau Docker uniquement : `docker compose exec mysql …`).
 - Healthcheck : `healthcheck.sh --connect --innodb_initialized`.
 
 #### MongoDB (`mongo`)
@@ -130,7 +130,7 @@ Pas de volume de code source monté.
 - Image `mongo:7`.
 - Auth root + utilisateur applicatif créé par `database/mongo-init-app-user.sh`.
 - Volume nommé **`mongo_data`** → `/data/db`.
-- **Aucun port publié** sur l’hôte (accès réseau Docker uniquement).
+- **Aucun port publié** sur l’hôte (accès réseau Docker uniquement : `docker compose exec mongo …`).
 - Healthcheck : `mongosh` authentifié (`admin`) avec `ping`.
 
 ---
@@ -169,6 +169,7 @@ Les credentials MariaDB / Mongo ne sont appliqués qu’à la **première** init
 | `EMAIL_PROVIDER` / `EMAIL_FROM` / `CONTACT_TO` | Configuration e-mails (`log` ou `resend`) |
 | `RESEND_API_KEY` | Clé Resend (si `EMAIL_PROVIDER=resend`) |
 | `ORS_API_KEY` | Clé OpenRouteService (frais de livraison) |
+| `TRUST_PROXY` | Proxies de confiance (`0` par défaut ; `1` derrière un reverse proxy) |
 
 Autres variables présentes : `PORT`, `ORS_BASE_URL`, `ORS_TIMEOUT_MS`, `CATERER_ADDRESS`, `CATERER_LATITUDE`, `CATERER_LONGITUDE`.
 
@@ -189,11 +190,13 @@ Mesures **effectivement** en place dans cet environnement :
 | CORS | Origine unique via `CORS_ORIGIN` |
 | Authentification API | JWT (`JWT_SECRET` / `JWT_EXPIRES`) |
 | Mots de passe comptes | Hash **bcrypt** (application) |
-| Abuse HTTP | Rate limiting sur `POST /auth/login` et `POST /contact` |
+| Abuse HTTP | Rate limiting login, contact, inscription et création de commande (+ estimation livraison) |
+| Comptes désactivés | Recontrôle `actif` à chaque requête JWT |
+| TRUST_PROXY | Opt-in ; désactivé par défaut |
 | Erreurs API | Filtrage des messages techniques (`safeErrorMessage`) |
 | Avis | Endpoints publics limités aux avis **Validé** (staff JWT pour le reste) |
 
-Le port MariaDB **3307** reste publié pour l’administration locale ; MongoDB n’est pas exposé hors du réseau Compose.
+MariaDB et MongoDB ne sont **pas** exposés hors du réseau Compose.
 
 ---
 
@@ -242,7 +245,7 @@ Vérifications réalisables sur la stack actuelle :
 | SPA (rafraîchissement) | `GET /menus`, `/login`, etc. | HTTP 200 (`index.html` via nginx) |
 | Backend / API | `GET http://localhost:3000/` ou `/menus` | Réponse API |
 | Health | `GET http://localhost:3000/health` | `{"status":"ok"}` |
-| MariaDB | Client sur `localhost:3307` ou `docker compose exec mysql …` | Connexion avec l’utilisateur applicatif ; schéma initialisé |
+| MariaDB | `docker compose exec mysql …` | Connexion avec l’utilisateur applicatif ; schéma initialisé |
 | MongoDB | `docker compose exec mongo mongosh …` (auth) | `ping` OK ; backend journalise la connexion Mongo au démarrage |
 
 Prérequis : fichier `.env` renseigné à partir de `.env.example`.
@@ -261,6 +264,7 @@ Prérequis : fichier `.env` renseigné à partir de `.env.example`.
 | Sauvegardes automatiques des volumes | Non automatisées |
 | Supervision / monitoring externalisé | Non mis en place (healthchecks Compose uniquement) |
 | Publication publique | Application en ligne non déployée |
+| Déploiement cloud (ex. AWS) | **Non réalisé** à ce stade |
 
 Ces points relèvent d’une étape de déploiement ultérieure, distincte de la pré-production locale décrite ici.
 

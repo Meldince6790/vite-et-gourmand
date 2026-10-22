@@ -13,6 +13,17 @@ L'application permet aux différents utilisateurs d'accéder à des fonctionnali
 
 L'objectif de l'application est de centraliser la gestion des menus, des plats et des commandes dans une interface simple et accessible.
 
+### Catalogue proposé en démonstration
+
+Après le premier démarrage Docker, le fichier `database/vite_gourmand.sql` initialise **3 menus** et **9 plats**.
+
+Pour une démonstration plus complète (soutenance), un script d’enrichissement optionnel porte le catalogue à **15 menus** et **37 plats** :
+
+- script SQL : `database/enrich_catalogue_menus.sql` ;
+- application assistée : `database/apply-enrich-catalogue.sh` (sauvegarde locale puis insertion idempotente).
+
+Cet enrichissement ne modifie pas les comptes utilisateurs ni les commandes existantes.
+
 ---
 
 ## 2. Accès à l'application

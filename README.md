@@ -85,8 +85,10 @@ L’architecture sépare l’interface React, l’API Express et deux bases de d
 |-----------------|------|---------------------|
 | `frontend` | SPA React servie par nginx (fallback `index.html`) | **5173** → 80 |
 | `backend` | API REST Node.js | **3000** → 3000 |
-| `mysql` | MariaDB + init SQL + validation de schéma | **3307** → 3306 *(outils locaux, ex. DBeaver)* |
+| `mysql` | MariaDB + init SQL + validation de schéma | **non publié** (réseau Docker uniquement) |
 | `mongo` | MongoDB avec authentification | **non publié** (réseau Docker uniquement) |
+
+Accès aux bases depuis l’hôte : `docker compose exec mysql …` et `docker compose exec mongo …` (aucun port MariaDB/Mongo publié).
 
 Les services backend et frontend tournent en configuration **production** (pas de bind mount de code, pas de serveur Vite de développement dans l’image frontend).
 
@@ -140,13 +142,13 @@ docker compose up --build -d
 
 ### 3. Accès
 
-| URL | Description |
-|-----|-------------|
+| URL / accès | Description |
+|-------------|-------------|
 | http://localhost:5173 | Interface (nginx) |
 | http://localhost:3000 | API |
 | http://localhost:3000/health | Sonde de disponibilité (`{"status":"ok"}`) |
-| `localhost:3307` | MariaDB (débogage / client SQL) |
-| MongoDB | Uniquement via `docker compose exec mongo …` |
+| `docker compose exec mysql …` | MariaDB (réseau Docker uniquement) |
+| `docker compose exec mongo …` | MongoDB (réseau Docker uniquement) |
 
 ### 4. Arrêt
 
@@ -183,7 +185,8 @@ Fichier de référence : [`.env.example`](.env.example) (à copier en `.env`, **
 | `DB_*` / `MYSQL_ROOT_PASSWORD` | Connexion MariaDB |
 | `MONGO_*` / `MONGO_URI` | Auth Mongo et URI applicative |
 | `JWT_SECRET` / `JWT_EXPIRES` | Signature et durée des jetons |
-| `EMAIL_PROVIDER` | `log` (console) ou `resend` |
+| `TRUST_PROXY` | Nombre de proxies de confiance (`0` par défaut ; `1` derrière un reverse proxy) |
+| `EMAIL_PROVIDER` | `log` (journalisation locale, sans envoi réseau) ou `resend` (envoi réel si clé fournie) |
 | `EMAIL_FROM` / `CONTACT_TO` / `RESEND_API_KEY` | Paramétrage e-mails |
 | `ORS_API_KEY` / `ORS_*` / `CATERER_*` | Calcul des frais de livraison |
 
@@ -231,6 +234,17 @@ npm run preview
 
 ---
 
+## Catalogue de démonstration
+
+Deux niveaux de données catalogue :
+
+| Niveau | Contenu | Script |
+|--------|---------|--------|
+| **Seed initial** (init Compose) | **3 menus**, **9 plats** | `database/vite_gourmand.sql` |
+| **Enrichissement optionnel** (démo / soutenance) | **15 menus**, **37 plats** | `database/enrich_catalogue_menus.sql` via `database/apply-enrich-catalogue.sh` |
+
+L’enrichissement est **idempotent**, n’altère pas les utilisateurs ni les commandes, et ne modifie pas MongoDB. Après un volume neuf, le seed contient 3 menus ; l’enrichissement local porte le catalogue à 15 menus pour la démonstration.
+
 ## Comptes de démonstration
 
 Présents après import de `database/vite_gourmand.sql` (premier démarrage du volume MariaDB).
@@ -241,8 +255,7 @@ Présents après import de `database/vite_gourmand.sql` (premier démarrage du v
 | Employé | `employe@vite-gourmand.fr` | Catalogue, commandes, avis, horaires |
 | Client | `client@vite-gourmand.fr` | Commandes, avis |
 
-Les mots de passe correspondent aux hashes bcrypt du fichier SQL de démonstration. Ils respectent les règles de complexité de l’application (majuscule, minuscule, chiffre, caractère spécial).  
-*Si vous ne disposez pas du mot de passe en clair fourni avec le jeu de données, recréez un compte via l’inscription client ou réinitialisez le hash en base pour les besoins de test.*
+Les mots de passe sont stockés **uniquement en hash bcrypt** dans le seed SQL. Ils ne sont pas publiés en clair dans la documentation. Réservés à un usage local / préproduction contrôlée ; à changer avant toute exposition publique.
 
 ---
 
@@ -250,19 +263,23 @@ Les mots de passe correspondent aux hashes bcrypt du fichier SQL de démonstrati
 
 Mesures en place dans le dépôt actuel :
 
-- Authentification **JWT** et middleware de rôles côté API
+- Authentification **JWT** (algorithme `HS256`) et middleware de rôles côté API
+- À chaque requête authentifiée : rechargement du compte en base et refus si `actif` est faux (`activeUser` / middlewares auth et optionalAuth)
 - Mots de passe hashés avec **bcrypt** ; règles de complexité à l’inscription
 - Requêtes SQL **paramétrées** (mysql2)
 - Filtrage des avis publics (**Validé** uniquement) ; accès complet réservé au staff authentifié
 - Messages d’erreur API : limitation de la fuite de détails techniques / SQL
-- Rate limiting sur `POST /auth/login` et `POST /contact`
+- Rate limiting : `POST /auth/login` (5 / 15 min), `POST /contact` (10 / h), `POST /utilisateurs` inscription (10 / h), `POST /commandes` (30 / 15 min) ; limitation additionnelle sur l’estimation de livraison
+- `TRUST_PROXY` configurable (désactivé par défaut ; activer derrière un reverse proxy unique)
+- Suppression définitive d’une commande (`DELETE`) réservée aux commandes déjà **Annulée**
 - Secrets et origines lus depuis `.env` (pas de secret de production codé en dur dans Compose)
-- MongoDB authentifié ; MariaDB avec utilisateur applicatif et root protégés
-- MongoDB **non exposé** sur l’hôte ; MariaDB publié sur 3307 uniquement pour l’administration locale
+- MariaDB et MongoDB authentifiés ; **aucun port de base publié** sur l’hôte
 - Backend non-root, `NODE_ENV=production`, endpoint `/health`, fermeture propre des connexions
 - Frontend servi en fichiers statiques (plus de serveur Vite de développement dans l’image)
 
-Limites restantes avant une mise en ligne publique : HTTPS / domaine, durcissement éventuel (fermeture du port 3307), CI/CD, sauvegardes automatisées, clé ORS et Resend de production.
+**E-mails :** en local, `EMAIL_PROVIDER=log` journalise sans envoi réseau. L’envoi réel via Resend est implémenté dans le code et activable avec `EMAIL_PROVIDER=resend` + `RESEND_API_KEY` (hors dépôt).
+
+Limites restantes avant une mise en ligne publique : HTTPS / domaine, CI/CD, sauvegardes automatisées, clés ORS / Resend de production. Le déploiement cloud (ex. AWS) **n’a pas encore été réalisé**.
 
 ---
 
@@ -279,9 +296,9 @@ vite-et-gourmand/
 │       ├── config/                # MariaDB, MongoDB
 │       ├── controllers/
 │       ├── domain/
-│       ├── middlewares/           # auth, rôles, rate-limit, auth optionnelle
+│       ├── middlewares/           # auth, optionalAuth, activeUser, rôles, rate-limit
 │       ├── models/
-│       ├── repositories/
+│       ├── repositories/          # CommandeRepository
 │       ├── routes/
 │       ├── services/              # métier, e-mails, ORS, statistiques
 │       └── utils/
@@ -294,7 +311,7 @@ vite-et-gourmand/
 │       ├── api/
 │       ├── components/
 │       ├── context/
-│       ├── data/
+│       ├── data/                  # mapping images menus
 │       ├── hooks/
 │       ├── layouts/
 │       ├── pages/
@@ -302,10 +319,12 @@ vite-et-gourmand/
 │       ├── styles/
 │       └── utils/
 ├── database/
-│   ├── vite_gourmand.sql          # Schéma + données de démo (init Compose)
+│   ├── vite_gourmand.sql          # Schéma + seed (3 menus, init Compose)
+│   ├── enrich_catalogue_menus.sql # Enrichissement optionnel → 15 menus
+│   ├── apply-enrich-catalogue.sh  # Backup + apply enrichissement local
 │   ├── 02-validate-schema.sh      # Contrôle des tables après init
 │   ├── mongo-init-app-user.sh     # Création utilisateur Mongo applicatif
-│   └── alter_*.sql / update_*.sql # Scripts d’évolution (hors init auto)
+│   └── alter_*.sql / update_*.sql # Historiques (déjà intégrés au seed — ne pas réappliquer)
 ├── docs/                          # Conception, livrables, maquettes, diagrammes
 ├── docker-compose.yml
 ├── .env.example

@@ -7,7 +7,7 @@ participant "Service auth FE\n(auth.service.js)" as AuthFe
 participant "API Express\n(POST /auth/login)" as API
 participant "Contrôleur auth\n(auth.controller.js)" as Ctrl
 participant "Service auth BE\n(auth.service.js)" as AuthBe
-database "MySQL" as MySQL
+database "MariaDB" as MySQL
 participant "bcrypt" as Bcrypt
 participant "jsonwebtoken" as Jwt
 participant "AuthContext" as Ctx

@@ -1,6 +1,6 @@
--- Mise à jour ciblée : différencier le Menu Mariage Végan (menu_id = 3)
--- À exécuter manuellement sur une base Docker déjà initialisée.
--- Ne pas exécuter automatiquement.
+-- HISTORIQUE — évolutions déjà présentes dans database/vite_gourmand.sql (seed actuel).
+-- Ne pas réappliquer sur une base initialisée via le seed Compose.
+-- Conservé pour tracer l’évolution du menu végan.
 
 -- 1. Renommer les plats orphelins en plats végans (IDs conservés)
 UPDATE plat

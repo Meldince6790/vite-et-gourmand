@@ -144,6 +144,24 @@ else Token valide et compte actif
       CmdModel --> CmdBe : OK
       deactivate CmdModel
 
+      CmdBe -> Stats : synchroniserChiffreAffairesSelonStatut(...)\n(statutAvant → statutApres)
+      activate Stats
+
+      note right of Stats
+        CA += montant à l'entrée dans
+        Livrée / retour matériel / Terminée ;
+        CA -= montant à la sortie.
+        Si avant et après contribuent
+        (ou aucun des deux) : no-op.
+        Best-effort MongoDB.
+      end note
+
+      Stats -> Mongo : ajusterStatistiqueCommande (delta CA)
+      Mongo --> Stats : OK / erreur journalisée
+
+      Stats --> CmdBe : OK
+      deactivate Stats
+
       CmdBe --> Ctrl : succès
 
     end

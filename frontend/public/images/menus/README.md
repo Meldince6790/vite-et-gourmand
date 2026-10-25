@@ -1,32 +1,29 @@
 # Photos des cartes catalogue
 
-Images libres utilisées pour illustrer les menus de démonstration.
+Mapping applicatif : `frontend/src/data/menuImages.js`.
 
-Le seed initial associe ces trois fichiers aux `menu_id` 1 à 3.
-Après enrichissement du catalogue (15 menus), le frontend **réutilise** ces mêmes assets selon le régime / thème (`frontend/src/data/menuImages.js`) — aucune image externe supplémentaire n’a été ajoutée.
+Catalogue cible : **8 menus** (ids 1–6, 8, 15). Format cible typique des WebP : 1 200 × 750.
 
-## menu-entreprise.webp
+## Images dédiées (actives)
 
-- **Usage :** Menu Entreprise Classique (`menu_id` 1)
-- **Plateforme :** Unsplash
-- **Auteur :** [Saile Ilyas](https://unsplash.com/@saileilyas)
-- **URL :** https://unsplash.com/photos/dumplings-platter-SiwrpBnxDww  
-  (fichier CDN : `photo-1555244162-803834f70033`)
-- **Licence :** [Unsplash License](https://unsplash.com/license) — libre d’utilisation (y compris commerciale)
+`USE_DEDICATED_MENU_IMAGES = true` — chaque menu conservé a son WebP :
 
-## menu-vegetarien.webp
+| Fichier | Menu |
+|---------|------|
+| `menu-01-entreprise-classique.webp` | Menu Entreprise Classique |
+| `menu-02-vegetarien-gourmand.webp` | Menu Végétarien Gourmand |
+| `menu-03-mariage-vegan.webp` | Menu Mariage Végan |
+| `menu-04-cocktail-dinatoire.webp` | Menu Cocktail Dinatoire |
+| `menu-05-buffet-traditionnel.webp` | Menu Buffet Traditionnel |
+| `menu-06-gastronomique-signature.webp` | Menu Gastronomique Signature |
+| `menu-08-estival-mediterraneen.webp` | Menu Estival Méditerranéen |
+| `menu-15-brunch-festif.webp` | Menu Brunch Festif |
 
-- **Usage :** Menu Végétarien Gourmand (`menu_id` 2)
-- **Plateforme :** Pexels
-- **Auteur :** [Ella Olsson](https://www.pexels.com/@ella-olsson-572949/) (`@ella-olsson-572949`)
-- **URL :** https://www.pexels.com/photo/vegetable-salad-on-white-ceramic-bowl-1640777/
-- **Licence :** [Pexels License](https://www.pexels.com/license/) — libre d’utilisation (y compris commerciale), sans attribution obligatoire
+## Fallback (titres inconnus)
 
-## menu-vegan.webp
+Pour un menu futur non mappé : `MENU_IMAGE_PLACEHOLDER` →
+`/images/plats/plat-placeholder.svg` (asset neutre partagé avec le catalogue plats).
 
-- **Usage :** Menu Mariage Végan (`menu_id` 3)
-- **Plateforme :** Unsplash
-- **Auteur :** [Anna Pelzer](https://unsplash.com/@annapelzer) (`@annapelzer`)
-- **URL :** https://unsplash.com/photos/vegetable-salad-dish-IGfIGP5ONV0  
-  (fichier CDN : `photo-1512621776951-a57141f2eefd`)
-- **Licence :** [Unsplash License](https://unsplash.com/license) — libre d’utilisation (y compris commerciale), sans warranty
+Les anciens fichiers génériques seed (`menu-entreprise.webp`,
+`menu-vegetarien.webp`, `menu-vegan.webp`) ont été retirés après l’intégration
+des huit photographies dédiées.

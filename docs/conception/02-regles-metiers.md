@@ -143,7 +143,7 @@ Le détail d'un menu affiche :
 | ID     | Origine               | Implémentation         | Statut    | Règle métier                                                                             |
 | ------ | --------------------- | ---------------------- | --------- | ---------------------------------------------------------------------------------------- |
 | RM-027 | 📋 Cahier des charges | Back + MongoDB         | 🧪 Testée | Les données statistiques nécessaires aux analyses sont enregistrées dans MongoDB.        |
-| RM-028 | ⚙️ Conception         | Back + MongoDB         | 🧪 Testée | Création : +1 commande et +CA ; modification impactant les montants : ajustement du CA uniquement (`deltaCommandes = 0`) ; annulation : −1 commande et −CA actuel. |
+| RM-028 | ⚙️ Conception         | Back + MongoDB         | 🧪 Testée | `nombre_commandes` : +1 à la création, −1 à l'annulation (hors Annulée). `chiffre_affaires` : uniquement si statut ∈ { Livrée, En attente du retour de matériel, Terminée } — +CA à l'entrée dans ces statuts, −CA à la sortie / annulation si déjà réglée ; modification tarifaire : delta CA seulement si déjà réglée. |
 | RM-029 | 📋 Cahier des charges | Back + MongoDB         | 🧪 Testée | Le nombre de commandes par menu peut être calculé.                                       |
 | RM-030 | 📋 Cahier des charges | Front + Back + MongoDB | 🧪 Testée | Les statistiques peuvent être affichées sous forme graphique pour l'administrateur.      |
 | RM-031 | 📋 Cahier des charges | Front + Back + MongoDB | 🧪 Testée | L'administrateur peut comparer les performances des menus.                               |
@@ -158,7 +158,7 @@ Le détail d'un menu affiche :
 | RM-033 | 📋 Cahier des charges | Front + Back + MongoDB | 🧪 Testée | L'administrateur peut consulter le chiffre d'affaires sous forme graphique.                                         |
 | RM-034 | 📋 Cahier des charges | Front + Back + MongoDB | 🧪 Testée | Le chiffre d'affaires peut être filtré par menu.                                                                    |
 | RM-035 | 📋 Cahier des charges | Front + Back + MongoDB | 🧪 Testée | Le chiffre d'affaires peut être filtré sur une période donnée.                                                      |
-| RM-036 | ⚙️ Conception         | Back + MongoDB         | 🧪 Testée | Le CA Mongo suit les montants serveur (`prix_menu + prix_livraison`) à la création, à chaque modification tarifaire (delta CA) et à l'annulation ; un `stats:resync` permet une réparation complète en cas d'écart. |
+| RM-036 | ⚙️ Conception         | Back + MongoDB         | 🧪 Testée | Le CA Mongo (`prix_menu + prix_livraison`) ne compte que les commandes réputées réglées à la livraison (statuts Livrée / retour matériel / Terminée). Le volume (`nombre_commandes`) reste distinct. Un `stats:resync` recalcule les deux indicateurs selon la même règle. |
 
 ---
 
@@ -221,7 +221,7 @@ Les fonctionnalités principales développées et validées concernent :
 - le dépôt et la modération des avis clients ;
 - l'affichage des horaires et des pages légales (mentions, CGV) ;
 - l'intégration MongoDB ;
-- les statistiques administrateur et le chiffre d'affaires (création / ajustement à la modification / annulation, resynchronisation possible) ;
+- les statistiques administrateur : volume hors annulées ; chiffre d'affaires uniquement pour Livrée / retour matériel / Terminée (`prix_menu + prix_livraison`), avec resynchronisation possible (`stats:resync`) ;
 - les graphiques et les filtres par menu et période.
 
-La préproduction locale est déjà en place (Docker Compose, Nginx, MariaDB, MongoDB, variables d'environnement et tests de déploiement local). Les évolutions restantes concernent principalement la production publique (hébergement cloud, HTTPS), le polish de l'expérience utilisateur et l'industrialisation (CI/CD, supervision, sauvegardes).
+La préproduction locale est déjà en place (Docker Compose, Nginx, MariaDB, MongoDB, variables d'environnement et tests de déploiement local). Une infrastructure AWS EC2 peut être préparée sans que l'application soit encore publiée. Les évolutions restantes concernent principalement l'exposition publique (déploiement applicatif, HTTPS, domaine), le polish UX et l'industrialisation (CI/CD, supervision, sauvegardes).

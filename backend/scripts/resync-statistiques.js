@@ -5,7 +5,12 @@ require("dotenv").config({
 const mongoose = require("mongoose");
 const database = require("../src/config/database");
 const statistiqueService = require("../src/services/statistique.service");
+const Commande = require("../src/domain/Commande");
 
+/**
+ * Commandes non annulées (alimentent nombre_commandes).
+ * Le CA n'est agrégé que pour les statuts réglés (voir Commande.STATUTS_CHIFFRE_AFFAIRES).
+ */
 const COMMANDES_ACTIVES_SQL = `
   SELECT
     c.commande_id,
@@ -13,6 +18,7 @@ const COMMANDES_ACTIVES_SQL = `
     c.prix_menu,
     c.prix_livraison,
     c.date_commande,
+    c.statut,
     m.titre AS nom_menu
   FROM commande c
   INNER JOIN menu m ON m.menu_id = c.menu_id
@@ -33,8 +39,15 @@ async function main() {
     console.log("MongoDB connecté.");
 
     const [commandesActives] = await database.query(COMMANDES_ACTIVES_SQL);
+    const commandesAvecCA = commandesActives.filter((commande) =>
+      Commande.contribueAuChiffreAffaires(commande.statut),
+    );
+
     console.log(
       `${commandesActives.length} commande(s) active(s) lue(s) depuis MariaDB.`,
+    );
+    console.log(
+      `${commandesAvecCA.length} commande(s) contribuant au chiffre d'affaires (statuts réglés).`,
     );
 
     const rapport =

@@ -341,7 +341,34 @@ class CommandeService {
       return result;
     }
 
-    return await this.commandeRepository.updateStatut(id, statut);
+    const statutAvant = commande.statut;
+    const result = await this.commandeRepository.updateStatut(id, statut);
+
+    try {
+      let nomMenu = commande.nom_menu;
+      const entreDansCA =
+        !this.Commande.contribueAuChiffreAffaires(statutAvant) &&
+        this.Commande.contribueAuChiffreAffaires(statut);
+
+      if (entreDansCA && !nomMenu) {
+        const menu = await this.menuModel.findById(commande.menu_id);
+        nomMenu = menu?.titre;
+      }
+
+      await this.statistiqueService.synchroniserChiffreAffairesSelonStatut(
+        commande,
+        statutAvant,
+        statut,
+        { nomMenu },
+      );
+    } catch (error) {
+      this.logger.error(
+        "Erreur lors de la mise à jour des statistiques MongoDB (transition statut) :",
+        error,
+      );
+    }
+
+    return result;
   }
 
   async annulerCommande(id, data) {
@@ -584,7 +611,10 @@ class CommandeService {
       result = await this.commandeRepository.update(id, updateData);
     }
 
-    if (deltaCA !== 0) {
+    if (
+      deltaCA !== 0 &&
+      this.Commande.contribueAuChiffreAffaires(commandeExistante.statut)
+    ) {
       try {
         await this.statistiqueService.ajusterStatistiqueCommande(
           {
@@ -593,6 +623,7 @@ class CommandeService {
             nom_menu: menu.titre,
             prix_menu: updateData.prix_menu,
             prix_livraison: updateData.prix_livraison,
+            statut: commandeExistante.statut,
           },
           deltaCA,
         );

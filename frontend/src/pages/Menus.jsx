@@ -224,6 +224,7 @@ function Menus() {
                 minPersonnes={menu.nombre_personne_minimum}
                 quantiteRestante={menu.quantite_restante}
                 imageSrc={getMenuImageSrc(menu.menu_id, {
+                  titre: menu.titre,
                   theme: menu.theme,
                   regime: menu.regime,
                 })}

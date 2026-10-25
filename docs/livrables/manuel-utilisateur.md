@@ -15,14 +15,23 @@ L'objectif de l'application est de centraliser la gestion des menus, des plats e
 
 ### Catalogue proposé en démonstration
 
-Après le premier démarrage Docker, le fichier `database/vite_gourmand.sql` initialise **3 menus** et **9 plats**.
+Lors du **premier** démarrage Docker (volume MariaDB neuf), l’application dispose automatiquement du catalogue cible : **8 menus**, **19 plats** et **26** associations `menu_plat` (seed + enrichissement montés dans `docker-entrypoint-initdb.d`, contrôlés par `04-validate-catalogue.sh`).
 
-Pour une démonstration plus complète (soutenance), un script d’enrichissement optionnel porte le catalogue à **15 menus** et **37 plats** :
+Menus conservés (identifiants inchangés) : Entreprise Classique (1), Végétarien Gourmand (2), Mariage Végan (3), Cocktail Dinatoire (4), Buffet Traditionnel (5), Gastronomique Signature (6), Estival Méditerranéen (8), Brunch Festif (15). Cocktail Dinatoire et Brunch Festif comportent quatre plats ; les six autres en comportent trois. Plusieurs recettes sont mutualisées entre menus via `menu_plat`.
 
-- script SQL : `database/enrich_catalogue_menus.sql` ;
-- application assistée : `database/apply-enrich-catalogue.sh` (sauvegarde locale puis insertion idempotente).
+Si la base a été créée avant cette intégration et ne contient que 3 menus, compléter **sans supprimer le volume** avec :
 
-Cet enrichissement ne modifie pas les comptes utilisateurs ni les commandes existantes.
+```bash
+ENRICH_CONFIRM=y ./database/apply-enrich-catalogue.sh
+```
+
+Cet enrichissement est idempotent et ne modifie pas les comptes utilisateurs ni les commandes existantes. Sur un volume déjà à un état intermédiaire (ex. 8 menus / 24 plats), utiliser les scripts de migration manuels (`preview_catalogue_*.sql` / `migrate_catalogue_*.sql`) décrits dans le README — **ne pas** utiliser `docker compose down -v` comme mise à jour ordinaire.
+
+Les photographies du catalogue public sont des fichiers WebP (et un placeholder SVG) versionnés sous `frontend/public/images/`, résolus par `menuImages.js` et `platImages.js`. Ce n’est **pas** une fonctionnalité d’upload depuis l’interface employé.
+
+### Commandes de démonstration
+
+Le seed SQL initial contient **trois** commandes historiques (`CMD-2026-001` Terminée, `CMD-2026-002` En préparation, `CMD-2026-003` Annulée). Une base locale peut en contenir davantage si un script optionnel (ex. `database/insert_commandes_demo.sql`) a été exécuté manuellement : ces ajouts ne font **pas** partie de l’initialisation Docker standard ni d’un déploiement futur tant qu’ils n’y sont pas rejoués. Les statistiques MongoDB associées (volume, CA) dépendent de l’état réel de la base et d’une éventuelle resynchronisation (`stats:resync`) ; ce ne sont pas des chiffres de production.
 
 ---
 
@@ -39,6 +48,8 @@ En environnement local, les adresses utilisées sont :
 - API backend :
 
   http://localhost:3000
+
+Depuis l’interface, le titre « Vite & Gourmand » du header renvoie vers la page d’accueil (`/`).
 
 L'accès aux fonctionnalités dépend du rôle de l'utilisateur connecté.
 
@@ -289,10 +300,10 @@ Cette fonctionnalité lui permet de maintenir les prestations proposées par l'e
 L'employé peut notamment :
 
 - consulter les menus existants ;
-- modifier les informations associées aux menus ;
+- modifier les informations associées aux menus (titre, description, conditions, stock, prix, thème, régime) ;
 - mettre à jour la composition des menus.
 
-La modification d'un menu permet notamment d'ajouter, retirer ou modifier les plats qui le composent afin de conserver une offre adaptée aux besoins de l'entreprise.
+La modification d'un menu permet notamment d'ajouter, retirer ou modifier les plats qui le composent afin de conserver une offre adaptée aux besoins de l'entreprise. Les images des cartes catalogue sont gérées côté application (fichiers versionnés) et ne sont pas éditables depuis cet écran.
 
 ---
 
@@ -303,10 +314,11 @@ L'employé peut gérer les plats disponibles depuis l'interface de gestion.
 Cette fonctionnalité permet notamment :
 
 - consulter les plats existants ;
-- modifier les informations relatives aux plats ;
-- mettre à jour les plats associés aux menus.
+- créer, renommer ou supprimer un plat ;
+- gérer les allergènes associés à chaque plat ;
+- mettre à jour les plats associés aux menus (depuis la gestion des menus).
 
-Les modifications réalisées depuis l'interface sont enregistrées dans la base de données afin de maintenir les informations affichées aux utilisateurs.
+Les modifications réalisées depuis l'interface sont enregistrées dans la base de données afin de maintenir les informations affichées aux utilisateurs. Les photographies des plats du catalogue public sont des ressources frontend versionnées ; elles ne sont pas saisies dans cet écran.
 
 ---
 
@@ -428,9 +440,11 @@ L'administrateur peut accéder aux données statistiques permettant d'avoir une 
 
 Les statistiques permettent notamment de suivre :
 
-- le nombre de commandes réalisées ;
+- le volume de commandes (hors commandes annulées) ;
 - les performances des menus ;
-- le chiffre d'affaires généré.
+- le chiffre d'affaires agrégé (`prix_menu + prix_livraison`) pour les commandes dont le statut est **Livrée**, **En attente du retour de matériel** ou **Terminée**.
+
+Ces indicateurs reflètent le suivi métier des commandes. Il n’existe pas de module de paiement bancaire : le chiffre d’affaires affiché n’est pas une preuve d’encaissement bancaire.
 
 Ces informations permettent d'aider à l'analyse de l'activité et à la prise de décision.
 

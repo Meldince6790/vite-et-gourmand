@@ -13,7 +13,6 @@ function EmployeePlats() {
 
   const [nouveauPlat, setNouveauPlat] = useState({
     titre_plat: "",
-    photo: "",
   });
 
   const [allergeneSelection, setAllergeneSelection] = useState({});
@@ -79,13 +78,15 @@ function EmployeePlats() {
       setError("");
       setMessage("");
 
-      await platService.createPlat(nouveauPlat);
+      await platService.createPlat({
+        titre_plat: nouveauPlat.titre_plat,
+        photo: null,
+      });
 
       setMessage("Plat créé avec succès.");
 
       setNouveauPlat({
         titre_plat: "",
-        photo: "",
       });
 
       await loadData();
@@ -96,7 +97,8 @@ function EmployeePlats() {
 
   function handleModifier(plat) {
     setPlatEdition({
-      ...plat,
+      plat_id: plat.plat_id,
+      titre_plat: plat.titre_plat,
     });
   }
 
@@ -105,7 +107,10 @@ function EmployeePlats() {
       setError("");
       setMessage("");
 
-      await platService.updatePlat(platEdition.plat_id, platEdition);
+      await platService.updatePlat(platEdition.plat_id, {
+        titre_plat: platEdition.titre_plat,
+        photo: null,
+      });
 
       setMessage("Plat modifié avec succès.");
 
@@ -196,17 +201,6 @@ function EmployeePlats() {
           />
         </label>
 
-        <label>
-          <span>Photo :</span>
-
-          <input
-            type="text"
-            name="photo"
-            value={nouveauPlat.photo}
-            onChange={handleChange}
-          />
-        </label>
-
         <div className="card-actions">
           <button
             className="button button-compact"
@@ -236,17 +230,6 @@ function EmployeePlats() {
                   />
                 </label>
 
-                <label>
-                  <span>Photo :</span>
-
-                  <input
-                    type="text"
-                    name="photo"
-                    value={platEdition.photo || ""}
-                    onChange={handleEditionChange}
-                  />
-                </label>
-
                 <div className="card-actions">
                   <button
                     className="button button-compact"
@@ -268,8 +251,6 @@ function EmployeePlats() {
             ) : (
               <>
                 <h3>{plat.titre_plat}</h3>
-
-                {plat.photo && <img src={plat.photo} alt={plat.titre_plat} />}
 
                 <div className="card-actions">
                   <button

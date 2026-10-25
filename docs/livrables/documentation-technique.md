@@ -106,19 +106,19 @@ Organisation sous `frontend/src/` :
 |---------|------|
 | **pages/** | Écrans métier (accueil, menus, détail, commande, espaces client / employé / admin, login, contact, mentions, CGV…). |
 | **components/** | Éléments réutilisables (`Navbar`, `Footer`, `MenuCard`, `ProtectedRoute`, graphiques statistiques…). |
-| **layouts/** | `MainLayout` : structure commune (navigation, pied de page). |
+| **layouts/** | `MainLayout` : structure commune (titre « Vite & Gourmand » lien React Router vers `/`, navigation, pied de page). |
 | **hooks/** | Accès simplifié au contexte d’authentification (`useAuth`). |
 | **context/** | `AuthContext` : session utilisateur et jeton JWT (stockage `localStorage`). |
 | **services/** | Clients HTTP vers l’API (menus, commandes, avis, livraison, statistiques, etc.). |
 | **api/** | URL de base de l’API (`VITE_API_URL`). |
 | **styles/** | Feuilles de styles globales et par zone. |
-| **data/** | Données auxiliaires côté client (ex. correspondance d’images de plats). |
+| **data/** | Correspondances d’images catalogue (`menuImages.js`, `platImages.js`) vers les assets de `public/images/`. |
 
 ### Organisation retenue
 
 - Les **pages** orchestrent les écrans ; la logique d’appel API est centralisée dans les **services**.
 - Les routes sensibles sont encapsulées par **`ProtectedRoute`** (contrôle UI sur `role_id`) ; la sécurité réelle reste garantie par l’API.
-- En pré-production Docker, le frontend n’est plus servi par le serveur de développement Vite : l’image construit le dossier `dist/` puis **nginx** sert les fichiers statiques avec fallback SPA (`try_files` → `index.html`).
+- En pré-production Docker, le frontend n’est plus servi par le serveur de développement Vite : l’image construit le dossier `dist/` puis **nginx** sert les fichiers statiques avec fallback SPA (`try_files` → `index.html`). Les assets hashés sous `/assets/` peuvent être mis en cache longtemps (`immutable`) ; `index.html` et les routes SPA sont servis sans cache longue durée afin d’éviter qu’un HTML périmé pointe vers un ancien bundle.
 
 ---
 
@@ -149,14 +149,20 @@ Organisation sous `frontend/src/` :
 - un plat peut avoir plusieurs allergènes ;
 - un avis est rattaché à un utilisateur.
 
-À l’init Docker, le dump est chargé puis le script `database/02-validate-schema.sh` vérifie la présence des tables critiques.
+À l’init d’un **volume MariaDB vierge**, Docker Compose enchaîne :
 
-**Catalogue de démonstration :**
+1. `01-vite_gourmand.sql` — schéma + seed (3 menus, 9 plats, 3 commandes historiques) ;
+2. `02-validate-schema.sh` — tables critiques présentes ;
+3. `03-enrich_catalogue_menus.sql` — enrichissement idempotent → **8 menus, 19 plats, 26** liens `menu_plat` ;
+4. `04-validate-catalogue.sh` — contrôle exact des effectifs (8 / 19 / 26, 0 plat orphelin).
 
-| Niveau | Contenu | Script |
-|--------|---------|--------|
-| Seed initial (init Compose) | 3 menus, 9 plats | `database/vite_gourmand.sql` |
-| Enrichissement optionnel | 15 menus, 37 plats | `database/enrich_catalogue_menus.sql` (+ `apply-enrich-catalogue.sh`) |
+Menus conservés (ids non renumérotés) : 1–6, 8, 15. Cocktail Dinatoire et Brunch Festif ont quatre plats ; les six autres en ont trois. Des recettes sont mutualisées via `menu_plat`.
+
+Sur un volume **déjà existant**, ces scripts ne sont pas rejoués. Pour compléter un catalogue resté à 3 menus sans recréer le volume : `database/apply-enrich-catalogue.sh`. Pour une base déjà enrichie à un état intermédiaire (ex. 8 menus / 24 plats) : scripts manuels `preview_catalogue_*.sql` / `migrate_catalogue_*.sql` (ne pas les monter dans `docker-entrypoint-initdb.d`). **Ne pas** utiliser `docker compose down -v` comme étape de mise à jour ordinaire (suppression des volumes).
+
+Le seed inclut **trois** commandes historiques (`CMD-2026-001` Terminée, `CMD-2026-002` En préparation, `CMD-2026-003` Annulée). D’éventuelles commandes supplémentaires ajoutées en local (ex. script `insert_commandes_demo.sql` pour `CMD-2026-004` à `006`) ne font **pas** partie de l’initialisation standard ni d’un futur déploiement AWS tant qu’elles n’y sont pas rejouées. Sur une base locale ainsi enrichie, un `stats:resync` peut produire par exemple un volume de 5 (hors annulée) et un CA de 1 484,50 € pour les seules commandes aux statuts CA — chiffres de **démonstration locale**, non de production.
+
+**Images catalogue :** **8** WebP menus + **19** WebP plats + **1** placeholder SVG sous `frontend/public/images/`, inclus dans le build nginx (format cible courant : 1 200 × 750, WebP). Mapping frontend (`menuImages.js`, `platImages.js`) — pas de chemin stocké en MariaDB pour l’affichage public, pas d’upload depuis l’UI employé. La colonne `plat.photo` (BLOB) existe pour compatibilité schéma / API mais n’est pas renseignée par le seed ni par l’interface employé. Les trois anciennes photos génériques de menus ont été retirées.
 
 Les scripts `alter_commande_*.sql` et `update_plats_menu_vegan.sql` sont **historiques** : leurs évolutions sont déjà présentes dans le seed actuel. Ne pas les réappliquer sur une base initialisée via `vite_gourmand.sql`.
 
@@ -170,19 +176,22 @@ Les scripts `alter_commande_*.sql` et `update_plats_menu_vegan.sql` sont **histo
 |-------|-------------|
 | `menu_id` | Identifiant du menu (référence logique MariaDB) |
 | `nom_menu` | Libellé du menu |
-| `nombre_commandes` | Compteur de commandes pour la période |
-| `chiffre_affaires` | Cumul des montants (menu + livraison) |
-| `periode` | Période d’agrégation (chaîne) |
+| `nombre_commandes` | Volume de commandes pour la période (hors **Annulée**) |
+| `chiffre_affaires` | Cumul `prix_menu + prix_livraison` des commandes réputées réglées à la livraison |
+| `periode` | Période d’agrégation (chaîne `YYYY-MM`) |
+
+**Règle métier du chiffre d’affaires** (`Commande.STATUTS_CHIFFRE_AFFAIRES`) : le CA n’est comptabilisé que si le statut ∈ { **Livrée**, **En attente du retour de matériel**, **Terminée** }. Les commandes en attente, acceptées, en préparation ou en livraison n’alimentent pas le CA. Il n’existe pas de module de paiement bancaire : ces agrégats ne prouvent pas un encaissement réel.
 
 **Synchronisation avec les commandes** (service statistiques, appelé depuis le service commandes) :
 
 | Événement | Effet MongoDB |
 |-----------|----------------|
-| Création de commande | +1 commande, + CA (`prix_menu + prix_livraison`) |
-| Modification impactant les montants | Ajustement du CA uniquement (`deltaCommandes = 0`) |
-| Annulation | −1 commande, − CA de la commande |
+| Création de commande | +1 sur `nombre_commandes` ; **CA inchangé** (`deltaCA = 0`) |
+| Transition de statut | Ajustement du CA à l’entrée / sortie d’un statut « réglé » (évite le double comptage) |
+| Modification tarifaire | Delta CA uniquement si la commande contribue déjà au CA |
+| Annulation | −1 commande ; − CA seulement si le statut avant annulation contribuait au CA |
 
-Un script de resynchronisation est disponible : `npm run stats:resync` dans `backend/` (`scripts/resync-statistiques.js`), pour reconstruire les agrégats à partir des commandes MariaDB non annulées.
+Mise à jour **best-effort** après commit MariaDB : un échec Mongo est journalisé sans annuler la commande. Réalignement possible via `npm run stats:resync` dans `backend/` (`scripts/resync-statistiques.js`), qui reconstruit volume et CA selon la même règle à partir de MariaDB.
 
 La connexion utilise `MONGO_URI` (utilisateur applicatif authentifié en environnement Compose).
 
@@ -314,18 +323,19 @@ Documents `statistiques` : `menu_id`, `nom_menu`, `nombre_commandes`, `chiffre_a
 
 Implémentée dans `statistique.service.js` via `appliquerDeltaStatistique` et les façades :
 
-- `updateStatistiqueCommande` (création) ;
-- `ajusterStatistiqueCommande` (delta CA seul) ;
-- `retirerStatistiqueCommande` (annulation).
+- `updateStatistiqueCommande` (création : +1 volume, CA inchangé) ;
+- `synchroniserChiffreAffairesSelonStatut` (entrée / sortie des statuts CA) ;
+- `ajusterStatistiqueCommande` (delta CA seul, ex. modification tarifaire si déjà réglée) ;
+- `retirerStatistiqueCommande` (annulation : −1 volume, −CA si déjà réglée).
+
+Approche **best-effort** : l’échec Mongo après une opération MariaDB réussie est journalisé ; `npm run stats:resync` reconstruit les agrégats sans doublon.
 
 ### Indicateurs exploités côté admin
 
 L’API `/statistiques` (rôle administrateur) alimente les écrans :
 
-- statistiques par menu / période ;
-- chiffre d’affaires (graphiques Chart.js dans le frontend).
-
-La resynchronisation globale (`stats:resync`) permet de réaligner MongoDB sur MariaDB si nécessaire.
+- volume de commandes et chiffre d’affaires par menu / période (graphiques Chart.js) ;
+- le CA affiché suit la règle des statuts « réglés à la livraison », distincte du simple volume.
 
 ---
 
@@ -358,22 +368,24 @@ Le token JWT est stocké côté navigateur (`localStorage`) : pratique courante 
 
 | Image | Principe |
 |-------|----------|
-| `frontend/Dockerfile` | Stage build (`npm ci`, `npm run build` avec `VITE_API_URL`) → stage **nginx:alpine** servant `dist/` + `nginx.conf` (SPA). |
+| `frontend/Dockerfile` | Stage build (`npm ci`, `npm run build` avec `VITE_API_URL`) → stage **nginx:alpine** servant `dist/` + `nginx.conf` (SPA, cache assets / no-cache `index.html`). |
 | `backend/Dockerfile` | `node:24-bookworm-slim`, `npm ci --omit=dev`, `NODE_ENV=production`, utilisateur `node`, `CMD ["node", "src/app.js"]`. |
 
 ### docker-compose.yml
 
-Quatre services : `frontend`, `backend`, `mysql` (`mariadb:10.11`), `mongo` (`mongo:7`).
+Quatre services : `frontend`, `backend`, `mysql` (`mariadb:10.11`), `mongo` (`mongo:7`). Pas de volume applicatif monté sur frontend/backend : toute modification du code ou des assets frontend impose un **rebuild** de l’image concernée.
 
 | Élément | Détail |
 |---------|--------|
 | **Réseau** | Bridge `vite-gourmand` |
 | **Volumes** | `mysql_data`, `mongo_data` |
-| **Init MariaDB** | `vite_gourmand.sql` + `02-validate-schema.sh` |
+| **Init MariaDB** | `vite_gourmand.sql` → `02-validate-schema.sh` → `enrich_catalogue_menus.sql` → `04-validate-catalogue.sh` (volume vierge uniquement) |
 | **Init Mongo** | `mongo-init-app-user.sh` (utilisateur `readWrite`) |
 | **Ports hôte** | Frontend **5173**, backend **3000** ; MariaDB et Mongo **non publiés** (accès via `docker compose exec`) |
-| **Dépendances** | Backend attend MariaDB et Mongo **healthy** |
+| **Dépendances** | Backend attend MariaDB et Mongo **healthy** ; frontend dépend de backend |
 | **Restart** | `unless-stopped` |
+
+Un éventuel fichier Compose local (ex. publication de ports MariaDB/Mongo sur `127.0.0.1` pour DBeaver / Compass) est **ignoré par Git** et ne fait pas partie de l’installation standard du dépôt.
 
 ### Variables d’environnement
 
@@ -400,40 +412,49 @@ L’environnement Docker actuel n’est plus un simple setup de développement (
 | BDD | Auth Mongo ; utilisateurs MariaDB non triviaux ; validation de schéma à l’init |
 | Réseau | Services isolés sur `vite-gourmand` |
 
-**Limites avant production publique :** HTTPS / domaine, CI/CD, sauvegardes automatiques, clés ORS / Resend de production. Le déploiement cloud (ex. AWS) n’a pas encore été réalisé.
+**Limites avant production publique :** HTTPS / domaine, CI/CD, sauvegardes automatiques, clés ORS / Resend de production. Une instance **AWS EC2** (Ubuntu, Docker / Compose, dépôt cloné, réseau initial) a pu être préparée côté infrastructure, mais l’application **n’est pas déployée publiquement** : pas d’URL publique opérationnelle, pas de certificat HTTPS de production ni de mesures de disponibilité en ligne documentées ici. Les URL `localhost` restent réservées à l’environnement local.
 
 ---
 
 ## 14. Tests
 
-Les tests automatisés backend s’exécutent avec le moteur natif Node.js :
+Les tests automatisés s’exécutent avec le moteur natif Node.js (`node --test`).
 
 ```bash
-cd backend
-npm test
+cd backend && npm test
+cd frontend && npm test
 ```
 
-### Suites présentes dans le dépôt
+### Résultats vérifiés localement (branche de développement)
+
+| Suite | Commande | Résultat constaté |
+|-------|----------|-------------------|
+| Backend | `npm test` (liste des fichiers dans `backend/package.json`) | **236 / 236** réussis |
+| Frontend | `npm test` (`src/data/*.test.js` — mappings images) | **9 / 9** réussis |
+
+Ces chiffres correspondent à une exécution locale des suites automatisées ; ils ne couvrent pas à eux seuls l’ensemble des parcours métier (commande complète, UI admin, déploiement AWS).
+
+### Suites backend présentes dans le dépôt
 
 | Fichier | Périmètre |
 |---------|-----------|
-| `domain/Commande.test.js` | Calculs de prix, droits client, normalisation |
+| `domain/Commande.test.js` | Calculs de prix, droits client, normalisation, statuts CA |
 | `repositories/CommandeRepository.test.js` | Persistance commandes (mocks SQL) |
 | `services/commande.service.test.js` | Création, annulation, modification, transactions, stats, e-mails |
 | `services/routing.service.test.js` | ORS, Bordeaux / hors Bordeaux, erreurs 503 |
-| `services/statistique.service.test.js` | Deltas Mongo, resync |
+| `services/statistique.service.test.js` | Deltas Mongo, transitions CA, resync |
 | `services/avis.service.test.js` | Règles de dépôt / filtres publics |
 | `services/auth.service.test.js` | Login, comptes inactifs, payload JWT |
 | `services/email.service.test.js` / `email.templates.test.js` | Modes log / Resend, templates |
 | `controllers/contact.controller.test.js` | Validation contact |
 | `services/menu.service.test.js` / `models/menu.model.test.js` | Menus enrichis |
+| `services/utilisateur.service.test.js` | Inscription client / création employé |
+| `middlewares/activeUser.test.js` | Recontrôle compte actif |
 | `utils/safeErrorMessage.test.js` | Filtrage des messages techniques |
 
-Des tests complémentaires existent aussi (ex. `utilisateur.service.test.js`) hors liste du script `npm test` selon la configuration du `package.json`.
+### Contrôles manuels / SQL (hors `npm test`)
 
-### Validation manuelle
-
-En complément : parcours navigateur (inscription, commande, estimation livraison, espaces employés / admin) et vérification de `GET /health` une fois la stack Compose démarrée.
+En complément, selon les besoins : parcours navigateur (catalogue, lien header, commande, estimation livraison, espaces employés / admin), `GET /health`, validation catalogue MariaDB (`04-validate-catalogue.sh` ou requêtes équivalentes), URLs des 27 images WebP/SVG, et éventuellement `stats:resync` après modifications SQL directes.
 
 ---
 

@@ -86,6 +86,7 @@ function createMocks(overrides = {}) {
     updateStatistiqueCommande: [],
     retirerStatistiqueCommande: [],
     ajusterStatistiqueCommande: [],
+    synchroniserChiffreAffairesSelonStatut: [],
     sendOrderConfirmationEmail: [],
     sendOrderCancellationEmail: [],
     findUtilisateurById: [],
@@ -156,6 +157,28 @@ function createMocks(overrides = {}) {
     overrides.statistiqueService?.ajusterStatistiqueCommande ??
     (async () => undefined);
 
+  const synchroniserChiffreAffairesSelonStatutImpl =
+    overrides.statistiqueService?.synchroniserChiffreAffairesSelonStatut ??
+    (async (commande, statutAvant, statutApres, options = {}) => {
+      const avant = Commande.contribueAuChiffreAffaires(statutAvant);
+      const apres = Commande.contribueAuChiffreAffaires(statutApres);
+      if (avant === apres) {
+        return null;
+      }
+      const montant = Number(
+        (
+          Number(commande.prix_menu) + Number(commande.prix_livraison)
+        ).toFixed(2),
+      );
+      return statistiqueService.ajusterStatistiqueCommande(
+        {
+          ...commande,
+          nom_menu: options.nomMenu ?? commande.nom_menu,
+        },
+        apres ? montant : -montant,
+      );
+    });
+
   const statistiqueService = {
     ...overrides.statistiqueService,
     updateStatistiqueCommande: async (commande, menu) => {
@@ -169,6 +192,25 @@ function createMocks(overrides = {}) {
     ajusterStatistiqueCommande: async (commande, deltaCA) => {
       calls.ajusterStatistiqueCommande.push({ commande, deltaCA });
       return ajusterStatistiqueCommandeImpl(commande, deltaCA);
+    },
+    synchroniserChiffreAffairesSelonStatut: async (
+      commande,
+      statutAvant,
+      statutApres,
+      options,
+    ) => {
+      calls.synchroniserChiffreAffairesSelonStatut.push({
+        commande,
+        statutAvant,
+        statutApres,
+        options,
+      });
+      return synchroniserChiffreAffairesSelonStatutImpl(
+        commande,
+        statutAvant,
+        statutApres,
+        options,
+      );
     },
   };
 
@@ -1410,8 +1452,31 @@ describe("CommandeService.updateCommande", () => {
     ]);
   });
 
-  it("ajuste le CA Mongo si le nombre de personnes change", async () => {
+  it("n'ajuste pas le CA Mongo si la commande n'est pas encore réglée", async () => {
     const { service, calls } = createMocks({
+      menuModel: {
+        findById: async () => ({ ...MENU, titre: "Menu Test" }),
+      },
+    });
+
+    await service.updateCommande(1, 10, { nombre_personne: 15 });
+
+    assert.equal(calls.update.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande.length, 0);
+  });
+
+  it("ajuste le CA Mongo sur une commande réglée si le montant change", async () => {
+    class FakeCommande extends Commande {
+      peutEtreModifieeParClient() {
+        return true;
+      }
+    }
+
+    const { service, calls } = createMocks({
+      CommandeDomain: FakeCommande,
+      commandeRepository: {
+        findById: async () => ({ ...ORDER, statut: "Livrée" }),
+      },
       menuModel: {
         findById: async () => ({ ...MENU, titre: "Menu Test" }),
       },
@@ -1422,14 +1487,21 @@ describe("CommandeService.updateCommande", () => {
     assert.equal(calls.ajusterStatistiqueCommande.length, 1);
     assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, 35);
     assert.equal(calls.ajusterStatistiqueCommande[0].commande.prix_menu, 135);
-    assert.equal(calls.ajusterStatistiqueCommande[0].commande.prix_livraison, 0);
     assert.equal(calls.ajusterStatistiqueCommande[0].commande.nom_menu, "Menu Test");
-    assert.equal(calls.updateStatistiqueCommande.length, 0);
-    assert.equal(calls.retirerStatistiqueCommande.length, 0);
   });
 
-  it("ajuste le CA Mongo si l'adresse change le prix de livraison", async () => {
+  it("ajuste le CA Mongo si l'adresse change après livraison (hors parcours client)", async () => {
+    class FakeCommande extends Commande {
+      peutEtreModifieeParClient() {
+        return true;
+      }
+    }
+
     const { service, calls } = createMocks({
+      CommandeDomain: FakeCommande,
+      commandeRepository: {
+        findById: async () => ({ ...ORDER, statut: "Terminée" }),
+      },
       routingService: {
         quoteDelivery: async () => ({
           distance_km: 8.5,
@@ -1445,11 +1517,20 @@ describe("CommandeService.updateCommande", () => {
 
     assert.equal(calls.ajusterStatistiqueCommande.length, 1);
     assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, 10.02);
-    assert.equal(calls.ajusterStatistiqueCommande[0].commande.prix_livraison, 10.02);
   });
 
-  it("ajuste le CA Mongo sur le total si effectif et adresse changent", async () => {
+  it("ajuste le CA Mongo sur le total si effectif et adresse changent après livraison", async () => {
+    class FakeCommande extends Commande {
+      peutEtreModifieeParClient() {
+        return true;
+      }
+    }
+
     const { service, calls } = createMocks({
+      CommandeDomain: FakeCommande,
+      commandeRepository: {
+        findById: async () => ({ ...ORDER, statut: "Livrée" }),
+      },
       routingService: {
         quoteDelivery: async () => ({
           distance_km: 8.5,
@@ -1464,7 +1545,6 @@ describe("CommandeService.updateCommande", () => {
       adresse_livraison: "10 rue Nouvelle, 33700 Mérignac",
     });
 
-    // CA avant 100+0=100 ; après 135+10.02=145.02 → delta 45.02
     assert.equal(calls.ajusterStatistiqueCommande.length, 1);
     assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, 45.02);
   });
@@ -1483,11 +1563,19 @@ describe("CommandeService.updateCommande", () => {
     assert.equal(calls.updateStatistiqueCommande.length, 0);
   });
 
-  it("applique un delta CA négatif si le montant baisse", async () => {
+  it("applique un delta CA négatif si le montant baisse après livraison", async () => {
+    class FakeCommande extends Commande {
+      peutEtreModifieeParClient() {
+        return true;
+      }
+    }
+
     const { service, calls } = createMocks({
+      CommandeDomain: FakeCommande,
       commandeRepository: {
         findById: async () => ({
           ...ORDER,
+          statut: "En attente du retour de matériel",
           nombre_personne: 15,
           prix_menu: 135,
           prix_livraison: 10,
@@ -1497,15 +1585,15 @@ describe("CommandeService.updateCommande", () => {
 
     await service.updateCommande(1, 10, { nombre_personne: 10 });
 
-    // CA avant 135+10=145 ; après 100+10=110 → delta -35
     assert.equal(calls.ajusterStatistiqueCommande.length, 1);
     assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, -35);
   });
 
-  it("préserve la cohérence create → modify → cancel côté appels statistiques", async () => {
+  it("préserve la cohérence create → modify → Livrée → Annulée côté stats", async () => {
     const caTracker = { value: 0, commandes: 0 };
     const orderState = {
       ...ORDER,
+      statut: "En attente",
       prix_menu: 100,
       prix_livraison: 0,
       nombre_personne: 10,
@@ -1519,21 +1607,29 @@ describe("CommandeService.updateCommande", () => {
           calls.update.push({ id, data });
           return true;
         },
+        updateStatut: async (id, statut, connection = null) => {
+          orderState.statut = statut;
+          calls.updateStatut.push({ id, statut, connection });
+          return true;
+        },
       },
       statistiqueService: {
-        updateStatistiqueCommande: async (commande) => {
+        updateStatistiqueCommande: async () => {
           caTracker.commandes += 1;
-          caTracker.value +=
-            Number(commande.prix_menu) + Number(commande.prix_livraison);
         },
         ajusterStatistiqueCommande: async (_commande, deltaCA) => {
           caTracker.value += Number(deltaCA);
         },
         retirerStatistiqueCommande: async (commande) => {
           caTracker.commandes -= 1;
-          caTracker.value -=
-            Number(commande.prix_menu) + Number(commande.prix_livraison);
+          if (Commande.contribueAuChiffreAffaires(commande.statut)) {
+            caTracker.value -=
+              Number(commande.prix_menu) + Number(commande.prix_livraison);
+          }
         },
+      },
+      menuModel: {
+        findById: async () => ({ ...MENU, titre: "Menu Test" }),
       },
       routingService: {
         quoteDelivery: async () => ({
@@ -1544,32 +1640,39 @@ describe("CommandeService.updateCommande", () => {
       },
     });
 
-    // Simule l'effet création déjà comptabilisé
     await service.statistiqueService.updateStatistiqueCommande({
       ...orderState,
-      prix_menu: 100,
-      prix_livraison: 0,
     });
-    assert.equal(caTracker.value, 100);
+    assert.equal(caTracker.value, 0);
     assert.equal(caTracker.commandes, 1);
 
     await service.updateCommande(1, 10, {
       adresse_livraison: "45 avenue Liberation, 33700 Merignac",
     });
+    assert.equal(caTracker.value, 0);
+
+    await service.updateStatut(1, "Livrée");
     assert.equal(caTracker.value, 110.72);
 
-    await service.updateCommande(1, 10, { nombre_personne: 15 });
-    assert.equal(caTracker.value, 145.72);
-
-    await service.annulerCommandeClient(1, 10);
+    await service.updateStatut(1, "Annulée");
     assert.equal(caTracker.value, 0);
     assert.equal(caTracker.commandes, 0);
-    assert.equal(calls.ajusterStatistiqueCommande.length, 2);
+    assert.equal(calls.synchroniserChiffreAffairesSelonStatut.length, 1);
     assert.equal(calls.retirerStatistiqueCommande.length, 1);
   });
 
-  it("conserve la modification MySQL si l'ajustement Mongo échoue", async () => {
+  it("conserve la modification MySQL si l'ajustement Mongo échoue (commande réglée)", async () => {
+    class FakeCommande extends Commande {
+      peutEtreModifieeParClient() {
+        return true;
+      }
+    }
+
     const { service, calls } = createMocks({
+      CommandeDomain: FakeCommande,
+      commandeRepository: {
+        findById: async () => ({ ...ORDER, statut: "Livrée" }),
+      },
       statistiqueService: {
         ajusterStatistiqueCommande: async () => {
           throw new Error("Mongo indisponible");
@@ -1590,10 +1693,18 @@ describe("CommandeService.updateCommande", () => {
   });
 
   it("arrondit le delta CA à deux décimales avant l'appel Mongo", async () => {
+    class FakeCommande extends Commande {
+      peutEtreModifieeParClient() {
+        return true;
+      }
+    }
+
     const { service, calls } = createMocks({
+      CommandeDomain: FakeCommande,
       commandeRepository: {
         findById: async () => ({
           ...ORDER,
+          statut: "Livrée",
           prix_menu: 100,
           prix_livraison: 0.1,
         }),
@@ -1601,7 +1712,6 @@ describe("CommandeService.updateCommande", () => {
       routingService: {
         quoteDelivery: async () => ({
           distance_km: 1,
-          // 5 + 0.59*1 = 5.59 — delta = 5.49
           prix_livraison: 5.59,
           livraison_gratuite: false,
         }),
@@ -1697,18 +1807,69 @@ describe("CommandeService.updateStatut", () => {
     assert.equal(events.includes("begin"), false);
   });
 
-  it("ne touche pas au stock pour un autre statut", async () => {
+  it("ne touche pas au stock ni au CA pour Acceptée / En préparation", async () => {
     const { service, calls, events } = createMocks();
 
     await service.updateStatut(1, "Acceptée");
+    await service.updateStatut(1, "En préparation");
 
     assert.deepEqual(calls.updateStatut, [
       { id: 1, statut: "Acceptée", connection: null },
+      { id: 1, statut: "En préparation", connection: null },
     ]);
     assert.equal(calls.increaseStock.length, 0);
+    assert.equal(calls.ajusterStatistiqueCommande.length, 0);
     assert.equal(calls.sendOrderCancellationEmail.length, 0);
     assert.equal(calls.retirerStatistiqueCommande.length, 0);
     assert.equal(events.includes("begin"), false);
+  });
+
+  it("ajoute le CA une seule fois au passage à Livrée", async () => {
+    const { service, calls } = createMocks({
+      menuModel: {
+        findById: async () => ({ ...MENU, titre: "Menu Test" }),
+      },
+    });
+
+    await service.updateStatut(1, "Livrée");
+
+    assert.equal(calls.synchroniserChiffreAffairesSelonStatut.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, 100);
+    assert.equal(calls.ajusterStatistiqueCommande[0].commande.nom_menu, "Menu Test");
+  });
+
+  it("ne double pas le CA entre Livrée, retour matériel et Terminée", async () => {
+    let statutCourant = "Livrée";
+    const { service, calls } = createMocks({
+      commandeRepository: {
+        findById: async () => ({ ...ORDER, statut: statutCourant }),
+        updateStatut: async (id, statut) => {
+          statutCourant = statut;
+          calls.updateStatut.push({ id, statut, connection: null });
+          return true;
+        },
+      },
+    });
+
+    await service.updateStatut(1, "En attente du retour de matériel");
+    await service.updateStatut(1, "Terminée");
+
+    assert.equal(calls.ajusterStatistiqueCommande.length, 0);
+    assert.equal(calls.synchroniserChiffreAffairesSelonStatut.length, 2);
+  });
+
+  it("retire le CA si retour d'un statut réglé vers En préparation", async () => {
+    const { service, calls } = createMocks({
+      commandeRepository: {
+        findById: async () => ({ ...ORDER, statut: "Livrée", prix_livraison: 10 }),
+      },
+    });
+
+    await service.updateStatut(1, "En préparation");
+
+    assert.equal(calls.ajusterStatistiqueCommande.length, 1);
+    assert.equal(calls.ajusterStatistiqueCommande[0].deltaCA, -110);
   });
 
   it("rejette si increaseStock échoue lors du passage à Annulée", async () => {
@@ -1915,6 +2076,10 @@ describe("CommandeService délégation au domaine", () => {
 
       peutEtreModifieeParClient() {
         return true;
+      }
+
+      static contribueAuChiffreAffaires(statut) {
+        return Commande.contribueAuChiffreAffaires(statut);
       }
 
       static calculerPrixMenu(menu, nombrePersonne) {

@@ -10,7 +10,6 @@ import "../styles/pages.css";
 const menuInitial = {
   titre: "",
   description: "",
-  photo: "",
   conditions: "",
   nombre_personne_minimum: "",
   prix_par_personne: "",
@@ -123,7 +122,6 @@ function EmployeeMenus() {
     setMenuFormulaire({
       titre: menu.titre,
       description: menu.description || "",
-      photo: menu.photo || "",
       conditions: menu.conditions || "",
       nombre_personne_minimum: menu.nombre_personne_minimum,
       prix_par_personne: menu.prix_par_personne,
@@ -212,16 +210,6 @@ function EmployeeMenus() {
             value={menuFormulaire.conditions}
             onChange={handleChange}
             placeholder="Ex : commander 7 jours avant, conserver au frais..."
-          />
-        </label>
-
-        <label>
-          <span>Photo :</span>
-          <input
-            type="text"
-            name="photo"
-            value={menuFormulaire.photo}
-            onChange={handleChange}
           />
         </label>
 

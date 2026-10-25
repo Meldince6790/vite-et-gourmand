@@ -105,7 +105,7 @@ function createStoreMock(initialDocs = []) {
 }
 
 describe("StatistiqueService.appliquerDeltaStatistique / façades", () => {
-  it("updateStatistiqueCommande crée un document (+1)", async () => {
+  it("updateStatistiqueCommande crée un document (+1 commande, CA inchangé)", async () => {
     const { StatistiqueModel, created, finds } = createModelMock({
       existing: null,
     });
@@ -117,12 +117,12 @@ describe("StatistiqueService.appliquerDeltaStatistique / façades", () => {
     assert.deepEqual(finds[0], { menu_id: 1, periode: "2026-08" });
     assert.equal(created.length, 1);
     assert.equal(result.nombre_commandes, 1);
-    assert.equal(result.chiffre_affaires, 110);
+    assert.equal(result.chiffre_affaires, 0);
     assert.equal(result.nom_menu, "Menu Test");
     assert.equal(result.periode, "2026-08");
   });
 
-  it("updateStatistiqueCommande incrémente un document existant (+1)", async () => {
+  it("updateStatistiqueCommande incrémente le compteur sans toucher au CA", async () => {
     const existing = createDocument();
     const { StatistiqueModel, created } = createModelMock({ existing });
     const service = createStatistiqueService({ StatistiqueModel });
@@ -131,20 +131,37 @@ describe("StatistiqueService.appliquerDeltaStatistique / façades", () => {
 
     assert.equal(created.length, 0);
     assert.equal(result.nombre_commandes, 3);
-    assert.equal(result.chiffre_affaires, 330);
+    assert.equal(result.chiffre_affaires, 220);
     assert.equal(existing.saveCalls, 1);
   });
 
-  it("retirerStatistiqueCommande décrémente un document (-1)", async () => {
+  it("retirerStatistiqueCommande retire compteur et CA si statut réglé", async () => {
     const existing = createDocument();
     const { StatistiqueModel, created } = createModelMock({ existing });
     const service = createStatistiqueService({ StatistiqueModel });
 
-    const result = await service.retirerStatistiqueCommande(COMMANDE);
+    const result = await service.retirerStatistiqueCommande({
+      ...COMMANDE,
+      statut: "Terminée",
+    });
 
     assert.equal(created.length, 0);
     assert.equal(result.nombre_commandes, 1);
     assert.equal(result.chiffre_affaires, 110);
+  });
+
+  it("retirerStatistiqueCommande retire seulement le compteur si non réglée", async () => {
+    const existing = createDocument();
+    const { StatistiqueModel } = createModelMock({ existing });
+    const service = createStatistiqueService({ StatistiqueModel });
+
+    const result = await service.retirerStatistiqueCommande({
+      ...COMMANDE,
+      statut: "En préparation",
+    });
+
+    assert.equal(result.nombre_commandes, 1);
+    assert.equal(result.chiffre_affaires, 220);
   });
 
   it("retirerStatistiqueCommande sans document : warning et no-op", async () => {
@@ -158,7 +175,10 @@ describe("StatistiqueService.appliquerDeltaStatistique / façades", () => {
       },
     });
 
-    const result = await service.retirerStatistiqueCommande(COMMANDE);
+    const result = await service.retirerStatistiqueCommande({
+      ...COMMANDE,
+      statut: "Acceptée",
+    });
 
     assert.equal(result, null);
     assert.equal(created.length, 0);
@@ -166,7 +186,7 @@ describe("StatistiqueService.appliquerDeltaStatistique / façades", () => {
     assert.match(String(warnings[0][0]), /introuvable/);
   });
 
-  it("empêche les valeurs négatives après décrément", async () => {
+  it("empêche les valeurs négatives après décrément d'une commande réglée", async () => {
     const existing = createDocument({
       nombre_commandes: 0,
       chiffre_affaires: 50,
@@ -174,9 +194,67 @@ describe("StatistiqueService.appliquerDeltaStatistique / façades", () => {
     const { StatistiqueModel } = createModelMock({ existing });
     const service = createStatistiqueService({ StatistiqueModel });
 
-    const result = await service.retirerStatistiqueCommande(COMMANDE);
+    const result = await service.retirerStatistiqueCommande({
+      ...COMMANDE,
+      statut: "Livrée",
+    });
 
     assert.equal(result.nombre_commandes, 0);
+    assert.equal(result.chiffre_affaires, 0);
+  });
+
+  it("synchroniserChiffreAffairesSelonStatut ajoute le CA à Livrée", async () => {
+    const existing = createDocument({
+      nombre_commandes: 1,
+      chiffre_affaires: 0,
+    });
+    const { StatistiqueModel } = createModelMock({ existing });
+    const service = createStatistiqueService({ StatistiqueModel });
+
+    const result = await service.synchroniserChiffreAffairesSelonStatut(
+      COMMANDE,
+      "En préparation",
+      "Livrée",
+      { nomMenu: "Menu Test" },
+    );
+
+    assert.equal(result.nombre_commandes, 1);
+    assert.equal(result.chiffre_affaires, 110);
+  });
+
+  it("synchroniserChiffreAffairesSelonStatut est no-op entre statuts réglés", async () => {
+    const existing = createDocument({
+      nombre_commandes: 1,
+      chiffre_affaires: 110,
+    });
+    const { StatistiqueModel, finds } = createModelMock({ existing });
+    const service = createStatistiqueService({ StatistiqueModel });
+
+    const result = await service.synchroniserChiffreAffairesSelonStatut(
+      COMMANDE,
+      "Livrée",
+      "Terminée",
+    );
+
+    assert.equal(result, null);
+    assert.equal(finds.length, 0);
+    assert.equal(existing.saveCalls || 0, 0);
+  });
+
+  it("synchroniserChiffreAffairesSelonStatut retire le CA au retour amont", async () => {
+    const existing = createDocument({
+      nombre_commandes: 1,
+      chiffre_affaires: 110,
+    });
+    const { StatistiqueModel } = createModelMock({ existing });
+    const service = createStatistiqueService({ StatistiqueModel });
+
+    const result = await service.synchroniserChiffreAffairesSelonStatut(
+      COMMANDE,
+      "Terminée",
+      "Acceptée",
+    );
+
     assert.equal(result.chiffre_affaires, 0);
   });
 
@@ -247,6 +325,7 @@ describe("StatistiqueService.recalculerStatistiques", () => {
       date_commande: "2026-07-10",
       prix_menu: 787,
       prix_livraison: 15,
+      statut: "Terminée",
       nom_menu: "Menu Entreprise Classique",
     },
     {
@@ -255,6 +334,7 @@ describe("StatistiqueService.recalculerStatistiques", () => {
       date_commande: "2026-08-02",
       prix_menu: 472.5,
       prix_livraison: 0,
+      statut: "En préparation",
       nom_menu: "Menu Entreprise Classique",
     },
   ];
@@ -272,9 +352,13 @@ describe("StatistiqueService.recalculerStatistiques", () => {
       docs.reduce((sum, doc) => sum + doc.nombre_commandes, 0),
       2,
     );
+    assert.equal(
+      docs.reduce((sum, doc) => sum + doc.chiffre_affaires, 0),
+      802,
+    );
   });
 
-  it("agrège par menu et période avec un CA correct", async () => {
+  it("agrège le volume pour toutes les actives et le CA seulement si réglées", async () => {
     const { StatistiqueModel, docs } = createStoreMock();
     const service = createStatistiqueService({ StatistiqueModel });
 
@@ -286,6 +370,16 @@ describe("StatistiqueService.recalculerStatistiques", () => {
         date_commande: "2026-08-15",
         prix_menu: 100,
         prix_livraison: 20,
+        statut: "Livrée",
+        nom_menu: "Menu Entreprise Classique",
+      },
+      {
+        commande_id: 9,
+        menu_id: 1,
+        date_commande: "2026-08-20",
+        prix_menu: 50,
+        prix_livraison: 0,
+        statut: "Acceptée",
         nom_menu: "Menu Entreprise Classique",
       },
     ]);
@@ -295,8 +389,8 @@ describe("StatistiqueService.recalculerStatistiques", () => {
 
     assert.equal(juillet.nombre_commandes, 1);
     assert.equal(juillet.chiffre_affaires, 802);
-    assert.equal(aout.nombre_commandes, 2);
-    assert.equal(aout.chiffre_affaires, 592.5);
+    assert.equal(aout.nombre_commandes, 3);
+    assert.equal(aout.chiffre_affaires, 120);
   });
 
   it("remplace un document existant faux", async () => {
@@ -317,6 +411,7 @@ describe("StatistiqueService.recalculerStatistiques", () => {
         date_commande: "2026-08-02",
         prix_menu: 472.5,
         prix_livraison: 0,
+        statut: "Terminée",
         nom_menu: "Menu Entreprise Classique",
       },
     ]);
@@ -329,7 +424,7 @@ describe("StatistiqueService.recalculerStatistiques", () => {
     assert.equal(docs[0].saveCalls, 1);
   });
 
-  it("crée un document absent", async () => {
+  it("crée un document avec CA 0 pour une commande non réglée", async () => {
     const { StatistiqueModel, docs } = createStoreMock();
     const service = createStatistiqueService({ StatistiqueModel });
 
@@ -339,6 +434,27 @@ describe("StatistiqueService.recalculerStatistiques", () => {
         date_commande: "2026-07-10",
         prix_menu: 787,
         prix_livraison: 15,
+        statut: "Acceptée",
+        nom_menu: "Menu Entreprise Classique",
+      },
+    ]);
+
+    assert.equal(rapport.documentsCrees, 1);
+    assert.equal(docs[0].nombre_commandes, 1);
+    assert.equal(docs[0].chiffre_affaires, 0);
+  });
+
+  it("crée un document absent avec CA pour une commande Terminée", async () => {
+    const { StatistiqueModel, docs } = createStoreMock();
+    const service = createStatistiqueService({ StatistiqueModel });
+
+    const rapport = await service.recalculerStatistiques([
+      {
+        menu_id: 1,
+        date_commande: "2026-07-10",
+        prix_menu: 787,
+        prix_livraison: 15,
+        statut: "Terminée",
         nom_menu: "Menu Entreprise Classique",
       },
     ]);

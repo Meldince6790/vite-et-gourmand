@@ -1,4 +1,5 @@
 const Statistique = require("../models/statistique.model");
+const Commande = require("../domain/Commande");
 
 function calculerPeriode(dateCommande) {
   const date = new Date(dateCommande);
@@ -7,7 +8,9 @@ function calculerPeriode(dateCommande) {
 }
 
 function calculerChiffreAffaires(commande) {
-  return Number(commande.prix_menu) + Number(commande.prix_livraison);
+  return Number(
+    (Number(commande.prix_menu) + Number(commande.prix_livraison)).toFixed(2),
+  );
 }
 
 function normaliserMontant(valeur) {
@@ -85,7 +88,7 @@ function createStatistiqueService({
       return await statistiqueExistante.save();
     },
 
-    // Façade +1 après création de commande
+    // Façade +1 après création : volume seulement (CA à la livraison)
     async updateStatistiqueCommande(commande, menu) {
       if (!menu) {
         throw new Error("Menu introuvable.");
@@ -93,22 +96,24 @@ function createStatistiqueService({
 
       return statistiqueService.appliquerDeltaStatistique(commande, {
         deltaCommandes: 1,
-        deltaCA: calculerChiffreAffaires(commande),
+        deltaCA: 0,
         nomMenu: menu.titre,
       });
     },
 
-    // Façade -1 après annulation de commande
+    // Façade -1 après annulation ; retire le CA seulement s'il y contribuait
     async retirerStatistiqueCommande(commande) {
-      const chiffreAffaires = calculerChiffreAffaires(commande);
+      const deltaCA = Commande.contribueAuChiffreAffaires(commande?.statut)
+        ? -calculerChiffreAffaires(commande)
+        : 0;
 
       return statistiqueService.appliquerDeltaStatistique(commande, {
         deltaCommandes: -1,
-        deltaCA: -chiffreAffaires,
+        deltaCA,
       });
     },
 
-    // Façade : ajustement du CA uniquement après modification de montants
+    // Façade : ajustement du CA uniquement (montants ou transition de statut)
     async ajusterStatistiqueCommande(commande, deltaCA) {
       const deltaCANormalise = normaliserMontant(deltaCA);
 
@@ -124,7 +129,38 @@ function createStatistiqueService({
     },
 
     /**
+     * Aligne le CA Mongo sur une transition de statut (sans toucher au compteur).
+     * Ajoute le montant une seule fois à l'entrée dans un statut « réglé »,
+     * le retire au retour vers un statut non réglé.
+     */
+    async synchroniserChiffreAffairesSelonStatut(
+      commande,
+      statutAvant,
+      statutApres,
+      { nomMenu } = {},
+    ) {
+      const avant = Commande.contribueAuChiffreAffaires(statutAvant);
+      const apres = Commande.contribueAuChiffreAffaires(statutApres);
+
+      if (avant === apres) {
+        return null;
+      }
+
+      const montant = calculerChiffreAffaires(commande);
+
+      return statistiqueService.ajusterStatistiqueCommande(
+        {
+          ...commande,
+          nom_menu: nomMenu ?? commande?.nom_menu,
+        },
+        apres ? montant : -montant,
+      );
+    },
+
+    /**
      * Recalcule les agrégats Mongo à partir des commandes actives (non annulées).
+     * nombre_commandes : toutes les commandes fournies.
+     * chiffre_affaires : uniquement les statuts réglés (Livrée / retour matériel / Terminée).
      * Non destructif : aucun document n'est supprimé.
      */
     async recalculerStatistiques(commandesActives = []) {
@@ -134,12 +170,18 @@ function createStatistiqueService({
         const menuId = Number(commande.menu_id);
         const periode = calculerPeriode(commande.date_commande);
         const cle = `${menuId}|${periode}`;
-        const chiffreAffaires = calculerChiffreAffaires(commande);
+        const montantRegle = Commande.contribueAuChiffreAffaires(
+          commande.statut,
+        )
+          ? calculerChiffreAffaires(commande)
+          : 0;
         const existant = agregats.get(cle);
 
         if (existant) {
           existant.nombre_commandes += 1;
-          existant.chiffre_affaires += chiffreAffaires;
+          existant.chiffre_affaires = normaliserMontant(
+            existant.chiffre_affaires + montantRegle,
+          );
           if (commande.nom_menu) {
             existant.nom_menu = commande.nom_menu;
           }
@@ -149,7 +191,7 @@ function createStatistiqueService({
             periode,
             nom_menu: commande.nom_menu,
             nombre_commandes: 1,
-            chiffre_affaires: chiffreAffaires,
+            chiffre_affaires: montantRegle,
           });
         }
       }

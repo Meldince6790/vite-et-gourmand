@@ -2,7 +2,7 @@
 
 Dépôt GitHub : [https://github.com/Meldince6790/vite-et-gourmand](https://github.com/Meldince6790/vite-et-gourmand)
 
-Application déployée en ligne : *non publiée à ce stade* (environnement de pré-production local via Docker Compose).
+Application déployée en ligne : *non publiée à ce stade*. Pré-production locale via Docker Compose. Une infrastructure AWS EC2 peut être préparée (Docker, dépôt cloné) sans que l’application soit encore exposée publiquement (pas d’URL / HTTPS de production documentés ici).
 
 ---
 
@@ -45,8 +45,8 @@ L’architecture sépare l’interface React, l’API Express et deux bases de d
 - Avis clients (dépôt après commande terminée, modération ; affichage public des avis **Validé** uniquement)
 - Horaires dynamiques en pied de page
 - E-mails transactionnels (bienvenue, contact, confirmation / annulation de commande) — mode `log` ou Resend
-- Statistiques administrateur (agrégats MongoDB synchronisés avec les commandes)
-- Conteneurisation complète prête pour une pré-production locale
+- Statistiques administrateur (MongoDB) : volume hors annulées ; CA uniquement pour les statuts Livrée / retour matériel / Terminée
+- Conteneurisation complète pour une pré-production locale (rebuild image frontend après modification du code ou des assets)
 
 ---
 
@@ -156,7 +156,7 @@ docker compose up --build -d
 docker compose down
 ```
 
-Suppression des volumes (réinitialise les bases) :
+Suppression des volumes (**réinitialise et efface** les bases — **ne pas** utiliser comme mise à jour ordinaire) :
 
 ```bash
 docker compose down -v
@@ -164,11 +164,11 @@ docker compose down -v
 
 ### Comportement Docker (état actuel)
 
-- **Frontend** : multi-stage `npm run build` puis nginx ; `VITE_API_URL` injectée au **build** de l’image
+- **Frontend** : multi-stage `npm run build` puis nginx ; `VITE_API_URL` injectée au **build** de l’image ; `nginx.conf` : cache longue durée sur `/assets/`, pas de cache longue durée sur `index.html`
 - **Backend** : image slim, `NODE_ENV=production`, utilisateur non-root, arrêt propre SIGTERM/SIGINT, healthcheck HTTP
-- **MariaDB** : utilisateur applicatif, mot de passe root obligatoire, import de `database/vite_gourmand.sql`, script `02-validate-schema.sh`
+- **MariaDB** : utilisateur applicatif, mot de passe root obligatoire ; init volume vierge : seed + validate schéma + enrichissement catalogue + validate 8/19/26
 - **MongoDB** : utilisateur root + utilisateur applicatif `readWrite`, URI authentifiée pour le backend
-- **Réseau** : bridge `vite-gourmand`
+- **Réseau** : bridge `vite-gourmand` ; MariaDB/Mongo non publiés (un Compose local ignoré par Git peut exposer des ports `127.0.0.1` pour les outils desktop — hors installation standard)
 - **Restart** : `unless-stopped` sur les services
 
 ---
@@ -236,14 +236,26 @@ npm run preview
 
 ## Catalogue de démonstration
 
-Deux niveaux de données catalogue :
+Sur un **volume MariaDB neuf**, Docker Compose charge automatiquement le catalogue cible (**8 menus**, **19 plats**, **26** liens `menu_plat`) :
 
-| Niveau | Contenu | Script |
-|--------|---------|--------|
-| **Seed initial** (init Compose) | **3 menus**, **9 plats** | `database/vite_gourmand.sql` |
-| **Enrichissement optionnel** (démo / soutenance) | **15 menus**, **37 plats** | `database/enrich_catalogue_menus.sql` via `database/apply-enrich-catalogue.sh` |
+| Étape init (`docker-entrypoint-initdb.d`) | Contenu | Fichier |
+|-------------------------------------------|---------|---------|
+| 01 — Seed | Schéma + 3 menus / 9 plats | `database/vite_gourmand.sql` |
+| 02 — Contrôle schéma | Tables critiques présentes | `database/02-validate-schema.sh` |
+| 03 — Enrichissement | +5 menus / +10 plats (idempotent) | `database/enrich_catalogue_menus.sql` |
+| 04 — Contrôle catalogue | Exactement 8 / 19 / 26 | `database/04-validate-catalogue.sh` |
 
-L’enrichissement est **idempotent**, n’altère pas les utilisateurs ni les commandes, et ne modifie pas MongoDB. Après un volume neuf, le seed contient 3 menus ; l’enrichissement local porte le catalogue à 15 menus pour la démonstration.
+Ces scripts ne s’exécutent **qu’à la création** du volume. Sur une base déjà initialisée :
+
+- catalogue resté à 3 menus : `database/apply-enrich-catalogue.sh` ;
+- état intermédiaire 8 menus / 24 plats → 19 plats : prévisualiser `preview_catalogue_19_plats.sql` puis `migrate_catalogue_19_plats.sql` ;
+- réduction 15 → 8 menus (si applicable) : `preview_catalogue_8_menus.sql` / `migrate_catalogue_8_menus.sql`.
+
+Ces migrations manuelles **ne doivent pas** être montées dans `docker-entrypoint-initdb.d`.
+
+L’enrichissement est **idempotent**, n’altère pas les utilisateurs ni les commandes, et ne modifie pas MongoDB. Le seed contient **3** commandes historiques (`CMD-2026-001` à `003`) ; des insertions locales supplémentaires (ex. `insert_commandes_demo.sql`) ne sont **pas** rejouées automatiquement sur une installation neuve ni sur AWS.
+
+**Images catalogue :** 8 WebP menus + 19 WebP plats + 1 placeholder SVG sous `frontend/public/images/` (cible typique 1 200 × 750), résolus côté frontend (`src/data/menuImages.js`, `src/data/platImages.js`). Pas d’upload UI ; pas de dépendance à `plat.photo` pour l’affichage public.
 
 ## Comptes de démonstration
 
@@ -279,7 +291,7 @@ Mesures en place dans le dépôt actuel :
 
 **E-mails :** en local, `EMAIL_PROVIDER=log` journalise sans envoi réseau. L’envoi réel via Resend est implémenté dans le code et activable avec `EMAIL_PROVIDER=resend` + `RESEND_API_KEY` (hors dépôt).
 
-Limites restantes avant une mise en ligne publique : HTTPS / domaine, CI/CD, sauvegardes automatisées, clés ORS / Resend de production. Le déploiement cloud (ex. AWS) **n’a pas encore été réalisé**.
+Limites restantes avant une mise en ligne publique : HTTPS / domaine, CI/CD, sauvegardes automatisées, clés ORS / Resend de production. Infrastructure AWS EC2 éventuellement préparée ; application **non exposée publiquement** à ce stade.
 
 ---
 
@@ -304,14 +316,14 @@ vite-et-gourmand/
 │       └── utils/
 ├── frontend/
 │   ├── Dockerfile                 # Build Vite + nginx
-│   ├── nginx.conf                 # SPA fallback
+│   ├── nginx.conf                 # SPA fallback + politique de cache
 │   ├── package.json
-│   ├── public/
+│   ├── public/                    # images/menus, images/plats (WebP + placeholder)
 │   └── src/
 │       ├── api/
 │       ├── components/
 │       ├── context/
-│       ├── data/                  # mapping images menus
+│       ├── data/                  # mapping images menus / plats
 │       ├── hooks/
 │       ├── layouts/
 │       ├── pages/
@@ -320,12 +332,15 @@ vite-et-gourmand/
 │       └── utils/
 ├── database/
 │   ├── vite_gourmand.sql          # Schéma + seed (3 menus, init Compose)
-│   ├── enrich_catalogue_menus.sql # Enrichissement optionnel → 15 menus
-│   ├── apply-enrich-catalogue.sh  # Backup + apply enrichissement local
+│   ├── enrich_catalogue_menus.sql # Enrichissement → 8 menus / 19 plats
+│   ├── 04-validate-catalogue.sh   # Contrôle 8 / 19 / 26 (volume neuf)
+│   ├── preview_catalogue_8_menus.sql / migrate_catalogue_8_menus.sql
+│   ├── preview_catalogue_19_plats.sql / migrate_catalogue_19_plats.sql
+│   ├── insert_commandes_demo.sql  # Optionnel local (hors init Compose)
+│   ├── apply-enrich-catalogue.sh  # Backup + apply enrich sur volume existant
 │   ├── 02-validate-schema.sh      # Contrôle des tables après init
 │   ├── mongo-init-app-user.sh     # Création utilisateur Mongo applicatif
-│   └── alter_*.sql / update_*.sql # Historiques (déjà intégrés au seed — ne pas réappliquer)
-├── docs/                          # Conception, livrables, maquettes, diagrammes
+│   └── alter_*.sql / update_*.sql # Historiques (déjà intégrés au seed — ne pas réappliquer)├── docs/                          # Conception, livrables, maquettes, diagrammes
 ├── docker-compose.yml
 ├── .env.example
 └── README.md

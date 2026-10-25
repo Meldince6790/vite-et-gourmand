@@ -1,60 +1,53 @@
 /**
- * Photos de cartes catalogue.
- * - IDs 1–3 : images dédiées du seed initial
- * - Autres menus : réutilisation des mêmes assets libres (Unsplash/Pexels)
- *   selon le régime puis le thème, pour éviter les cartes sans visuel.
+ * Photos de cartes catalogue (ressources locales versionnées).
+ *
+ * Priorité :
+ * 1. Mapping par **titre** vers WebP dédiés (8 menus conservés)
+ * 2. Placeholder générique pour tout menu futur non mappé
  */
-const MENU_IMAGES_BY_ID = {
-  1: "/images/menus/menu-entreprise.webp",
-  2: "/images/menus/menu-vegetarien.webp",
-  3: "/images/menus/menu-vegan.webp",
+
+/** Secours unique — même asset neutre que les plats. */
+export const MENU_IMAGE_PLACEHOLDER = "/images/plats/plat-placeholder.svg";
+
+/** Cibles dédiées — 8 menus du catalogue réduit. */
+export const MENU_IMAGES_BY_TITLE = {
+  "menu entreprise classique": "/images/menus/menu-01-entreprise-classique.webp",
+  "menu vegetarien gourmand": "/images/menus/menu-02-vegetarien-gourmand.webp",
+  "menu mariage vegan": "/images/menus/menu-03-mariage-vegan.webp",
+  "menu cocktail dinatoire": "/images/menus/menu-04-cocktail-dinatoire.webp",
+  "menu buffet traditionnel": "/images/menus/menu-05-buffet-traditionnel.webp",
+  "menu gastronomique signature":
+    "/images/menus/menu-06-gastronomique-signature.webp",
+  "menu estival mediterraneen":
+    "/images/menus/menu-08-estival-mediterraneen.webp",
+  "menu brunch festif": "/images/menus/menu-15-brunch-festif.webp",
 };
 
-const IMAGE_ENTREPRISE = "/images/menus/menu-entreprise.webp";
-const IMAGE_VEGETARIEN = "/images/menus/menu-vegetarien.webp";
-const IMAGE_VEGAN = "/images/menus/menu-vegan.webp";
+/** Images dédiées intégrées sous public/images/menus/. */
+export const USE_DEDICATED_MENU_IMAGES = true;
 
-function normalizeLabel(value) {
+export function normalizeMenuTitle(value) {
   return String(value || "")
+    .replace(/œ/gi, "oe")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .trim();
 }
 
 /**
  * @param {number|string|null|undefined} menuId
- * @param {{ theme?: string, regime?: string }} [options]
+ * @param {{ theme?: string, regime?: string, titre?: string }} [options]
  */
 export function getMenuImageSrc(menuId, options = {}) {
-  if (menuId != null && MENU_IMAGES_BY_ID[menuId]) {
-    return MENU_IMAGES_BY_ID[menuId];
+  if (USE_DEDICATED_MENU_IMAGES && options.titre) {
+    const byTitle = MENU_IMAGES_BY_TITLE[normalizeMenuTitle(options.titre)];
+    if (byTitle) {
+      return byTitle;
+    }
   }
 
-  if (menuId != null && MENU_IMAGES_BY_ID[String(menuId)]) {
-    return MENU_IMAGES_BY_ID[String(menuId)];
-  }
-
-  const regime = normalizeLabel(options.regime);
-  if (regime.includes("vegan")) {
-    return IMAGE_VEGAN;
-  }
-  if (regime.includes("vegetarien")) {
-    return IMAGE_VEGETARIEN;
-  }
-
-  const theme = normalizeLabel(options.theme);
-  if (theme.includes("mariage")) {
-    return IMAGE_VEGAN;
-  }
-  if (theme.includes("entreprise")) {
-    return IMAGE_ENTREPRISE;
-  }
-  if (theme.includes("evenement") || theme.includes("prive")) {
-    return IMAGE_VEGETARIEN;
-  }
-
-  // Secours : image générique plutôt qu'une carte vide
-  return IMAGE_ENTREPRISE;
+  return MENU_IMAGE_PLACEHOLDER;
 }
 
-export default MENU_IMAGES_BY_ID;
+export default MENU_IMAGES_BY_TITLE;

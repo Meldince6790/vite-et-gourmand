@@ -75,8 +75,11 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in the root .env file}
     volumes:
       - mysql_data:/var/lib/mysql
+      # Exécutés uniquement à la création d'un volume MariaDB vierge
       - ./database/vite_gourmand.sql:/docker-entrypoint-initdb.d/01-vite_gourmand.sql:ro
       - ./database/02-validate-schema.sh:/docker-entrypoint-initdb.d/02-validate-schema.sh:ro
+      - ./database/enrich_catalogue_menus.sql:/docker-entrypoint-initdb.d/03-enrich_catalogue_menus.sql:ro
+      - ./database/04-validate-catalogue.sh:/docker-entrypoint-initdb.d/04-validate-catalogue.sh:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s

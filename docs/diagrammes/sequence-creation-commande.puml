@@ -140,9 +140,9 @@ else Token valide et compte actif
 
       Menu --> CmdBe : OK
 
-      opt Mise à jour statistiques MongoDB
+      opt Mise à jour statistiques MongoDB (best-effort)
 
-        CmdBe -> Stats : updateStatistiqueCommande(...)
+        CmdBe -> Stats : updateStatistiqueCommande(...)\n(+1 nombre_commandes, deltaCA = 0)
         activate Stats
 
         Stats -> Mongo : findOne / save Statistique
@@ -157,12 +157,15 @@ else Token valide et compte actif
             Erreur journalisée.
             La commande reste
             enregistrée en MariaDB.
+            CA non compté à la création :
+            uniquement aux statuts
+            Livrée / retour matériel / Terminée.
           end note
 
         else Succès MongoDB
 
           Mongo --> Stats : OK
-          Stats --> CmdBe : statistiques à jour
+          Stats --> CmdBe : volume à jour (sans CA)
 
         end
 

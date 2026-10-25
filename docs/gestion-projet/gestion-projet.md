@@ -275,7 +275,7 @@ Certaines évolutions ont été traitées progressivement après les livraisons 
 
 **Restent à réaliser pour une mise en production publique :**
 
-- le déploiement sur un hébergement distant (ex. AWS) — **non effectué** à ce stade ;
+- le déploiement applicatif public (une préparation d’instance AWS EC2 / Docker ne vaut pas encore une mise en ligne) ;
 - HTTPS / nom de domaine ;
 - CI/CD, sauvegardes automatisées et supervision externalisée.
 

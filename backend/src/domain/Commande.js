@@ -3,6 +3,20 @@ class Commande {
     Object.assign(this, data);
   }
 
+  /**
+   * Statuts pour lesquels le paiement est réputé effectué (règlement à la livraison).
+   * Seules ces commandes alimentent le chiffre d'affaires MongoDB.
+   */
+  static STATUTS_CHIFFRE_AFFAIRES = Object.freeze([
+    "Livrée",
+    "En attente du retour de matériel",
+    "Terminée",
+  ]);
+
+  static contribueAuChiffreAffaires(statut) {
+    return Commande.STATUTS_CHIFFRE_AFFAIRES.includes(statut);
+  }
+
   static calculerPrixMenu(menu, nombrePersonne) {
     let prixMenu =
       Number(menu.prix_par_personne) * Number(nombrePersonne);

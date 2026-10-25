@@ -67,6 +67,28 @@ describe("Commande droits client", () => {
   });
 });
 
+describe("Commande.contribueAuChiffreAffaires", () => {
+  it("reconnaît les statuts réglés à la livraison", () => {
+    for (const statut of Commande.STATUTS_CHIFFRE_AFFAIRES) {
+      assert.equal(Commande.contribueAuChiffreAffaires(statut), true);
+    }
+  });
+
+  it("exclut les statuts amont et Annulée", () => {
+    for (const statut of [
+      "En attente",
+      "Acceptée",
+      "En préparation",
+      "En cours de livraison",
+      "Annulée",
+      undefined,
+      null,
+    ]) {
+      assert.equal(Commande.contribueAuChiffreAffaires(statut), false);
+    }
+  });
+});
+
 describe("Commande.initialiserCreation", () => {
   const date = new Date("2026-08-02T12:00:00.000Z");
 

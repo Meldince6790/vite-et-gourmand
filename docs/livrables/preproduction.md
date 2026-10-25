@@ -94,8 +94,9 @@ Fichier d’orchestration : `docker-compose.yml` à la racine.
 3. Stage **runtime** : `nginx:1.27-alpine` ; copie de `dist/` vers `/usr/share/nginx/html`.
 4. Configuration `frontend/nginx.conf` :
    - `try_files $uri $uri/ /index.html` pour le fallback **React Router** ;
-   - cache long sur `/assets/`.
-5. **`VITE_API_URL`** : build-arg obligatoire ; sans valeur, le build échoue. Compose la lit depuis `.env` (`${VITE_API_URL:?…}`).
+   - cache long (`immutable`) sur les assets hashés `/assets/` ;
+   - `Cache-Control: no-cache` (voire `no-store` pour `index.html`) sur l’entrée SPA, pour éviter qu’un HTML périmé référence un ancien bundle.
+5. **`VITE_API_URL`** : build-arg obligatoire ; sans valeur, le build échoue. Compose la lit depuis `.env` (`${VITE_API_URL:?…}`). Toute modification du frontend ou de cette URL impose un rebuild de l’image (pas de bind mount de code).
 
 Ports : hôte **5173** → conteneur **80**.  
 `restart: unless-stopped`. Dépend de `backend`.
@@ -120,7 +121,8 @@ Pas de volume de code source monté.
 
 - Image `mariadb:10.11`.
 - Variables : `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` (issues de `.env`, obligatoires côté service mysql).
-- Init : `database/vite_gourmand.sql` puis `database/02-validate-schema.sh`.
+- Init (volume vierge uniquement) : seed `01-vite_gourmand.sql` → contrôle schéma `02-validate-schema.sh` → enrichissement catalogue `03-enrich_catalogue_menus.sql` → contrôle `04-validate-catalogue.sh` (**8 menus / 19 plats / 26** associations `menu_plat`, 0 plat orphelin).
+- Volume déjà existant : les scripts d’init ne sont pas rejoués ; compléter au besoin avec `database/apply-enrich-catalogue.sh` ou les migrations manuelles `migrate_catalogue_*.sql` (sans wipe). **Ne pas** utiliser `docker compose down -v` comme mise à jour ordinaire.
 - Volume nommé **`mysql_data`** → `/var/lib/mysql`.
 - **Aucun port publié** sur l’hôte (accès réseau Docker uniquement : `docker compose exec mysql …`).
 - Healthcheck : `healthcheck.sh --connect --innodb_initialized`.
@@ -250,6 +252,17 @@ Vérifications réalisables sur la stack actuelle :
 
 Prérequis : fichier `.env` renseigné à partir de `.env.example`.
 
+### Contrôles automatisés locaux (indicatifs)
+
+Exécutés hors Compose, sur le poste de développement :
+
+| Suite | Résultat constaté |
+|-------|-------------------|
+| Backend (`cd backend && npm test`) | 236 / 236 |
+| Frontend mappings images (`cd frontend && npm test`) | 9 / 9 |
+
+Ces suites ne remplacent pas les contrôles manuels (catalogue, images, parcours navigateur) ni un futur plan de validation post-déploiement AWS.
+
 ---
 
 ## 8. Limites avant mise en production réelle
@@ -258,15 +271,16 @@ Prérequis : fichier `.env` renseigné à partir de `.env.example`.
 
 | Élément | État actuel |
 |---------|-------------|
-| HTTPS / certificat TLS | Non configuré |
-| Nom de domaine public | Non configuré (accès `localhost`) |
+| HTTPS / certificat TLS | Non configuré pour une exposition publique |
+| Nom de domaine public | Non configuré (accès local `localhost`) |
 | CI/CD | Non présent dans le dépôt |
 | Sauvegardes automatiques des volumes | Non automatisées |
 | Supervision / monitoring externalisé | Non mis en place (healthchecks Compose uniquement) |
-| Publication publique | Application en ligne non déployée |
-| Déploiement cloud (ex. AWS) | **Non réalisé** à ce stade |
+| Publication publique | Application **non déployée** en ligne (pas d’URL publique opérationnelle documentée) |
+| Infrastructure AWS EC2 | Préparation possible (Ubuntu, Docker / Compose, dépôt cloné, réseau initial) — **distincte** d’un déploiement applicatif public réussi |
+| Tests de production / perf en ligne | Non réalisés / non documentés ici |
 
-Ces points relèvent d’une étape de déploiement ultérieure, distincte de la pré-production locale décrite ici.
+Les URL `http://localhost:5173` et `http://localhost:3000` sont réservées au poste de développement ; elles ne conviennent pas aux navigateurs des visiteurs d’un site public. Ces points relèvent d’une étape de déploiement ultérieure, distincte de la pré-production locale décrite ici.
 
 ---
 

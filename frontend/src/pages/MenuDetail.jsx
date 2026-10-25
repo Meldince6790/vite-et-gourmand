@@ -1,66 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { getPlatImageSrc } from "../data/platImages.js";
 import useAuth from "../hooks/useAuth";
 import menuService from "../services/menu.service";
 import "../styles/pages.css";
-
-/**
- * Mapping local des photos de plats (démonstration).
- * Les clés correspondent aux plat_id de database/vite_gourmand.sql.
- */
-const PLAT_IMAGES = {
-  1: "/images/plats/plat-01-salade-perigourdine.webp",
-  2: "/images/plats/plat-02-veloute-legumes.webp",
-  3: "/images/plats/plat-03-tartare-legumes.webp",
-  4: "/images/plats/plat-04-poulet-sauce-forestiere.webp",
-  5: "/images/plats/plat-05-curry-legumes-coco.webp",
-  6: "/images/plats/plat-06-risotto-legumes.webp",
-  7: "/images/plats/plat-07-tarte-pommes.webp",
-  8: "/images/plats/plat-08-mousse-chocolat-vegetale.webp",
-  9: "/images/plats/plat-09-salade-fruits.webp",
-};
-
-/** Réutilisation cyclique des assets libres existants pour les nouveaux plats. */
-const PLAT_IMAGE_FALLBACKS = Object.values(PLAT_IMAGES);
-
-function getDatabasePhotoSrc(photo) {
-  if (typeof photo === "string" && photo.trim() !== "") {
-    if (photo.startsWith("data:") || photo.startsWith("http")) {
-      return photo;
-    }
-
-    return `data:image/jpeg;base64,${photo}`;
-  }
-
-  return null;
-}
-
-function getLocalPlatImageSrc(platId) {
-  if (platId == null) {
-    return null;
-  }
-
-  if (PLAT_IMAGES[platId] || PLAT_IMAGES[String(platId)]) {
-    return PLAT_IMAGES[platId] || PLAT_IMAGES[String(platId)];
-  }
-
-  const numericId = Number(platId);
-  if (!Number.isFinite(numericId) || PLAT_IMAGE_FALLBACKS.length === 0) {
-    return null;
-  }
-
-  const index =
-    ((Math.trunc(numericId) % PLAT_IMAGE_FALLBACKS.length) +
-      PLAT_IMAGE_FALLBACKS.length) %
-    PLAT_IMAGE_FALLBACKS.length;
-
-  return PLAT_IMAGE_FALLBACKS[index];
-}
-
-function resolvePlatPhotoSrc(plat) {
-  return getDatabasePhotoSrc(plat?.photo) || getLocalPlatImageSrc(plat?.plat_id);
-}
 
 function MenuDetail() {
   const { id } = useParams();
@@ -170,28 +114,19 @@ function MenuDetail() {
         ) : (
           <ul className="menu-detail-plat-list">
             {plats.map((plat) => {
-              const photoSrc = resolvePlatPhotoSrc(plat);
+              const photoSrc = getPlatImageSrc(plat);
               const allergenes = Array.isArray(plat.allergenes)
                 ? plat.allergenes
                 : [];
 
               return (
                 <li key={plat.plat_id} className="menu-detail-plat">
-                  <div
-                    className="menu-detail-plat-photo"
-                    aria-hidden={photoSrc ? undefined : true}
-                  >
-                    {photoSrc ? (
-                      <img
-                        src={photoSrc}
-                        alt={plat.titre_plat}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="menu-detail-plat-placeholder">
-                        Photo non disponible
-                      </div>
-                    )}
+                  <div className="menu-detail-plat-photo">
+                    <img
+                      src={photoSrc}
+                      alt={plat.titre_plat}
+                      loading="lazy"
+                    />
                   </div>
 
                   <div className="menu-detail-plat-content">

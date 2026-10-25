@@ -37,11 +37,13 @@ Ce diagramme illustre le traitement d'une commande par un employé ou un adminis
 
 ---
 
+Les sources PlantUML (`.puml`) font foi pour le comportement décrit ; les rendus `.svg` associés peuvent nécessiter une régénération après mise à jour des sources.
+
 ## Points d'attention relevés lors de l’analyse
 
 Les points suivants précisent des comportements du code utile à la lecture des diagrammes. Ils ne constituent pas des anomalies bloquantes :
 
 - la page `Commander.jsx` estime les frais via `POST /livraison/estimation` puis le backend recalcule définitivement distance et tarif à la création (les valeurs client `distance_km` / `prix_livraison` sont ignorées) ;
-- les statistiques MongoDB sont synchronisées avec le cycle de vie des commandes : incrément à la création, ajustement du chiffre d'affaires lorsque les montants évoluent, décrément à l'annulation ;
+- les statistiques MongoDB sont synchronisées (best-effort) avec le cycle de vie des commandes : +1 volume à la création (sans CA), ajustement du chiffre d'affaires à l'entrée / sortie des statuts Livrée / retour matériel / Terminée (et delta tarifaire si déjà réglée), −1 volume à l'annulation (−CA seulement si déjà réglée) ; `stats:resync` permet de reconstruire les agrégats ;
 - il n'existe pas de workflow strict de transitions entre statuts : tout statut de la liste autorisée peut être appliqué sans enchaînement imposé ;
 - l'`utilisateur_id` éventuellement fourni par le frontend est écrasé côté serveur par `req.user.utilisateur_id` issu du JWT (comportement de sécurité correct, mais à ne pas confondre avec une confiance accordée au body).

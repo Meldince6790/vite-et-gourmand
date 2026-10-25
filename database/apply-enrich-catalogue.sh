@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-# Applique enrich_catalogue_menus.sql sur la MariaDB Docker locale.
+# Applique enrich_catalogue_menus.sql sur une MariaDB Docker déjà initialisée.
+# Utile pour les volumes existants (l'init docker-entrypoint ne rejoue pas les scripts).
+# Sur volume neuf, l'enrichissement est déjà monté en 03-enrich_catalogue_menus.sql.
+# N'exécute PAS les migrations manuelles (8 menus / 19 plats) :
+#   migrate_catalogue_8_menus.sql, migrate_catalogue_19_plats.sql.
 # Prérequis : docker compose up (au minimum service mysql healthy).
+# Ne supprime ni ne recrée aucun volume.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"

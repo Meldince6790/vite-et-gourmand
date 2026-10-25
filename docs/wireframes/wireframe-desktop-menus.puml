@@ -1,0 +1,65 @@
+@startsalt
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Desktop Menus (blocs fonctionnels)
+{
+WIREFRAME — BASSE FIDÉLITÉ — Desktop Menus
+----
+{+
+Logo | Navigation
+}
+----
+Catalogue
+----
+{
+{+
+Filtres
+.
+Thème
+Régime
+Nb min. pers.
+Fourchette de prix
+.
+[Réinitialiser] | [Appliquer]
+} |
+{+
+.
+.
+Image
+.
+.
+}
+}
+----
+{
+{+
+Image
+Titre menu
+Infos menu
+} |
+{+
+Image
+Titre menu
+Infos menu
+} |
+{+
+Image
+Titre menu
+Infos menu
+}
+}
+----
+{
+{+
+Horaires
+} |
+{+
+Mentions légales
+} |
+{+
+CGV
+}
+}
+}
+@endsalt

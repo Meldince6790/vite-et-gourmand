@@ -1,0 +1,15 @@
+.env
+.env.local
+.env.*.local
+database/backups/
+# Dossier de transit des visuels (sources PNG) — seuls les WebP finaux sont versionnés
+assets-a-integrer/
+# Configuration Docker locale pour DBeaver / Compass
+/docker-compose.dbeaver.local.yml
+backend/.env.resync-local
+# Clés privées (TLS, SSH, certificats) — jamais versionner
+*.pem
+*.key
+id_rsa
+id_ed25519
+id_ecdsa

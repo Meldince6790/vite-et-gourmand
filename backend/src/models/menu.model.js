@@ -1,6 +1,7 @@
-const database = require("../config/database");
+const defaultDatabase = require("../config/database");
 
-const Menu = {
+function createMenuModel(database = defaultDatabase) {
+  return {
   async findAll() {
     const [rows] = await database.query(
       `
@@ -56,7 +57,48 @@ const Menu = {
       [id],
     );
 
-    menu.plats = plats;
+    let allergenesRows = [];
+
+    if (plats.length > 0) {
+      const platIds = plats.map((plat) => plat.plat_id);
+      const placeholders = platIds.map(() => "?").join(", ");
+
+      const [rows] = await database.query(
+        `
+          SELECT
+            plat_allergene.plat_id,
+            allergene.allergene_id,
+            allergene.libelle
+          FROM plat_allergene
+          JOIN allergene
+            ON plat_allergene.allergene_id = allergene.allergene_id
+          WHERE plat_allergene.plat_id IN (${placeholders})
+        `,
+        platIds,
+      );
+
+      allergenesRows = rows;
+    }
+
+    const allergenesByPlatId = new Map();
+
+    for (const row of allergenesRows) {
+      if (!allergenesByPlatId.has(row.plat_id)) {
+        allergenesByPlatId.set(row.plat_id, []);
+      }
+
+      allergenesByPlatId.get(row.plat_id).push({
+        allergene_id: row.allergene_id,
+        libelle: row.libelle,
+      });
+    }
+
+    menu.plats = plats.map((plat) => ({
+      plat_id: plat.plat_id,
+      titre_plat: plat.titre_plat,
+      photo: plat.photo,
+      allergenes: allergenesByPlatId.get(plat.plat_id) || [],
+    }));
 
     return menu;
   },
@@ -227,8 +269,9 @@ const Menu = {
 
   // Gestion du stock
 
-  async hasStock(id, quantite = 1) {
-    const [rows] = await database.query(
+  async hasStock(id, quantite = 1, connection = null) {
+    const db = connection ?? database;
+    const [rows] = await db.query(
       `
         SELECT quantite_restante
         FROM menu
@@ -244,8 +287,9 @@ const Menu = {
     return rows[0].quantite_restante >= quantite;
   },
 
-  async decreaseStock(id, quantite) {
-    await database.query(
+  async decreaseStock(id, quantite, connection = null) {
+    const db = connection ?? database;
+    const [result] = await db.query(
       `
         UPDATE menu
         SET quantite_restante = quantite_restante - ?
@@ -254,10 +298,13 @@ const Menu = {
       `,
       [quantite, id, quantite],
     );
+
+    return result.affectedRows > 0;
   },
 
-  async increaseStock(id, quantite) {
-    await database.query(
+  async increaseStock(id, quantite, connection = null) {
+    const db = connection ?? database;
+    const [result] = await db.query(
       `
         UPDATE menu
         SET quantite_restante = quantite_restante + ?
@@ -265,7 +312,13 @@ const Menu = {
       `,
       [quantite, id],
     );
+
+    return result.affectedRows > 0;
   },
-};
+  };
+}
+
+const Menu = createMenuModel();
 
 module.exports = Menu;
+module.exports.createMenuModel = createMenuModel;

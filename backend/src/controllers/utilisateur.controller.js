@@ -1,4 +1,5 @@
 const utilisateurService = require("../services/utilisateur.service");
+const { toClientErrorMessage } = require("../utils/safeErrorMessage");
 
 const utilisateurController = {
   async getAll(req, res) {
@@ -80,7 +81,10 @@ const utilisateurController = {
       }
 
       res.status(400).json({
-        message: error.message || "Erreur lors de la mise à jour du profil.",
+        message: toClientErrorMessage(
+          error,
+          "Erreur lors de la mise à jour du profil.",
+        ),
       });
     }
   },
@@ -102,10 +106,15 @@ const utilisateurController = {
         });
       }
 
-      if (
-        error.message ===
-        "Le mot de passe ne respecte pas les règles de sécurité."
-      ) {
+      const erreursValidation = new Set([
+        "Le nom est obligatoire.",
+        "Le prénom est obligatoire.",
+        "L'adresse e-mail est obligatoire.",
+        "Le mot de passe est obligatoire.",
+        "Le mot de passe ne respecte pas les règles de sécurité.",
+      ]);
+
+      if (erreursValidation.has(error.message)) {
         return res.status(400).json({
           message: error.message,
         });
@@ -176,7 +185,10 @@ const utilisateurController = {
       }
 
       res.status(400).json({
-        message: error.message,
+        message: toClientErrorMessage(
+          error,
+          "Erreur lors de la modification du statut du compte.",
+        ),
       });
     }
   },

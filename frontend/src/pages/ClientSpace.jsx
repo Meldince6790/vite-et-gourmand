@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import useAuth from "../hooks/useAuth";
 import commandeService from "../services/commande.service";
 import utilisateurService from "../services/utilisateur.service";
+import { formatDateFr } from "../utils/date.js";
 import "../styles/pages.css";
 
 function ClientSpace() {
@@ -70,58 +72,77 @@ function ClientSpace() {
     }
   }
 
-  if (error && commandes.length === 0) {
-    return <p>{error}</p>;
-  }
-
   return (
-    <section className="section">
+    <section className="section client-space">
       <h1>Mon espace client</h1>
 
-      {success && <p>{success}</p>}
+      <p className="client-space-intro">
+        Retrouvez vos informations personnelles et un aperçu de vos commandes.
+        Vous pouvez mettre à jour vos coordonnées à tout moment.
+      </p>
 
-      {error && <p>{error}</p>}
+      {success && <p className="auth-success">{success}</p>}
 
-      <section>
+      {error && <p className="auth-error">{error}</p>}
+
+      <section className="client-profile">
         <h2>Mes informations</h2>
 
-        <div className="card">
+        <p className="client-profile-help">
+          Ces informations sont utilisées pour le suivi de vos commandes et la
+          communication avec Vite &amp; Gourmand.
+        </p>
+
+        <div className="card client-profile-card">
           {!isEditing ? (
             <>
-              <p>
-                <strong>Nom :</strong> {user.nom}
-              </p>
+              <dl className="client-profile-list">
+                <div>
+                  <dt>Nom</dt>
+                  <dd>{user.nom}</dd>
+                </div>
 
-              <p>
-                <strong>Prénom :</strong> {user.prenom}
-              </p>
+                <div>
+                  <dt>Prénom</dt>
+                  <dd>{user.prenom}</dd>
+                </div>
 
-              <p>
-                <strong>Email :</strong> {user.email}
-              </p>
+                <div>
+                  <dt>Email</dt>
+                  <dd>{user.email}</dd>
+                </div>
 
-              <p>
-                <strong>Téléphone :</strong> {user.telephone}
-              </p>
+                <div>
+                  <dt>Téléphone</dt>
+                  <dd>{user.telephone || "—"}</dd>
+                </div>
 
-              <p>
-                <strong>Ville :</strong> {user.ville}
-              </p>
+                <div>
+                  <dt>Ville</dt>
+                  <dd>{user.ville || "—"}</dd>
+                </div>
 
-              <p>
-                <strong>Pays :</strong> {user.pays}
-              </p>
+                <div>
+                  <dt>Pays</dt>
+                  <dd>{user.pays || "—"}</dd>
+                </div>
 
-              <p>
-                <strong>Adresse :</strong> {user.adresse_postale}
-              </p>
+                <div className="client-profile-full">
+                  <dt>Adresse</dt>
+                  <dd>{user.adresse_postale || "—"}</dd>
+                </div>
+              </dl>
 
-              <button type="button" onClick={() => setIsEditing(true)}>
+              <button
+                type="button"
+                className="button client-profile-edit"
+                onClick={() => setIsEditing(true)}
+              >
                 Modifier mes informations
               </button>
             </>
           ) : (
-            <form onSubmit={handleSubmit}>
+            <form className="form client-profile-form" onSubmit={handleSubmit}>
               <label htmlFor="nom">Nom</label>
 
               <input
@@ -182,11 +203,19 @@ function ClientSpace() {
                 onChange={handleChange}
               />
 
-              <button type="submit">Enregistrer</button>
+              <div className="client-profile-actions">
+                <button type="submit" className="button">
+                  Enregistrer
+                </button>
 
-              <button type="button" onClick={() => setIsEditing(false)}>
-                Annuler
-              </button>
+                <button
+                  type="button"
+                  className="client-profile-cancel"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Annuler
+                </button>
+              </div>
             </form>
           )}
         </div>
@@ -194,6 +223,12 @@ function ClientSpace() {
 
       <section>
         <h2>Mes commandes</h2>
+
+        <p>
+          <Link className="button" to="/mes-commandes">
+            Gérer mes commandes
+          </Link>
+        </p>
 
         {commandes.length === 0 ? (
           <p>Aucune commande trouvée.</p>
@@ -209,7 +244,7 @@ function ClientSpace() {
 
                 <p>
                   <strong>Date de prestation :</strong>{" "}
-                  {commande.date_prestation}
+                  {formatDateFr(commande.date_prestation)}
                 </p>
 
                 <p>
@@ -233,23 +268,11 @@ function ClientSpace() {
                   <strong>Livraison :</strong> {commande.prix_livraison} €
                 </p>
 
-                {commande.pret_materiel && (
+                {Boolean(commande.pret_materiel) ? (
                   <p>
                     <strong>Matériel :</strong> prêt demandé
                   </p>
-                )}
-
-                {commande.statut === "En attente" && (
-                  <div>
-                    <button type="button">Modifier</button>
-
-                    <button type="button">Annuler</button>
-                  </div>
-                )}
-
-                {commande.statut !== "En attente" && (
-                  <button type="button">Voir le suivi</button>
-                )}
+                ) : null}
               </div>
             ))}
           </div>

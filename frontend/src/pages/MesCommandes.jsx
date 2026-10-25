@@ -1,9 +1,27 @@
 import { useEffect, useState } from "react";
 
+import useAuth from "../hooks/useAuth";
 import commandeService from "../services/commande.service";
+import avisService from "../services/avis.service";
+import { formatDateFr, toDateInputValue } from "../utils/date.js";
 import "../styles/pages.css";
 
+const AVIS_FORM_INITIAL = {
+  note: "5",
+  description: "",
+};
+
+function aUnAvisActif(avisListe, utilisateurId) {
+  return avisListe.some(
+    (avis) =>
+      Number(avis.utilisateur_id) === Number(utilisateurId) &&
+      (avis.statut === "En attente" || avis.statut === "Validé"),
+  );
+}
+
 function MesCommandes() {
+  const { user } = useAuth();
+
   const [commandes, setCommandes] = useState([]);
   const [commandeEdition, setCommandeEdition] = useState(null);
   const [commandeAnnulation, setCommandeAnnulation] = useState(null);
@@ -11,18 +29,29 @@ function MesCommandes() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  const [avisActifExistant, setAvisActifExistant] = useState(false);
+  const [avisForm, setAvisForm] = useState(AVIS_FORM_INITIAL);
+  const [avisError, setAvisError] = useState("");
+  const [avisMessage, setAvisMessage] = useState("");
+  const [avisSubmitting, setAvisSubmitting] = useState(false);
+
+  const aCommandeTerminee = commandes.some(
+    (commande) => commande.statut === "Terminée",
+  );
+
   useEffect(() => {
     let actif = true;
 
-    async function fetchCommandes() {
+    async function fetchDonnees() {
       try {
-        const data = await commandeService.getMesCommandes();
+        const commandesData = await commandeService.getMesCommandes();
 
         if (!actif) {
           return;
         }
 
-        setCommandes(data);
+        setCommandes(commandesData);
+        setError("");
       } catch (error) {
         if (actif) {
           console.error(
@@ -33,20 +62,37 @@ function MesCommandes() {
           setError("Impossible de récupérer vos commandes.");
         }
       }
+
+      try {
+        const avisData = await avisService.getAvis();
+
+        if (!actif) {
+          return;
+        }
+
+        setAvisActifExistant(
+          aUnAvisActif(avisData, user?.utilisateur_id),
+        );
+      } catch (error) {
+        if (actif) {
+          console.error("Erreur lors de la récupération des avis :", error);
+        }
+      }
     }
 
-    fetchCommandes();
+    fetchDonnees();
 
     return () => {
       actif = false;
     };
-  }, []);
+  }, [user?.utilisateur_id]);
 
   async function refreshCommandes() {
     try {
       const data = await commandeService.getMesCommandes();
 
       setCommandes(data);
+      setError("");
     } catch (error) {
       setError(error.message);
     }
@@ -55,6 +101,7 @@ function MesCommandes() {
   function handleModifier(commande) {
     setCommandeEdition({
       ...commande,
+      date_prestation: toDateInputValue(commande.date_prestation),
     });
   }
 
@@ -68,11 +115,25 @@ function MesCommandes() {
   }
 
   async function handleSave() {
-    try {
-      await commandeService.updateCommande(
-        commandeEdition.commande_id,
-        commandeEdition,
+    const adresse = String(commandeEdition.adresse_livraison ?? "").trim();
+
+    if (!adresse) {
+      setError("L'adresse de livraison est obligatoire.");
+      return;
+    }
+
+    if (adresse.length > 255) {
+      setError(
+        "L'adresse de livraison ne doit pas dépasser 255 caractères.",
       );
+      return;
+    }
+
+    try {
+      await commandeService.updateCommande(commandeEdition.commande_id, {
+        ...commandeEdition,
+        adresse_livraison: adresse,
+      });
 
       setMessage("Commande modifiée avec succès.");
       setCommandeEdition(null);
@@ -109,8 +170,37 @@ function MesCommandes() {
     }
   }
 
-  if (error) {
-    return <p>{error}</p>;
+  function handleAvisChange(event) {
+    const { name, value } = event.target;
+
+    setAvisForm((ancien) => ({
+      ...ancien,
+      [name]: value,
+    }));
+  }
+
+  async function handleSubmitAvis(event) {
+    event.preventDefault();
+    setAvisSubmitting(true);
+    setAvisError("");
+    setAvisMessage("");
+
+    try {
+      await avisService.createAvis({
+        note: Number(avisForm.note),
+        description: avisForm.description,
+      });
+
+      setAvisMessage(
+        "Votre avis a été envoyé et sera publié après validation.",
+      );
+      setAvisForm(AVIS_FORM_INITIAL);
+      setAvisActifExistant(true);
+    } catch (error) {
+      setAvisError(error.message);
+    } finally {
+      setAvisSubmitting(false);
+    }
   }
 
   return (
@@ -118,6 +208,8 @@ function MesCommandes() {
       <h1>Mes commandes</h1>
 
       {message && <p>{message}</p>}
+
+      {error && <p>{error}</p>}
 
       {commandes.length === 0 ? (
         <p>Aucune commande trouvée.</p>
@@ -163,6 +255,30 @@ function MesCommandes() {
                       name="adresse_livraison"
                       value={commandeEdition.adresse_livraison}
                       onChange={handleChange}
+                      placeholder="Ex. 12 rue Sainte-Catherine, 33000 Bordeaux"
+                      maxLength={255}
+                      required
+                    />
+                    <span className="field-help">
+                      Indiquez le numéro, la rue, le code postal et la ville.
+                      {commandeEdition.adresse_livraison !==
+                      commande.adresse_livraison
+                        ? " Les frais de livraison seront recalculés à l'enregistrement."
+                        : ""}
+                    </span>
+                  </label>
+
+                  <label>
+                    <span>Informations complémentaires :</span>
+
+                    <textarea
+                      name="informations_complementaires"
+                      value={
+                        commandeEdition.informations_complementaires ?? ""
+                      }
+                      onChange={handleChange}
+                      maxLength={500}
+                      rows={3}
                     />
                   </label>
 
@@ -215,13 +331,20 @@ function MesCommandes() {
                 <>
                   <p>
                     <strong>Date de prestation :</strong>{" "}
-                    {commande.date_prestation}
+                    {formatDateFr(commande.date_prestation)}
                   </p>
 
                   <p>
                     <strong>Heure de livraison :</strong>{" "}
                     {commande.heure_livraison}
                   </p>
+
+                  {commande.informations_complementaires ? (
+                    <p>
+                      <strong>Informations complémentaires :</strong>{" "}
+                      {commande.informations_complementaires}
+                    </p>
+                  ) : null}
 
                   <p>
                     <strong>Nombre de personnes :</strong>{" "}
@@ -234,13 +357,17 @@ function MesCommandes() {
 
                   <p>
                     <strong>Livraison :</strong> {commande.prix_livraison} €
+                    {commande.distance_km != null &&
+                    commande.distance_km !== ""
+                      ? ` (${Number(commande.distance_km).toFixed(2)} km)`
+                      : ""}
                   </p>
 
-                  {commande.pret_materiel && (
+                  {Boolean(commande.pret_materiel) ? (
                     <p>
                       <strong>Matériel :</strong> prêt demandé
                     </p>
-                  )}
+                  ) : null}
 
                   {commande.statut === "En attente" &&
                     commandeAnnulation?.commande_id ===
@@ -278,6 +405,70 @@ function MesCommandes() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {aCommandeTerminee && (
+        <div className="section">
+          <h2>Déposer un avis</h2>
+
+          {avisMessage && (
+            <p className="auth-success" role="status">
+              {avisMessage}
+            </p>
+          )}
+
+          {avisActifExistant ? (
+            <p>Vous avez déjà déposé un avis.</p>
+          ) : (
+            <>
+              {avisError && (
+                <p className="auth-error" role="alert" id="avis-error">
+                  {avisError}
+                </p>
+              )}
+
+              <form
+                className="form"
+                onSubmit={handleSubmitAvis}
+                aria-busy={avisSubmitting}
+              >
+                <label htmlFor="avis-note">Note</label>
+
+                <select
+                  id="avis-note"
+                  name="note"
+                  value={avisForm.note}
+                  onChange={handleAvisChange}
+                  required
+                  disabled={avisSubmitting}
+                >
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+
+                <label htmlFor="avis-description">Commentaire</label>
+
+                <textarea
+                  id="avis-description"
+                  name="description"
+                  value={avisForm.description}
+                  onChange={handleAvisChange}
+                  maxLength={500}
+                  required
+                  disabled={avisSubmitting}
+                  aria-describedby={avisError ? "avis-error" : undefined}
+                />
+
+                <button type="submit" disabled={avisSubmitting}>
+                  {avisSubmitting ? "Envoi..." : "Envoyer mon avis"}
+                </button>
+              </form>
+            </>
+          )}
         </div>
       )}
     </section>

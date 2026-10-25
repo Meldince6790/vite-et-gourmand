@@ -13,6 +13,26 @@ L'application permet aux différents utilisateurs d'accéder à des fonctionnali
 
 L'objectif de l'application est de centraliser la gestion des menus, des plats et des commandes dans une interface simple et accessible.
 
+### Catalogue proposé en démonstration
+
+Lors du **premier** démarrage Docker (volume MariaDB neuf), l’application dispose automatiquement du catalogue cible : **8 menus**, **19 plats** et **26** associations `menu_plat` (seed + enrichissement montés dans `docker-entrypoint-initdb.d`, contrôlés par `04-validate-catalogue.sh`).
+
+Menus conservés (identifiants inchangés) : Entreprise Classique (1), Végétarien Gourmand (2), Mariage Végan (3), Cocktail Dinatoire (4), Buffet Traditionnel (5), Gastronomique Signature (6), Estival Méditerranéen (8), Brunch Festif (15). Cocktail Dinatoire et Brunch Festif comportent quatre plats ; les six autres en comportent trois. Plusieurs recettes sont mutualisées entre menus via `menu_plat`.
+
+Si la base a été créée avant cette intégration et ne contient que 3 menus, compléter **sans supprimer le volume** avec :
+
+```bash
+ENRICH_CONFIRM=y ./database/apply-enrich-catalogue.sh
+```
+
+Cet enrichissement est idempotent et ne modifie pas les comptes utilisateurs ni les commandes existantes. Sur un volume déjà à un état intermédiaire (ex. 8 menus / 24 plats), utiliser les scripts de migration manuels (`preview_catalogue_*.sql` / `migrate_catalogue_*.sql`) décrits dans le README — **ne pas** utiliser `docker compose down -v` comme mise à jour ordinaire.
+
+Les photographies du catalogue public sont des fichiers WebP (et un placeholder SVG) versionnés sous `frontend/public/images/`, résolus par `menuImages.js` et `platImages.js`. Ce n’est **pas** une fonctionnalité d’upload depuis l’interface employé.
+
+### Commandes de démonstration
+
+Le seed SQL initial contient **trois** commandes historiques (`CMD-2026-001` Terminée, `CMD-2026-002` En préparation, `CMD-2026-003` Annulée). Une base locale peut en contenir davantage si un script optionnel (ex. `database/insert_commandes_demo.sql`) a été exécuté manuellement : ces ajouts ne font **pas** partie de l’initialisation Docker standard ni d’un déploiement futur tant qu’ils n’y sont pas rejoués. Les statistiques MongoDB associées (volume, CA) dépendent de l’état réel de la base et d’une éventuelle resynchronisation (`stats:resync`) ; ce ne sont pas des chiffres de production.
+
 ---
 
 ## 2. Accès à l'application
@@ -28,6 +48,8 @@ En environnement local, les adresses utilisées sont :
 - API backend :
 
   http://localhost:3000
+
+Depuis l’interface, le titre « Vite & Gourmand » du header renvoie vers la page d’accueil (`/`).
 
 L'accès aux fonctionnalités dépend du rôle de l'utilisateur connecté.
 
@@ -62,7 +84,8 @@ Il peut accéder aux informations publiques sans disposer de compte.
 
 Les fonctionnalités disponibles sont :
 
-- consultation des menus proposés ;
+- consultation et filtrage des menus proposés ;
+- consultation du détail d'un menu ;
 - consultation des informations de contact.
 
 ---
@@ -71,14 +94,25 @@ Les fonctionnalités disponibles sont :
 
 Depuis la page dédiée aux menus, le visiteur peut consulter les différentes offres proposées par l'entreprise.
 
-Chaque menu présente les informations principales :
+Il peut filtrer le catalogue selon :
+
+- le thème ;
+- le régime alimentaire ;
+- le prix maximum ;
+- le nombre de personnes.
+
+Le filtrage est lancé uniquement après un clic sur « Appliquer ». Le bouton « Réinitialiser » restaure l'affichage de l'ensemble du catalogue. Si aucun menu ne correspond aux critères choisis, le message « Aucun menu ne correspond à vos critères. » est affiché.
+
+Chaque carte menu présente les informations principales :
 
 - nom du menu ;
 - description ;
 - thème associé ;
 - régime alimentaire ;
 - nombre minimum de personnes ;
-- prix par personne.
+- prix par personne ;
+- quantité restante ;
+- indication d'indisponibilité lorsque la quantité restante est nulle.
 
 Le visiteur peut ainsi consulter les différentes prestations disponibles avant de créer une commande.
 
@@ -90,10 +124,14 @@ Lorsqu'un menu est sélectionné, l'utilisateur peut accéder à une vue détail
 
 Cette page permet notamment de consulter :
 
-- la composition du menu ;
-- les différents plats proposés ;
-- les informations liées aux allergènes ;
-- les conditions associées au menu.
+- le thème et le régime alimentaire ;
+- le prix par personne ;
+- le nombre minimum de personnes ;
+- la quantité restante ;
+- les conditions associées au menu ;
+- la composition du menu et les plats proposés ;
+- les allergènes associés à chaque plat ;
+- une information sur la remise de 10 % applicable uniquement lorsque le nombre de personnes atteint le seuil affiché (nombre minimum de personnes + 5).
 
 Cette étape permet au visiteur de choisir une prestation adaptée à ses besoins.
 
@@ -101,17 +139,15 @@ Cette étape permet au visiteur de choisir une prestation adaptée à ses besoin
 
 ## 3.3 Accès au formulaire de contact
 
-La page de contact permet au visiteur d'accéder à un formulaire lui permettant de préparer une demande auprès de l'entreprise.
+La page de contact permet au visiteur d'envoyer une demande au traiteur.
 
-Cette page présente une interface comprenant les champs nécessaires à la saisie d'un message.
+Le formulaire comporte les champs suivants :
 
-Dans la version actuelle de l'application, le formulaire est uniquement présent à titre d'interface utilisateur et n'est pas encore relié à un système de traitement des demandes.
+- nom ;
+- e-mail ;
+- message.
 
-Cette fonctionnalité pourra être complétée dans une évolution future avec :
-
-- l'envoi automatique des messages ;
-- la transmission des demandes à l'entreprise ;
-- l'ajout d'une gestion des demandes de contact.
+Lors de l'envoi, la demande est transmise à l'entreprise et un accusé de réception est envoyé à l'adresse e-mail indiquée par le visiteur.
 
 ---
 
@@ -167,17 +203,13 @@ L'accès aux fonctionnalités est ensuite adapté selon les droits associés au 
 
 ## 4.2 Consultation des menus
 
-Une fois connecté, le client peut consulter les menus disponibles proposés par l'entreprise.
+Une fois connecté, le client dispose des mêmes possibilités de consultation et de filtrage du catalogue que le visiteur.
 
-Les informations affichées permettent de choisir une prestation adaptée :
+Il peut notamment :
 
-- nom du menu ;
-- description ;
-- composition ;
-- régime alimentaire ;
-- thème ;
-- prix par personne ;
-- nombre minimum de personnes.
+- filtrer les menus par thème, régime alimentaire, prix maximum et nombre de personnes ;
+- consulter les cartes menus (thème, régime, prix par personne, nombre minimum de personnes, quantité restante) ;
+- ouvrir le détail d'un menu (composition, allergènes, conditions, stock et information sur la remise éventuelle).
 
 Le client peut ainsi identifier le menu correspondant à ses besoins avant de réaliser une commande.
 
@@ -205,7 +237,12 @@ Lors de la commande, les informations nécessaires sont prises en compte afin de
 
 - menu sélectionné ;
 - nombre de personnes concernées ;
+- adresse de livraison complète (numéro, rue, code postal, ville) ;
 - informations nécessaires au traitement de la commande.
+
+Avant de valider la commande, le client doit obtenir une **estimation des frais de livraison** à partir de l’adresse saisie. La livraison est gratuite à Bordeaux ; hors Bordeaux, un forfait kilométrique s’applique. Sans estimation valide, la commande ne peut pas être confirmée.
+
+Lors de l’enregistrement, le serveur **recalcule systématiquement** la distance et les frais de livraison. Les montants éventuellement affichés côté interface ne sont pas repris tels quels : seuls les calculs effectués par l’API sont enregistrés.
 
 Le système applique les contrôles nécessaires avant l'enregistrement de la commande.
 
@@ -235,7 +272,9 @@ Les principales fonctionnalités disponibles sont :
 
 - gestion des menus ;
 - gestion des plats ;
-- consultation et gestion des commandes.
+- consultation et gestion des commandes ;
+- gestion des horaires ;
+- gestion et modération des avis clients.
 
 ---
 
@@ -261,10 +300,10 @@ Cette fonctionnalité lui permet de maintenir les prestations proposées par l'e
 L'employé peut notamment :
 
 - consulter les menus existants ;
-- modifier les informations associées aux menus ;
+- modifier les informations associées aux menus (titre, description, conditions, stock, prix, thème, régime) ;
 - mettre à jour la composition des menus.
 
-La modification d'un menu permet notamment d'ajouter, retirer ou modifier les plats qui le composent afin de conserver une offre adaptée aux besoins de l'entreprise.
+La modification d'un menu permet notamment d'ajouter, retirer ou modifier les plats qui le composent afin de conserver une offre adaptée aux besoins de l'entreprise. Les images des cartes catalogue sont gérées côté application (fichiers versionnés) et ne sont pas éditables depuis cet écran.
 
 ---
 
@@ -275,14 +314,13 @@ L'employé peut gérer les plats disponibles depuis l'interface de gestion.
 Cette fonctionnalité permet notamment :
 
 - consulter les plats existants ;
-- modifier les informations relatives aux plats ;
-- mettre à jour les plats associés aux menus.
+- créer, renommer ou supprimer un plat ;
+- gérer les allergènes associés à chaque plat ;
+- mettre à jour les plats associés aux menus (depuis la gestion des menus).
 
-Les modifications réalisées depuis l'interface sont enregistrées dans la base de données afin de maintenir les informations affichées aux utilisateurs.
+Les modifications réalisées depuis l'interface sont enregistrées dans la base de données afin de maintenir les informations affichées aux utilisateurs. Les photographies des plats du catalogue public sont des ressources frontend versionnées ; elles ne sont pas saisies dans cet écran.
 
 ---
-
-## 5.4 Gestion des commandes
 
 ## 5.4 Gestion des commandes
 
@@ -309,7 +347,35 @@ Cette règle permet de garantir un suivi client et d'éviter les annulations eff
 
 ---
 
-## 5.5 Restrictions d'accès
+## 5.5 Gestion des horaires
+
+L'employé peut gérer les horaires d'ouverture de l'entreprise depuis son espace dédié.
+
+Cette fonctionnalité permet notamment de :
+
+- consulter les plages horaires enregistrées pour chaque jour ;
+- modifier les heures d'ouverture et de fermeture ;
+- maintenir à jour les informations affichées dans le pied de page du site.
+
+Les horaires publiés permettent aux visiteurs et aux clients de connaître les périodes d'activité de l'entreprise.
+
+---
+
+## 5.6 Gestion des avis clients
+
+L'employé peut accéder à la modération des avis déposés par les clients.
+
+Cette fonctionnalité permet notamment de :
+
+- consulter la liste des avis (y compris ceux en attente de validation) ;
+- valider un avis afin qu'il puisse être affiché sur la page d'accueil ;
+- refuser un avis qui ne doit pas être publié.
+
+Seuls les avis au statut **Validé** sont visibles par les visiteurs sur le site public.
+
+---
+
+## 5.7 Restrictions d'accès
 
 Les fonctionnalités employées sont protégées par le système d'authentification et de gestion des rôles.
 
@@ -374,9 +440,11 @@ L'administrateur peut accéder aux données statistiques permettant d'avoir une 
 
 Les statistiques permettent notamment de suivre :
 
-- le nombre de commandes réalisées ;
+- le volume de commandes (hors commandes annulées) ;
 - les performances des menus ;
-- le chiffre d'affaires généré.
+- le chiffre d'affaires agrégé (`prix_menu + prix_livraison`) pour les commandes dont le statut est **Livrée**, **En attente du retour de matériel** ou **Terminée**.
+
+Ces indicateurs reflètent le suivi métier des commandes. Il n’existe pas de module de paiement bancaire : le chiffre d’affaires affiché n’est pas une preuve d’encaissement bancaire.
 
 Ces informations permettent d'aider à l'analyse de l'activité et à la prise de décision.
 
@@ -398,7 +466,15 @@ Afin de permettre la découverte des différentes fonctionnalités de l'applicat
 
 Chaque compte permet de tester un parcours utilisateur différent selon le rôle associé.
 
-Les identifiants seront renseignés après restauration et vérification de la base de données.
+Ces comptes sont présents après import du fichier `database/vite_gourmand.sql` (premier démarrage du volume MariaDB). Les mots de passe sont stockés **uniquement sous forme de hash bcrypt** dans ce fichier SQL.
+
+**Sécurité :**
+
+- ne jamais publier ni versionner de mots de passe de démonstration en clair ;
+- ces comptes sont réservés à un environnement **local / de préproduction contrôlée** ;
+- avant tout déploiement public, changer ou désactiver ces comptes et utiliser des secrets forts distincts.
+
+Les e-mails de démonstration issus du seed sont :
 
 ---
 
@@ -412,8 +488,8 @@ Ce compte permet de tester le parcours client :
 - suivi des commandes.
 
 ```
-Email :
-Mot de passe :
+Email : client@vite-gourmand.fr
+Mot de passe : non publié (hash dans database/vite_gourmand.sql — usage local uniquement)
 ```
 
 ---
@@ -425,11 +501,12 @@ Ce compte permet de tester les fonctionnalités de gestion :
 - gestion des menus ;
 - gestion des plats ;
 - gestion des commandes ;
+- gestion des horaires ;
 - gestion des avis clients.
 
 ```
-Email :
-Mot de passe :
+Email : employe@vite-gourmand.fr
+Mot de passe : non publié (hash dans database/vite_gourmand.sql — usage local uniquement)
 ```
 
 ---
@@ -444,8 +521,8 @@ Ce compte permet de tester l'ensemble des fonctionnalités d'administration :
 - supervision de l'activité.
 
 ```
-Email :
-Mot de passe :
+Email : admin@vite-gourmand.fr
+Mot de passe : non publié (hash dans database/vite_gourmand.sql — usage local uniquement)
 ```
 
 ---

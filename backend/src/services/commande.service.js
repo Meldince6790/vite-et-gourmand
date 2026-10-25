@@ -1,6 +1,11 @@
-const Commande = require("../models/commande.model");
+const database = require("../config/database");
+const CommandeRepository = require("../repositories/CommandeRepository");
 const Menu = require("../models/menu.model");
-const statistiqueService = require("./statistique.service");
+const Utilisateur = require("../models/utilisateur.model");
+const statistiqueServiceModule = require("./statistique.service");
+const emailServiceModule = require("./email.service");
+const routingServiceModule = require("./routing.service");
+const Commande = require("../domain/Commande");
 
 const STATUTS_AUTORISES = new Set([
   "En attente",
@@ -15,27 +20,152 @@ const STATUTS_AUTORISES = new Set([
 
 const MODES_CONTACT_AUTORISES = new Set(["Téléphone", "Mail"]);
 
-const commandeService = {
-  async getAllCommandes() {
-    return await Commande.findAll();
-  },
+class CommandeService {
+  constructor({
+    commandeRepository,
+    menuModel,
+    statistiqueService,
+    CommandeDomain,
+    database,
+    emailService,
+    utilisateurModel,
+    routingService,
+    logger = console,
+  }) {
+    this.commandeRepository = commandeRepository;
+    this.menuModel = menuModel;
+    this.statistiqueService = statistiqueService;
+    this.Commande = CommandeDomain;
+    this.database = database;
+    this.emailService = emailService;
+    this.utilisateurModel = utilisateurModel;
+    this.routingService = routingService;
+    this.logger = logger;
+  }
 
-  async getCommandeById(id) {
-    const commande = await Commande.findById(id);
+  normaliserAdresseLivraison(adresse) {
+    if (adresse === undefined || adresse === null) {
+      throw new Error("L'adresse de livraison est obligatoire.");
+    }
+
+    if (typeof adresse !== "string") {
+      throw new Error("L'adresse de livraison est invalide.");
+    }
+
+    const trimmed = adresse.trim();
+
+    if (!trimmed) {
+      throw new Error("L'adresse de livraison est obligatoire.");
+    }
+
+    if (trimmed.length > 255) {
+      throw new Error(
+        "L'adresse de livraison ne doit pas dépasser 255 caractères.",
+      );
+    }
+
+    return trimmed;
+  }
+
+  async getClientPourEmail(utilisateurId) {
+    const utilisateur = await this.utilisateurModel.findById(utilisateurId);
+
+    if (!utilisateur || !utilisateur.email) {
+      return null;
+    }
+
+    return utilisateur;
+  }
+
+  async envoyerEmailAnnulation(commande) {
+    try {
+      const client = await this.getClientPourEmail(commande.utilisateur_id);
+
+      if (!client) {
+        return;
+      }
+
+      await this.emailService.sendOrderCancellationEmail({
+        to: client.email,
+        prenom: client.prenom,
+        commande: {
+          ...commande,
+          statut: "Annulée",
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        "Erreur lors de l'envoi de l'e-mail d'annulation de commande :",
+        error,
+      );
+    }
+  }
+
+  async appliquerStatistiqueAnnulation(commande) {
+    try {
+      await this.statistiqueService.retirerStatistiqueCommande(commande);
+    } catch (error) {
+      this.logger.error(
+        "Erreur lors de la mise à jour des statistiques MongoDB (annulation) :",
+        error,
+      );
+    }
+  }
+
+  async withTransaction(work) {
+    const connection = await this.database.getConnection();
+
+    try {
+      await connection.beginTransaction();
+      const result = await work(connection);
+      await connection.commit();
+      return result;
+    } catch (error) {
+      try {
+        await connection.rollback();
+      } catch {
+        // Ne pas masquer l'erreur d'origine si le rollback échoue.
+      }
+
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async getAllCommandes() {
+    return await this.commandeRepository.findAll();
+  }
+
+  async getCommandeById(id, user) {
+    const commande = await this.commandeRepository.findById(id);
 
     if (!commande) {
       throw new Error("Commande introuvable.");
     }
 
-    return commande;
-  },
+    const roleId = Number(user.role_id);
+
+    if (roleId === 2 || roleId === 3) {
+      return commande;
+    }
+
+    if (
+      roleId === 1 &&
+      Number(commande.utilisateur_id) === Number(user.utilisateur_id)
+    ) {
+      return commande;
+    }
+
+    throw new Error("Commande introuvable.");
+  }
 
   async getCommandesByUtilisateurId(utilisateurId) {
-    return await Commande.findByUtilisateurId(utilisateurId);
-  },
+    return await this.commandeRepository.findByUtilisateurId(utilisateurId);
+  }
 
   async createCommande(commande) {
-    const menu = await Menu.findById(commande.menu_id);
+    const menu = await this.menuModel.findById(commande.menu_id);
 
     if (!menu) {
       throw new Error("Menu introuvable.");
@@ -49,9 +179,9 @@ const commandeService = {
       throw new Error("L'heure de livraison est obligatoire.");
     }
 
-    if (!commande.adresse_livraison) {
-      throw new Error("L'adresse de livraison est obligatoire.");
-    }
+    const adresseLivraison = this.normaliserAdresseLivraison(
+      commande.adresse_livraison,
+    );
 
     if (!commande.nombre_personne || commande.nombre_personne <= 0) {
       throw new Error("Le nombre de personnes doit être supérieur à zéro.");
@@ -63,7 +193,14 @@ const commandeService = {
       );
     }
 
-    const stockDisponible = await Menu.hasStock(
+    const informationsComplementaires =
+      this.Commande.normaliserInformationsComplementaires(
+        commande.informations_complementaires,
+      );
+
+    const livraison = await this.routingService.quoteDelivery(adresseLivraison);
+
+    const stockDisponible = await this.menuModel.hasStock(
       commande.menu_id,
       commande.nombre_personne,
     );
@@ -74,60 +211,82 @@ const commandeService = {
       );
     }
 
-    let prixMenu =
-      Number(menu.prix_par_personne) * Number(commande.nombre_personne);
+    const nouvelleCommande = this.Commande.initialiserCreation(
+      {
+        ...commande,
+        adresse_livraison: adresseLivraison,
+        informations_complementaires: informationsComplementaires,
+        distance_km: livraison.distance_km,
+        prix_livraison: livraison.prix_livraison,
+      },
+      menu,
+    );
 
-    if (commande.nombre_personne >= Number(menu.nombre_personne_minimum) + 5) {
-      prixMenu *= 0.9;
-    }
+    nouvelleCommande.distance_km = livraison.distance_km;
+    nouvelleCommande.prix_livraison = livraison.prix_livraison;
 
-    commande.prix_menu = Number(prixMenu.toFixed(2));
+    const commandeId = await this.withTransaction(async (connection) => {
+      const id = await this.commandeRepository.create(
+        nouvelleCommande,
+        connection,
+      );
 
-    let prixLivraison = 0;
+      const stockDecremente = await this.menuModel.decreaseStock(
+        nouvelleCommande.menu_id,
+        nouvelleCommande.nombre_personne,
+        connection,
+      );
 
-    if (commande.distance_km > 0) {
-      prixLivraison = 5 + 0.59 * commande.distance_km;
-    }
+      if (!stockDecremente) {
+        throw new Error("La mise à jour du stock a échoué.");
+      }
 
-    commande.prix_livraison = Number(prixLivraison.toFixed(2));
+      return id;
+    });
 
-    commande.numero_commande = `CMD-${Date.now()}`;
-    commande.date_commande = new Date();
-    commande.statut = "En attente";
-
-    if (commande.pret_materiel === undefined) {
-      commande.pret_materiel = false;
-    }
-
-    if (commande.restitution_materiel === undefined) {
-      commande.restitution_materiel = false;
-    }
-
-    const commandeId = await Commande.create(commande);
-
-    await Menu.decreaseStock(commande.menu_id, commande.nombre_personne);
-
-    // Mise à jour des statistiques MongoDB
+    // Mise à jour des statistiques MongoDB (après commit uniquement)
     try {
-      await statistiqueService.updateStatistiqueCommande(
+      await this.statistiqueService.updateStatistiqueCommande(
         {
-          ...commande,
+          ...nouvelleCommande,
           commande_id: commandeId,
         },
         menu,
       );
     } catch (error) {
-      console.error(
+      this.logger.error(
         "Erreur lors de la mise à jour des statistiques MongoDB :",
         error,
       );
     }
 
+    try {
+      const client = await this.getClientPourEmail(
+        nouvelleCommande.utilisateur_id,
+      );
+
+      if (client) {
+        await this.emailService.sendOrderConfirmationEmail({
+          to: client.email,
+          prenom: client.prenom,
+          commande: {
+            ...nouvelleCommande,
+            commande_id: commandeId,
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        "Erreur lors de l'envoi de l'e-mail de confirmation de commande :",
+        error,
+      );
+    }
+
     return commandeId;
-  },
+  }
 
   async getCommandeClient(id, utilisateurId) {
-    const commande = await Commande.findById(id);
+    const commande = await this.commandeRepository.findById(id);
 
     if (!commande) {
       throw new Error("Commande introuvable.");
@@ -138,12 +297,12 @@ const commandeService = {
     }
 
     return commande;
-  },
+  }
 
   async updateStatut(id, statut) {
-    const commandeExiste = await Commande.exists(id);
+    const commande = await this.commandeRepository.findById(id);
 
-    if (!commandeExiste) {
+    if (!commande) {
       throw new Error("Commande introuvable.");
     }
 
@@ -151,17 +310,79 @@ const commandeService = {
       throw new Error("Statut de commande invalide.");
     }
 
-    return await Commande.updateStatut(id, statut);
-  },
+    if (statut === "Annulée") {
+      if (commande.statut === "Annulée") {
+        throw new Error("Cette commande est déjà annulée.");
+      }
+
+      const result = await this.withTransaction(async (connection) => {
+        const updated = await this.commandeRepository.updateStatut(
+          id,
+          statut,
+          connection,
+        );
+
+        const stockRestitue = await this.menuModel.increaseStock(
+          commande.menu_id,
+          commande.nombre_personne,
+          connection,
+        );
+
+        if (!stockRestitue) {
+          throw new Error("La mise à jour du stock a échoué.");
+        }
+
+        return updated;
+      });
+
+      await this.appliquerStatistiqueAnnulation(commande);
+      await this.envoyerEmailAnnulation(commande);
+
+      return result;
+    }
+
+    const statutAvant = commande.statut;
+    const result = await this.commandeRepository.updateStatut(id, statut);
+
+    try {
+      let nomMenu = commande.nom_menu;
+      const entreDansCA =
+        !this.Commande.contribueAuChiffreAffaires(statutAvant) &&
+        this.Commande.contribueAuChiffreAffaires(statut);
+
+      if (entreDansCA && !nomMenu) {
+        const menu = await this.menuModel.findById(commande.menu_id);
+        nomMenu = menu?.titre;
+      }
+
+      await this.statistiqueService.synchroniserChiffreAffairesSelonStatut(
+        commande,
+        statutAvant,
+        statut,
+        { nomMenu },
+      );
+    } catch (error) {
+      this.logger.error(
+        "Erreur lors de la mise à jour des statistiques MongoDB (transition statut) :",
+        error,
+      );
+    }
+
+    return result;
+  }
 
   async annulerCommande(id, data) {
-    const commande = await Commande.findById(id);
+    const commande = await this.commandeRepository.findById(id);
 
     if (!commande) {
       throw new Error("Commande introuvable.");
     }
 
-    if (!data.mode_contact_annulation) {
+    if (commande.statut === "Annulée") {
+      throw new Error("Cette commande est déjà annulée.");
+    }
+
+    if (!data?.mode_contact_annulation) {
       throw new Error("Le mode de contact est obligatoire.");
     }
 
@@ -169,49 +390,97 @@ const commandeService = {
       throw new Error("Le mode de contact doit être Téléphone ou Mail.");
     }
 
-    if (!data.motif_annulation) {
+    if (!data?.motif_annulation) {
       throw new Error("Le motif d'annulation est obligatoire.");
     }
 
-    const result = await Commande.updateAnnulation(id, {
+    const annulation = {
       mode_contact_annulation: data.mode_contact_annulation,
       motif_annulation: data.motif_annulation,
       date_annulation: new Date(),
+    };
+
+    const result = await this.withTransaction(async (connection) => {
+      const updated = await this.commandeRepository.updateAnnulation(
+        id,
+        annulation,
+        connection,
+      );
+
+      const stockRestitue = await this.menuModel.increaseStock(
+        commande.menu_id,
+        commande.nombre_personne,
+        connection,
+      );
+
+      if (!stockRestitue) {
+        throw new Error("La mise à jour du stock a échoué.");
+      }
+
+      return updated;
     });
 
-    await Menu.increaseStock(commande.menu_id, commande.nombre_personne);
+    await this.appliquerStatistiqueAnnulation(commande);
+    await this.envoyerEmailAnnulation(commande);
 
     return result;
-  },
+  }
 
   async annulerCommandeClient(id, utilisateurId) {
-    const commande = await this.getCommandeClient(id, utilisateurId);
+    const commandeExistante = await this.getCommandeClient(id, utilisateurId);
 
-    if (commande.statut !== "En attente") {
+    if (commandeExistante.statut === "Annulée") {
+      throw new Error("Cette commande est déjà annulée.");
+    }
+
+    const commandeMetier = new this.Commande(commandeExistante);
+
+    if (!commandeMetier.peutEtreAnnuleeParClient()) {
       throw new Error("Cette commande ne peut plus être annulée.");
     }
 
-    const result = await Commande.updateStatut(id, "Annulée");
+    const result = await this.withTransaction(async (connection) => {
+      const updated = await this.commandeRepository.updateStatut(
+        id,
+        "Annulée",
+        connection,
+      );
 
-    await Menu.increaseStock(commande.menu_id, commande.nombre_personne);
+      const stockRestitue = await this.menuModel.increaseStock(
+        commandeExistante.menu_id,
+        commandeExistante.nombre_personne,
+        connection,
+      );
+
+      if (!stockRestitue) {
+        throw new Error("La mise à jour du stock a échoué.");
+      }
+
+      return updated;
+    });
+
+    await this.appliquerStatistiqueAnnulation(commandeExistante);
+    await this.envoyerEmailAnnulation(commandeExistante);
 
     return result;
-  },
+  }
 
   async updateCommande(id, utilisateurId, data) {
-    const commande = await this.getCommandeClient(id, utilisateurId);
+    const commandeExistante = await this.getCommandeClient(id, utilisateurId);
+    const commandeMetier = new this.Commande(commandeExistante);
 
-    if (commande.statut !== "En attente") {
+    if (!commandeMetier.peutEtreModifieeParClient()) {
       throw new Error("Cette commande ne peut plus être modifiée.");
     }
 
-    const menu = await Menu.findById(commande.menu_id);
+    const menu = await this.menuModel.findById(commandeExistante.menu_id);
 
     if (!menu) {
       throw new Error("Menu introuvable.");
     }
 
-    const nombrePersonne = data.nombre_personne ?? commande.nombre_personne;
+    const nombrePersonne =
+      data.nombre_personne ?? commandeExistante.nombre_personne;
 
     if (nombrePersonne < menu.nombre_personne_minimum) {
       throw new Error(
@@ -219,39 +488,191 @@ const commandeService = {
       );
     }
 
-    let prixMenu = Number(menu.prix_par_personne) * Number(nombrePersonne);
+    const ancienNombre = Number(commandeExistante.nombre_personne);
+    const nouveauNombre = Number(nombrePersonne);
+    const delta = nouveauNombre - ancienNombre;
 
-    if (nombrePersonne >= Number(menu.nombre_personne_minimum) + 5) {
-      prixMenu *= 0.9;
+    const informationsComplementaires =
+      data.informations_complementaires !== undefined
+        ? this.Commande.normaliserInformationsComplementaires(
+            data.informations_complementaires,
+          )
+        : commandeExistante.informations_complementaires;
+
+    const adresseLivraison =
+      data.adresse_livraison !== undefined
+        ? this.normaliserAdresseLivraison(data.adresse_livraison)
+        : commandeExistante.adresse_livraison;
+
+    const adresseAChange =
+      adresseLivraison !== String(commandeExistante.adresse_livraison || "").trim();
+
+    let distanceKm = commandeExistante.distance_km;
+    let prixLivraison = commandeExistante.prix_livraison;
+
+    if (adresseAChange) {
+      const livraison = await this.routingService.quoteDelivery(adresseLivraison);
+      distanceKm = livraison.distance_km;
+      prixLivraison = livraison.prix_livraison;
     }
 
-    return await Commande.update(id, {
-      date_prestation: data.date_prestation ?? commande.date_prestation,
+    const updateData = {
+      date_prestation:
+        data.date_prestation ?? commandeExistante.date_prestation,
 
-      heure_livraison: data.heure_livraison ?? commande.heure_livraison,
+      heure_livraison:
+        data.heure_livraison ?? commandeExistante.heure_livraison,
 
-      adresse_livraison: data.adresse_livraison ?? commande.adresse_livraison,
+      adresse_livraison: adresseLivraison,
+
+      distance_km: distanceKm,
+
+      informations_complementaires: informationsComplementaires,
 
       nombre_personne: nombrePersonne,
 
-      pret_materiel: data.pret_materiel ?? commande.pret_materiel,
+      pret_materiel: data.pret_materiel ?? commandeExistante.pret_materiel,
 
       restitution_materiel:
-        data.restitution_materiel ?? commande.restitution_materiel,
+        data.restitution_materiel ?? commandeExistante.restitution_materiel,
 
-      prix_menu: Number(prixMenu.toFixed(2)),
-    });
-  },
+      prix_menu: this.Commande.calculerPrixMenu(menu, nombrePersonne),
 
+      prix_livraison: prixLivraison,
+    };
+
+    const caAvant = Number(
+      (
+        Number(commandeExistante.prix_menu) +
+        Number(commandeExistante.prix_livraison)
+      ).toFixed(2),
+    );
+    const caApres = Number(
+      (Number(updateData.prix_menu) + Number(updateData.prix_livraison)).toFixed(
+        2,
+      ),
+    );
+    const deltaCA = Number((caApres - caAvant).toFixed(2));
+
+    let result;
+
+    if (delta > 0) {
+      result = await this.withTransaction(async (connection) => {
+        const stockDisponible = await this.menuModel.hasStock(
+          commandeExistante.menu_id,
+          delta,
+          connection,
+        );
+
+        if (!stockDisponible) {
+          throw new Error(
+            "Le stock disponible est insuffisant pour cette commande.",
+          );
+        }
+
+        const stockDecremente = await this.menuModel.decreaseStock(
+          commandeExistante.menu_id,
+          delta,
+          connection,
+        );
+
+        if (!stockDecremente) {
+          throw new Error("La mise à jour du stock a échoué.");
+        }
+
+        return await this.commandeRepository.update(
+          id,
+          updateData,
+          connection,
+        );
+      });
+    } else if (delta < 0) {
+      result = await this.withTransaction(async (connection) => {
+        const updateResult = await this.commandeRepository.update(
+          id,
+          updateData,
+          connection,
+        );
+
+        const stockRestitue = await this.menuModel.increaseStock(
+          commandeExistante.menu_id,
+          Math.abs(delta),
+          connection,
+        );
+
+        if (!stockRestitue) {
+          throw new Error("La mise à jour du stock a échoué.");
+        }
+
+        return updateResult;
+      });
+    } else {
+      // delta === 0 : aucun mouvement de stock, update simple hors transaction
+      result = await this.commandeRepository.update(id, updateData);
+    }
+
+    if (
+      deltaCA !== 0 &&
+      this.Commande.contribueAuChiffreAffaires(commandeExistante.statut)
+    ) {
+      try {
+        await this.statistiqueService.ajusterStatistiqueCommande(
+          {
+            menu_id: commandeExistante.menu_id,
+            date_commande: commandeExistante.date_commande,
+            nom_menu: menu.titre,
+            prix_menu: updateData.prix_menu,
+            prix_livraison: updateData.prix_livraison,
+            statut: commandeExistante.statut,
+          },
+          deltaCA,
+        );
+      } catch (error) {
+        this.logger.error(
+          "Erreur lors de la mise à jour des statistiques MongoDB (modification) :",
+          error,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Suppression définitive réservée aux commandes déjà annulées.
+   * Choix conservateur : l'annulation a déjà restauré le stock et
+   * ajusté MongoDB ; on ne détruit pas l'historique d'une commande active.
+   */
   async deleteCommande(id) {
-    const commandeExiste = await Commande.exists(id);
+    const commande = await this.commandeRepository.findById(id);
 
-    if (!commandeExiste) {
+    if (!commande) {
       throw new Error("Commande introuvable.");
     }
 
-    return await Commande.delete(id);
-  },
-};
+    if (commande.statut !== "Annulée") {
+      throw new Error(
+        "Seules les commandes annulées peuvent être définitivement supprimées. Annulez la commande au préalable.",
+      );
+    }
+
+    return await this.commandeRepository.delete(id);
+  }
+}
+
+const commandeRepository = new CommandeRepository(database);
+
+const commandeService = new CommandeService({
+  commandeRepository,
+  menuModel: Menu,
+  statistiqueService: statistiqueServiceModule,
+  CommandeDomain: Commande,
+  database,
+  emailService: emailServiceModule,
+  utilisateurModel: Utilisateur,
+  routingService: routingServiceModule,
+  logger: console,
+});
 
 module.exports = commandeService;
+module.exports.CommandeService = CommandeService;

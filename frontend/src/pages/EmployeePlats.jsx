@@ -13,7 +13,6 @@ function EmployeePlats() {
 
   const [nouveauPlat, setNouveauPlat] = useState({
     titre_plat: "",
-    photo: "",
   });
 
   const [allergeneSelection, setAllergeneSelection] = useState({});
@@ -79,13 +78,15 @@ function EmployeePlats() {
       setError("");
       setMessage("");
 
-      await platService.createPlat(nouveauPlat);
+      await platService.createPlat({
+        titre_plat: nouveauPlat.titre_plat,
+        photo: null,
+      });
 
       setMessage("Plat créé avec succès.");
 
       setNouveauPlat({
         titre_plat: "",
-        photo: "",
       });
 
       await loadData();
@@ -96,7 +97,8 @@ function EmployeePlats() {
 
   function handleModifier(plat) {
     setPlatEdition({
-      ...plat,
+      plat_id: plat.plat_id,
+      titre_plat: plat.titre_plat,
     });
   }
 
@@ -105,7 +107,10 @@ function EmployeePlats() {
       setError("");
       setMessage("");
 
-      await platService.updatePlat(platEdition.plat_id, platEdition);
+      await platService.updatePlat(platEdition.plat_id, {
+        titre_plat: platEdition.titre_plat,
+        photo: null,
+      });
 
       setMessage("Plat modifié avec succès.");
 
@@ -196,20 +201,15 @@ function EmployeePlats() {
           />
         </label>
 
-        <label>
-          <span>Photo :</span>
-
-          <input
-            type="text"
-            name="photo"
-            value={nouveauPlat.photo}
-            onChange={handleChange}
-          />
-        </label>
-
-        <button className="button" type="button" onClick={handleCreate}>
-          Ajouter
-        </button>
+        <div className="card-actions">
+          <button
+            className="button button-compact"
+            type="button"
+            onClick={handleCreate}
+          >
+            Ajouter
+          </button>
+        </div>
       </div>
 
       <div className="cards">
@@ -230,60 +230,55 @@ function EmployeePlats() {
                   />
                 </label>
 
-                <label>
-                  <span>Photo :</span>
+                <div className="card-actions">
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={handleUpdate}
+                  >
+                    Enregistrer
+                  </button>
 
-                  <input
-                    type="text"
-                    name="photo"
-                    value={platEdition.photo || ""}
-                    onChange={handleEditionChange}
-                  />
-                </label>
-
-                <button className="button" type="button" onClick={handleUpdate}>
-                  Enregistrer
-                </button>
-
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => setPlatEdition(null)}
-                >
-                  Annuler
-                </button>
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={() => setPlatEdition(null)}
+                  >
+                    Annuler
+                  </button>
+                </div>
               </>
             ) : (
               <>
                 <h3>{plat.titre_plat}</h3>
 
-                {plat.photo && <img src={plat.photo} alt={plat.titre_plat} />}
+                <div className="card-actions">
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={() => handleModifier(plat)}
+                  >
+                    Modifier
+                  </button>
 
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => handleModifier(plat)}
-                >
-                  Modifier
-                </button>
-
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => handleDelete(plat.plat_id)}
-                >
-                  Supprimer
-                </button>
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={() => handleDelete(plat.plat_id)}
+                  >
+                    Supprimer
+                  </button>
+                </div>
 
                 <h4>Allergènes</h4>
 
                 {plat.allergenes?.length > 0 ? (
                   plat.allergenes.map((allergene) => (
-                    <p key={allergene.allergene_id}>
-                      {allergene.libelle}
+                    <p className="inline-action-row" key={allergene.allergene_id}>
+                      <span>{allergene.libelle}</span>
 
                       <button
-                        className="button"
+                        className="button button-compact"
                         type="button"
                         onClick={() =>
                           handleRemoveAllergene(
@@ -318,13 +313,15 @@ function EmployeePlats() {
                   ))}
                 </select>
 
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => handleAddAllergene(plat.plat_id)}
-                >
-                  Ajouter allergène
-                </button>
+                <div className="card-actions">
+                  <button
+                    className="button button-compact"
+                    type="button"
+                    onClick={() => handleAddAllergene(plat.plat_id)}
+                  >
+                    Ajouter allergène
+                  </button>
+                </div>
               </>
             )}
           </div>

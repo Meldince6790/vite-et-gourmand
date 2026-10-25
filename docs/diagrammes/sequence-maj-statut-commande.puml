@@ -1,0 +1,202 @@
+@startuml sequence-maj-statut-commande
+title Diagramme de séquence — Mise à jour du statut d'une commande
+
+actor "Employé /\nAdministrateur" as Staff
+participant "Page EmployeeCommandes\n(EmployeeCommandes.jsx)" as Page
+participant "Service commande FE\n(commande.service.js)" as CmdFe
+participant "API Express\n(PATCH /commandes/{id}/statut)" as API
+participant "authMiddleware" as AuthMw
+participant "roleMiddleware" as RoleMw
+participant "Contrôleur commande\n(commande.controller.js)" as Ctrl
+participant "Service commande\n(commande.service.js)" as CmdBe
+participant "CommandeRepository" as CmdModel
+participant "Modèle Menu" as Menu
+participant "Service statistiques" as Stats
+participant "Service e-mail" as Email
+database "MariaDB" as MySQL
+database "MongoDB" as Mongo
+
+Staff -> Page : Sélectionne un nouveau statut\npuis valide
+activate Page
+
+Page -> CmdFe : updateStatut(id, statut)
+activate CmdFe
+
+CmdFe -> API : PATCH /commandes/{id}/statut\n{ statut }\nAuthorization: Bearer …
+activate API
+
+API -> AuthMw : Vérifie le JWT (HS256)\n+ recharge compte actif
+activate AuthMw
+
+alt Token manquant, invalide\nou compte désactivé
+
+  AuthMw --> API : 401 Accès refusé
+  API --> CmdFe : 401
+  CmdFe --> Page : Error(message)
+  Page --> Staff : Affiche l'erreur
+
+else Token valide et compte actif
+
+  AuthMw --> API : req.user renseigné
+  deactivate AuthMw
+
+  API -> RoleMw : role_id ∈ {2,3} ?
+  activate RoleMw
+
+  alt Rôle client (role_id = 1) ou autre rôle interdit
+
+    RoleMw --> API : 403 Accès interdit
+    API --> CmdFe : 403
+    CmdFe --> Page : Error(message)
+    Page --> Staff : Affiche l'erreur
+
+  else Employé ou Administrateur
+
+    RoleMw --> API : autorisé
+    deactivate RoleMw
+
+    API -> Ctrl : updateStatut(req, res)
+    activate Ctrl
+
+    Ctrl -> CmdBe : updateStatut(id, statut)
+    activate CmdBe
+
+    CmdBe -> CmdModel : findById(id)
+    activate CmdModel
+
+    CmdModel -> MySQL : SELECT commande
+    MySQL --> CmdModel : commande / null
+
+    CmdModel --> CmdBe : commande
+    deactivate CmdModel
+
+    alt Commande introuvable
+
+      CmdBe --> Ctrl : Error("Commande introuvable.")
+      Ctrl --> API : 404
+      API --> CmdFe : 404
+      CmdFe --> Page : Error(message)
+      Page --> Staff : Affiche l'erreur
+
+    else Statut non autorisé
+
+      CmdBe --> Ctrl : Error("Statut de commande invalide.")
+      Ctrl --> API : 400
+      API --> CmdFe : 400
+      CmdFe --> Page : Error(message)
+      Page --> Staff : Affiche l'erreur
+
+    else Nouveau statut = "Annulée"
+
+      alt Commande déjà annulée
+
+        CmdBe --> Ctrl : Error("Cette commande est déjà annulée.")
+        Ctrl --> API : 409
+        API --> CmdFe : 409
+        CmdFe --> Page : Error(message)
+        Page --> Staff : Affiche l'erreur
+
+      else Annulation autorisée
+
+        CmdBe -> CmdModel : updateStatut(id, "Annulée")
+        activate CmdModel
+
+        CmdModel -> MySQL : UPDATE commande
+        MySQL --> CmdModel : OK
+
+        CmdModel --> CmdBe : OK
+        deactivate CmdModel
+
+        CmdBe -> Menu : increaseStock(menu_id,\nnombre_personne)
+
+        Menu -> MySQL : UPDATE stock
+        MySQL --> Menu : OK
+
+        Menu --> CmdBe : OK
+
+        CmdBe -> Stats : retirerStatistiqueCommande(...)
+        activate Stats
+
+        Stats -> Mongo : Mise à jour statistiques
+        Mongo --> Stats : OK
+
+        Stats --> CmdBe : OK
+        deactivate Stats
+
+        CmdBe -> Email : sendOrderCancellationEmail(...)
+        activate Email
+
+        Email --> CmdBe : OK
+        deactivate Email
+
+        CmdBe --> Ctrl : succès
+
+      end
+
+    else Autre statut valide
+
+      CmdBe -> CmdModel : updateStatut(id, statut)
+      activate CmdModel
+
+      CmdModel -> MySQL : UPDATE commande
+      MySQL --> CmdModel : OK
+
+      CmdModel --> CmdBe : OK
+      deactivate CmdModel
+
+      CmdBe -> Stats : synchroniserChiffreAffairesSelonStatut(...)\n(statutAvant → statutApres)
+      activate Stats
+
+      note right of Stats
+        CA += montant à l'entrée dans
+        Livrée / retour matériel / Terminée ;
+        CA -= montant à la sortie.
+        Si avant et après contribuent
+        (ou aucun des deux) : no-op.
+        Best-effort MongoDB.
+      end note
+
+      Stats -> Mongo : ajusterStatistiqueCommande (delta CA)
+      Mongo --> Stats : OK / erreur journalisée
+
+      Stats --> CmdBe : OK
+      deactivate Stats
+
+      CmdBe --> Ctrl : succès
+
+    end
+
+    deactivate CmdBe
+
+    Ctrl --> API : 200 { message de succès }
+    deactivate Ctrl
+
+    API --> CmdFe : 200
+    deactivate API
+
+    CmdFe --> Page : succès
+    deactivate CmdFe
+
+    Page -> CmdFe : getCommandes()\n(rafraîchissement)
+
+    activate CmdFe
+
+    CmdFe -> API : GET /commandes
+    activate API
+
+    API --> CmdFe : liste des commandes
+
+    deactivate API
+
+    CmdFe --> Page : données à jour
+    deactivate CmdFe
+
+    Page --> Staff : Affiche le message\net la liste actualisée
+
+  end
+
+end
+
+deactivate Page
+
+@enduml

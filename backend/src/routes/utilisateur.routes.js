@@ -5,6 +5,7 @@ const router = express.Router();
 const utilisateurController = require("../controllers/utilisateur.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
 const roleMiddleware = require("../middlewares/role.middleware");
+const { registerRateLimiter } = require("../middlewares/rateLimit.middleware");
 
 // Profil utilisateur connecté
 router.get("/me", authMiddleware, utilisateurController.getMe);
@@ -23,7 +24,7 @@ router.get(
 
 // Création d'un compte client
 // Route publique utilisée lors de l'inscription
-router.post("/", utilisateurController.create);
+router.post("/", registerRateLimiter, utilisateurController.create);
 
 // Création d'un compte employé
 // Accessible uniquement à l'administrateur

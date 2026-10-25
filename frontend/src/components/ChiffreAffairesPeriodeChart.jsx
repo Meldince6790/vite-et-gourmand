@@ -10,6 +10,12 @@ import {
 
 import { Bar } from "react-chartjs-2";
 
+import {
+  borderColorsForCount,
+  colorsForCount,
+  hoverColorsForCount,
+} from "./chartPalette.js";
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -20,16 +26,21 @@ ChartJS.register(
 );
 
 function ChiffreAffairesPeriodeChart({ chiffreAffaires }) {
+  const barCount = chiffreAffaires.length;
+
   const data = {
     labels: chiffreAffaires.map((statistique) => statistique.periode),
 
     datasets: [
       {
         label: "Chiffre d'affaires (€)",
-
         data: chiffreAffaires.map(
           (statistique) => statistique.chiffre_affaires,
         ),
+        backgroundColor: colorsForCount(barCount),
+        hoverBackgroundColor: hoverColorsForCount(barCount),
+        borderColor: borderColorsForCount(barCount),
+        borderWidth: 1,
       },
     ],
   };

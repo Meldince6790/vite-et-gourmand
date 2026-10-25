@@ -1,0 +1,55 @@
+@startsalt
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Desktop Accueil (blocs fonctionnels)
+{
+WIREFRAME — BASSE FIDÉLITÉ — Desktop Accueil
+----
+{+
+Logo | Navigation
+}
+----
+{
+{+
+Contenu principal
+.
+Titre
+Texte
+.
+[Bouton]
+} |
+{+
+.
+.
+Image
+.
+.
+}
+}
+----
+{
+{+
+Avis client
+} |
+{+
+Avis client
+} |
+{+
+Avis client
+}
+}
+----
+{
+{+
+Horaires
+} |
+{+
+Mentions légales
+} |
+{+
+CGV
+}
+}
+}
+@endsalt

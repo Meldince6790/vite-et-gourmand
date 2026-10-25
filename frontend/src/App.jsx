@@ -26,6 +26,8 @@ import MesCommandes from "./pages/MesCommandes.jsx";
 
 import Login from "./pages/Login.jsx";
 import Contact from "./pages/Contact.jsx";
+import MentionsLegales from "./pages/MentionsLegales.jsx";
+import CGV from "./pages/CGV.jsx";
 
 function App() {
   return (
@@ -37,7 +39,14 @@ function App() {
 
         <Route path="/menus/:id" element={<MenuDetail />} />
 
-        <Route path="/commander/:id" element={<Commander />} />
+        <Route
+          path="/commander/:id"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <Commander />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/espace-client"
@@ -138,11 +147,22 @@ function App() {
           }
         />
 
-        <Route path="/mes-commandes" element={<MesCommandes />} />
+        <Route
+          path="/mes-commandes"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <MesCommandes />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/login" element={<Login />} />
 
         <Route path="/contact" element={<Contact />} />
+
+        <Route path="/mentions-legales" element={<MentionsLegales />} />
+
+        <Route path="/cgv" element={<CGV />} />
       </Route>
     </Routes>
   );

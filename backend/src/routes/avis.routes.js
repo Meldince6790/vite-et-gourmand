@@ -4,13 +4,14 @@ const router = express.Router();
 const avisController = require("../controllers/avis.controller");
 
 const authMiddleware = require("../middlewares/auth.middleware");
+const optionalAuthMiddleware = require("../middlewares/optionalAuth.middleware");
 const roleMiddleware = require("../middlewares/role.middleware");
 
-// Consultation publique
+// Consultation : public = Validé uniquement ; employé/admin (JWT) = tous
 
-router.get("/", avisController.getAll);
+router.get("/", optionalAuthMiddleware, avisController.getAll);
 
-router.get("/:id", avisController.getById);
+router.get("/:id", optionalAuthMiddleware, avisController.getById);
 
 // Création d'un avis par un client connecté
 

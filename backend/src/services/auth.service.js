@@ -25,6 +25,10 @@ const authService = {
       throw new Error("Identifiants incorrects.");
     }
 
+    if (!utilisateur.actif) {
+      throw new Error("Identifiants incorrects.");
+    }
+
     const token = jwt.sign(
       {
         utilisateur_id: utilisateur.utilisateur_id,
@@ -42,7 +46,12 @@ const authService = {
       email: utilisateur.email,
       nom: utilisateur.nom,
       prenom: utilisateur.prenom,
+      telephone: utilisateur.telephone,
+      ville: utilisateur.ville,
+      pays: utilisateur.pays,
+      adresse_postale: utilisateur.adresse_postale,
       role_id: utilisateur.role_id,
+      actif: utilisateur.actif,
       token,
     };
   },

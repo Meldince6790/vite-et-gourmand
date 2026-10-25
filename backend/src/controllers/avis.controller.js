@@ -1,9 +1,17 @@
 const avisService = require("../services/avis.service");
+const { toClientErrorMessage } = require("../utils/safeErrorMessage");
+
+function isStaffUser(user) {
+  const roleId = Number(user?.role_id);
+  return roleId === 2 || roleId === 3;
+}
 
 const avisController = {
   async getAll(req, res) {
     try {
-      const avis = await avisService.getAll();
+      const avis = await avisService.getAll({
+        publicOnly: !isStaffUser(req.user),
+      });
 
       res.status(200).json(avis);
     } catch (error) {
@@ -17,7 +25,9 @@ const avisController = {
 
   async getById(req, res) {
     try {
-      const avis = await avisService.getById(req.params.id);
+      const avis = await avisService.getById(req.params.id, {
+        publicOnly: !isStaffUser(req.user),
+      });
 
       if (!avis) {
         return res.status(404).json({
@@ -52,7 +62,10 @@ const avisController = {
       console.error(error);
 
       res.status(400).json({
-        message: error.message,
+        message: toClientErrorMessage(
+          error,
+          "Erreur lors de la création de l'avis.",
+        ),
       });
     }
   },
@@ -74,7 +87,10 @@ const avisController = {
       console.error(error);
 
       res.status(400).json({
-        message: error.message,
+        message: toClientErrorMessage(
+          error,
+          "Erreur lors de la modification de l'avis.",
+        ),
       });
     }
   },

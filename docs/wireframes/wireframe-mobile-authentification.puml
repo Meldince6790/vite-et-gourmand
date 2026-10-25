@@ -1,0 +1,60 @@
+@startsalt
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Mobile Authentification (blocs fonctionnels)
+{
+WIREFRAME — BASSE FIDÉLITÉ — Mobile Authentification
+----
+{+
+Logo | Menu
+}
+----
+Mon compte
+----
+{+
+{+
+Connexion | Inscription
+}
+.
+Connexion
+.
+E-mail
+Mot de passe
+.
+[Se connecter]
+.
+Lien oublié
+}
+----
+{+
+{+
+Connexion | Inscription
+}
+.
+Inscription
+.
+Nom
+Prénom
+Téléphone
+Adresse
+E-mail
+Mot de passe
+Confirmation
+.
+Règles mdp
+.
+[Créer compte]
+}
+----
+{
+{+
+Horaires
+} |
+{+
+Mentions légales
+CGV
+}
+}
+}
+@endsalt

@@ -1,0 +1,71 @@
+@startsalt
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Mobile Menus (blocs fonctionnels)
+{
+WIREFRAME — BASSE FIDÉLITÉ — Mobile Menus
+----
+{+
+Logo | Menu
+}
+----
+Catalogue
+----
+{+
+Filtres
+.
+{
+Thème | Régime
+}
+{
+Nb min. pers. | Fourchette de prix
+}
+.
+[Réinitialiser] | [Appliquer]
+}
+----
+{+
+{
+Image
+} |
+{
+Titre menu
+Infos menu
+[Voir détail]
+}
+}
+----
+{+
+{
+Image
+} |
+{
+Titre menu
+Infos menu
+[Voir détail]
+}
+}
+----
+{+
+{
+Image
+} |
+{
+Titre menu
+Infos menu
+[Voir détail]
+}
+}
+----
+{
+{+
+Horaires
+} |
+{+
+Mentions légales
+CGV
+}
+}
+}
+@endsalt

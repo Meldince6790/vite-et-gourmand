@@ -1,9 +1,8 @@
-@startuml DiagrammeClasses
+@startuml diagramme-classes
 
-title Diagramme de classes - Vite & Gourmand
+title Diagramme de classes — Vite & Gourmand
 
 left to right direction
-
 skinparam classAttributeIconSize 0
 
 ' =====================
@@ -19,7 +18,8 @@ class Utilisateur {
     - telephone : string
     - ville : string
     - pays : string
-    - adresse : string
+    - adresse_postale : string
+    - actif : boolean
 }
 
 class Role {
@@ -28,7 +28,6 @@ class Role {
 }
 
 Utilisateur "0..*" -- "1" Role : possède
-
 
 ' =====================
 ' Catalogue
@@ -40,6 +39,7 @@ class Menu {
     - nombre_personne_minimum : int
     - prix_par_personne : decimal
     - description : string
+    - conditions : string
     - quantite_restante : int
 }
 
@@ -64,27 +64,32 @@ class Allergene {
     - libelle : string
 }
 
-
 ' =====================
 ' Commandes
 ' =====================
 
 class Commande {
+    - commande_id : int
     - numero_commande : string
     - date_commande : date
     - date_prestation : date
     - heure_livraison : string
+    - adresse_livraison : string
     - prix_menu : decimal
     - nombre_personne : int
     - prix_livraison : decimal
+    - distance_km : decimal
+    - informations_complementaires : string
     - statut : string
     - pret_materiel : boolean
     - restitution_materiel : boolean
+    - mode_contact_annulation : string
+    - motif_annulation : string
+    - date_annulation : date
 }
 
-
 ' =====================
-' Avis
+' Avis / Horaires
 ' =====================
 
 class Avis {
@@ -94,11 +99,6 @@ class Avis {
     - statut : string
 }
 
-
-' =====================
-' Horaire
-' =====================
-
 class Horaire {
     - horaire_id : int
     - jour : string
@@ -106,23 +106,35 @@ class Horaire {
     - heure_fermeture : string
 }
 
+' =====================
+' Statistiques (MongoDB)
+' =====================
+
+class Statistique <<MongoDB>> {
+    - menu_id : int
+    - nom_menu : string
+    - nombre_commandes : int
+    - chiffre_affaires : decimal
+    - periode : string
+}
 
 ' =====================
 ' Associations
 ' =====================
 
 Utilisateur "1" -- "0..*" Commande : effectue
-
 Commande "0..*" -- "1" Menu : concerne
-
 Utilisateur "1" -- "0..*" Avis : publie
-
 Menu "0..*" -- "1" Theme : propose
-
 Menu "0..*" -- "1" Regime : adapte
-
 Menu "1..*" -- "0..*" Plat : propose
-
 Plat "0..*" -- "0..*" Allergene : contient
+Statistique ..> Menu : référence logique
+
+note bottom of Statistique
+  Collection MongoDB « statistiques »
+  synchronisée avec le cycle de vie
+  des commandes MariaDB
+end note
 
 @enduml

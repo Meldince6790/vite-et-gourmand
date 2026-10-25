@@ -1,0 +1,59 @@
+@startsalt
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontColor #000000
+skinparam shadowing false
+' WIREFRAME — BASSE FIDÉLITÉ — Desktop Commande (blocs fonctionnels)
+{
+WIREFRAME — BASSE FIDÉLITÉ — Desktop Commande
+----
+{+
+Logo | Navigation
+}
+----
+Commande
+----
+{
+{
+{+
+Menu sélectionné
+.
+Titre menu
+Infos menu
+}
+.
+{+
+Formulaire
+.
+Date
+Heure
+Nb personnes
+Matériel Oui / Non
+Adresse
+Infos complémentaires
+}
+} |
+{+
+Récapitulatif
+.
+Ligne récap 1
+Ligne récap 2
+Ligne récap 3
+Total
+.
+[Valider]
+}
+}
+----
+{
+{+
+Horaires
+} |
+{+
+Mentions légales
+} |
+{+
+CGV
+}
+}
+}
+@endsalt

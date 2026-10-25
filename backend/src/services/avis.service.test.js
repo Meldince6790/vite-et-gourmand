@@ -212,3 +212,72 @@ describe("avisService.getAll / getById", () => {
     });
   });
 });
+
+describe("avisService.update", () => {
+  it("refuse un corps sans champ modifiable avant tout appel au modèle", async () => {
+    for (const body of [{}, [], null, undefined, "x", { autre: 1 }]) {
+      let updateCalls = 0;
+      const { service, avisModel } = createMocks();
+      avisModel.update = async () => {
+        updateCalls += 1;
+        return 1;
+      };
+
+      await assert.rejects(
+        service.update(1, body),
+        /Aucune donnée modifiable n'a été fournie\./,
+      );
+      assert.equal(updateCalls, 0);
+    }
+  });
+
+  it("refuse un statut vide ou invalide", async () => {
+    const { service } = createMocks();
+
+    for (const statut of ["", null, 0, false, "Inconnu", ["Validé"], {}]) {
+      await assert.rejects(
+        service.update(1, { statut }),
+        /Statut d'avis invalide\./,
+      );
+    }
+  });
+
+  it("refuse une description qui n'est pas un texte", async () => {
+    const { service } = createMocks();
+
+    for (const description of [{}, { a: 1 }, ["x"], null, 12, true]) {
+      await assert.rejects(
+        service.update(1, { description }),
+        /Le commentaire doit être un texte\./,
+      );
+    }
+  });
+
+  it("transmet inchangés les champs valides au modèle", async () => {
+    const received = [];
+    const { service, avisModel } = createMocks();
+    avisModel.update = async (id, data) => {
+      received.push({ id, data });
+      return 1;
+    };
+
+    await service.update(5, { note: "4", description: "Bien", statut: "Validé" });
+    await service.update(5, { statut: "Refusé" });
+    await service.update(5, { description: "" });
+
+    assert.deepEqual(received, [
+      { id: 5, data: { note: 4, description: "Bien", statut: "Validé" } },
+      { id: 5, data: { statut: "Refusé" } },
+      { id: 5, data: { description: "" } },
+    ]);
+  });
+
+  it("conserve les contrôles existants sur la note", async () => {
+    const { service } = createMocks();
+
+    await assert.rejects(
+      service.update(1, { note: 9 }),
+      /La note doit être comprise entre 1 et 5\./,
+    );
+  });
+});

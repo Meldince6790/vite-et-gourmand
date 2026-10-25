@@ -87,6 +87,17 @@ function createAvisService({ avisModel = Avis, database = db } = {}) {
     },
 
     async update(id, data) {
+      const aUnChampModifiable =
+        data !== null &&
+        typeof data === "object" &&
+        ["note", "description", "statut"].some(
+          (champ) => data[champ] !== undefined,
+        );
+
+      if (!aUnChampModifiable) {
+        throw new Error("Aucune donnée modifiable n'a été fournie.");
+      }
+
       if (data.note !== undefined) {
         const note = Number(data.note);
 
@@ -98,7 +109,14 @@ function createAvisService({ avisModel = Avis, database = db } = {}) {
       }
 
       if (
-        data.statut &&
+        data.description !== undefined &&
+        typeof data.description !== "string"
+      ) {
+        throw new Error("Le commentaire doit être un texte.");
+      }
+
+      if (
+        data.statut !== undefined &&
         !["En attente", "Validé", "Refusé"].includes(data.statut)
       ) {
         throw new Error("Statut d'avis invalide.");

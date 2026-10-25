@@ -95,6 +95,10 @@ const Avis = {
       values.push(avis.statut);
     }
 
+    if (fields.length === 0) {
+      throw new Error("Aucune donnée modifiable n'a été fournie.");
+    }
+
     values.push(id);
 
     const [result] = await db.query(

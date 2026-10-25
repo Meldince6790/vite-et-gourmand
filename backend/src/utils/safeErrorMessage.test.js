@@ -51,3 +51,24 @@ describe("safeErrorMessage", () => {
     );
   });
 });
+
+describe("safeErrorMessage : erreurs du pilote SQL", () => {
+  const { isSqlDriverError } = require("./safeErrorMessage");
+
+  it("masque une erreur identifiée par sqlState / sqlMessage / code ER_", () => {
+    const error = Object.assign(
+      new Error(
+        "You have an error in your SQL syntax; check the manual near 'WHERE avis_id = '1'' at line 1",
+      ),
+      { code: "ER_PARSE_ERROR", sqlState: "42000", sqlMessage: "x" },
+    );
+
+    assert.equal(isSqlDriverError(error), true);
+    assert.equal(toClientErrorMessage(error, "Erreur générique."), "Erreur générique.");
+  });
+
+  it("ne confond pas une erreur métier avec une erreur SQL", () => {
+    assert.equal(isSqlDriverError(new Error("Avis introuvable.")), false);
+    assert.equal(isSqlDriverError(null), false);
+  });
+});
